@@ -46,7 +46,7 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 
 * Role: Team Member
-* Responsibilities: Data
+* Responsibilities: Data/Storage
 
 ### Jean Doe
 
