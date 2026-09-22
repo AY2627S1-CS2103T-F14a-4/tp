@@ -486,12 +486,13 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 ### Non-Functional Requirements
 
-1.  Should work on any _mainstream OS_ as long as it has Java `25` or above installed.
-2.  Should be able to hold up to 1000 persons without noticeable sluggishness in performance for typical usage.
-3.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
+1. Should work on any _mainstream OS_ as long as it has Java `25` or above installed.
+2. Should be able to hold up to 1000 persons without noticeable sluggishness in performance for typical usage.
+3. A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
 4. ClientBook should support all core client-record management features without requiring an Internet connection.
 5. ClientBook should save all changes to client records to local storage so that the data is available after the application is closed and restarted.
-
+6. The application must fail gracefully without crashing if the local storage file is missing, locked by another process, or corrupted via manual editing. It should present a clear error message to the user rather than freezing.
+7. The graphical user interface must reflect the results of any command execution (e.g., adding a client, filtering the list, or deleting a record) within 500 milliseconds to maintain the perception of instantaneous feedback.
 *{More to be added}*
 
 ### Glossary
