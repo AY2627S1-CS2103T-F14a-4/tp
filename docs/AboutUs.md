@@ -1,6 +1,6 @@
 ---
   layout: default.md
-  title: "About Us"
+    title: "About Us"
 ---
 
 # About Us
@@ -49,12 +49,11 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 * Role: Developer
 * Responsibilities: Dev Ops + Threading
 
-### James Doe
+### Tan Wei Jie
 
-<img src="images/johndoe.png" width="200px">
+<img src="images/jokthreee.png" width="200px">
 
-[[github](http://github.com/johndoe)]
-[[portfolio](team/johndoe.md)]
+[[github](http://github.com/JokThreee)]
 
-* Role: Developer
-* Responsibilities: UI
+* Role: Team Member
+* Responsibilities: Logic / Commands
