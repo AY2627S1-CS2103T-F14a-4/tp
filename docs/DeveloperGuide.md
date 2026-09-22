@@ -421,7 +421,31 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
   * 4a1. ClientBook shows an error message.
   * Use case resumes at step 4.
 
+**Use case: Add an important date**
 
+**MSS**
+
+1. User requests to add an important date to an existing client or prospect.
+2. ClientBook identifies the specified client or prospect.
+3. User provides the important date and its description.
+4. ClientBook validates the supplied information.
+5. ClientBook adds the important date to the person's record and displays a confirmation message.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. The specified client or prospect does not exist.
+    * 2a1. ClientBook shows an error message.
+    * Use case ends.
+
+* 3a. The required information is not supplied.
+    * 3a1. ClientBook shows an error message.
+    * Use case ends.
+
+* 4a. The supplied date is invalid.
+    * 4a1. ClientBook shows an error message.
+    * Use case resumes at step 3.
 *{More to be added}*
 
 ### Non-Functional Requirements
@@ -430,6 +454,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 2.  Should be able to hold up to 1000 persons without noticeable sluggishness in performance for typical usage.
 3.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
 4. ClientBook should support all core client-record management features without requiring an Internet connection.
+5. ClientBook should save all changes to client records to local storage so that the data is available after the application is closed and restarted.
 
 *{More to be added}*
 
