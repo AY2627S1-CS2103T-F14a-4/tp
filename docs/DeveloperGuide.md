@@ -446,6 +446,42 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * 4a. The supplied date is invalid.
     * 4a1. ClientBook shows an error message.
     * Use case resumes at step 3.
+
+**Use case: Convert a prospect to a client**
+
+**MSS**
+
+1. User issues a search command with name keywords to locate the target prospect.
+2. ClientBook identifies the specified prospect.
+3. User issues a conversion command specifying the target prospect's index number.
+4. ClientBook verifies the contact is currently classified as a prospect and prompts the user to input mandatory client-specific onboarding details (e.g., billing address and tax ID).
+5. User inputs the required onboarding details.
+6. ClientBook validates the new information, changes the contact's classification from "prospect" to "client", saves the data, and displays a confirmation message.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. The specified client or prospect does not exist.
+    * 1a1. ClientBook shows an error message.
+    * Use case ends.
+
+* 3a. The user provides an invalid index number (e.g., out of bounds or non-numeric).
+    * 3a1. System displays an error message stating the index is invalid.
+    * Use case resumes at step 3.
+
+* 4a. The selected contact is already classified as a client.
+    * 4a1. System displays an error message stating the contact cannot be converted because they are already a client.
+    * Use case ends.
+
+* 5a. The user provides invalid formatting for the onboarding details (e.g., an alphanumeric string for a strictly numeric tax ID).
+    * 5a1. System displays an error message detailing the specific parameter constraint and re-prompts the user for the details.
+    * Use case resumes at step 5.
+
+* 5b. The user inputs an abort command.
+  * 5b1. System cancels the conversion process and leaves the contact as a prospect.
+  * Use case ends.
+
 *{More to be added}*
 
 ### Non-Functional Requirements
