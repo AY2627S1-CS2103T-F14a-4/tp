@@ -21,6 +21,15 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 * Role: Project Advisor
 
+### Nicholas Goh
+
+<img src="images/nicholas-gohh.png" width="200px">
+
+[[github](https://github.com/Nicholas-gohh)]
+
+* Role: Team Member
+* Responsibilities: Git organization maintenance
+
 ### Xian Han
 
 <img src="images/koeyxianhan123.png" width="200px">
