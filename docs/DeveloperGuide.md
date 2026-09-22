@@ -287,7 +287,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 #### First Use and Core Contact Records
 
-| Priority | As a … | I can … | So that I can … |
+| Priority | As a … | I want to … | So that I can … |
 | --- | --- | --- | --- |
 | * | As a potential user exploring the app | view realistic sample client records | understand how the product supports relationship management before entering real data. |
 | * | As a user ready to start using the app | remove all sample or experimental records | begin with a clean set of client data. |
@@ -299,7 +299,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 #### Relationship Context
 
-| Priority | As a … | I can … | So that I can … |
+| Priority | As a … | I want to … | So that I can … |
 | --- | --- | --- | --- |
 | * * | As a financial consultant handling different kinds of relationships | assign one or more meaningful tags to a person | organise contacts according to how I work. |
 | * * * | As a financial consultant managing a relationship pipeline | record whether a person is a prospect, active client, or inactive client | tell what kind of attention each relationship needs. |
@@ -310,7 +310,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 #### Interaction History
 
-| Priority | As a … | I can … | So that I can … |
+| Priority | As a … | I want to … | So that I can … |
 | --- | --- | --- | --- |
 | * | As a financial consultant after speaking with a client | add a dated interaction note | preserve important details while they are still fresh. |
 | * | As a financial consultant | record the type and outcome of an interaction | distinguish a meeting, call, message, or unsuccessful contact attempt. |
@@ -319,7 +319,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 #### Follow Ups and Reminders
 
-| Priority | As a … | I can … | So that I can … |
+| Priority | As a … | I want to … | So that I can … |
 | --- | --- | --- | --- |
 | * * | As a financial consultant after an interaction | record the next action and its due date | turn the conversation into a concrete follow-up. |
 | * * | As a financial consultant starting the workday | view follow-ups that are due or overdue | act on urgent relationships before they are forgotten. |
@@ -329,7 +329,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 #### Retrieval and Prioritisation
 
-| Priority | As a … | I can … | So that I can … |
+| Priority | As a … | I want to … | So that I can … |
 | --- | --- | --- | --- |
 | * * * | As a financial consultant looking for a specific person | find clients or prospects using one or more name keywords | quickly locate the relevant client record. |
 | * * | As a financial consultant who remembers context rather than a name | search across preferences and notes using keywords | find the relevant relationship from the detail I remember. |
@@ -340,7 +340,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 #### Long Term Use and Data Continuity
 
-| Priority | As a … | I can … | So that I can … |
+| Priority | As a … | I want to … | So that I can … |
 | --- | --- | --- | --- |
 | * | As a long-time user | move inactive records out of my active view and restore them later | reduce clutter without permanently losing relationship history. |
 | * * | As a financial consultant moving or safeguarding my local data | create a backup copy of my records | protect the relationship information I have accumulated. |
