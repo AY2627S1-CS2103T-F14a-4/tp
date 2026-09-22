@@ -399,6 +399,28 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
     Use case ends.
 
+**Use case: Record a follow-up after a client interaction**
+
+**MSS**
+
+1. User requests to find a client or prospect.
+2. ClientBook displays the matching record.
+3. User records the outcome of the interaction.
+4. User records the next action and its due date.
+5. ClientBook saves the interaction details and follow-up.
+
+    Use case ends.
+
+**Extensions**
+
+* 2a. No matching client or prospect is found.
+  * 2a1. ClientBook shows a message that no matching record exists.
+  * Use case ends.
+
+* 4a. The supplied due date is invalid.
+  * 4a1. ClientBook shows an error message.
+  * Use case resumes at step 4.
+
 
 *{More to be added}*
 
@@ -407,13 +429,14 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 1.  Should work on any _mainstream OS_ as long as it has Java `25` or above installed.
 2.  Should be able to hold up to 1000 persons without noticeable sluggishness in performance for typical usage.
 3.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
+4. ClientBook should support all core client-record management features without requiring an Internet connection.
 
 *{More to be added}*
 
 ### Glossary
 
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
-
+* **Prospect**: A person who is being tracked as a potential future client but is not currently an active client.
 
 --------------------------------------------------------------------------------------------------------------------
 
