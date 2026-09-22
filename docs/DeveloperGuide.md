@@ -270,29 +270,82 @@ _{Explain here how the data archiving feature will be implemented}_
 
 **Target user profile**:
 
-* has a need to manage a significant number of contacts
-* prefers desktop apps over other types of applications
-* can type fast
-* prefers typing to mouse interactions
-* is reasonably comfortable using CLI apps
+* maintains one user's local records of clients and prospects
+* stores contact details, relationship status, tags, preferences, interests, important dates, and other concise relationship context
+* records high-level business needs such as financial goals, priorities, budget ranges, and areas of interest
+* records dated interactions, outcomes, next actions, and reminders
+* finds, filters, sorts, reviews, archives, and backs up relationship records
+* supports frequent users who prefer fast typed input while using the interface for clear feedback
 
-**Value proposition**: Manage contacts faster than with a typical mouse-driven GUI application.
+**Value proposition**: Keeps track of their clients' details, allowing them to quickly recall important personal context about their clients, so that they can maintain more personalised and informed client relationships.
+
 
 
 ### User stories
 
 Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unlikely to have) - `*`
 
-| Priority | As a …                                    | I want to …                 | So that I can…                                                        |
-|----------|--------------------------------------------|------------------------------|------------------------------------------------------------------------|
-| `* * *`  | new user                                   | see usage instructions       | refer to instructions when I forget how to use the App                 |
-| `* * *`  | user                                       | add a new person             |                                                                        |
-| `* * *`  | user                                       | delete a person              | remove entries that I no longer need                                   |
-| `* * *`  | user                                       | find a person by name        | locate details of persons without having to go through the entire list |
-| `* *`    | user                                       | hide private contact details | minimize chance of someone else seeing them by accident                |
-| `*`      | user with many persons in the address book | sort persons by name         | locate a person easily                                                 |
+#### First Use and Core Contact Records
 
-*{More to be added}*
+| Priority | As a … | I want to … | So that I can … |
+| --- | --- | --- | --- |
+| * | As a potential user exploring the app | view realistic sample client records | understand how the product supports relationship management before entering real data. |
+| * | As a user ready to start using the app | remove all sample or experimental records | begin with a clean set of client data. |
+| * * * | As a financial consultant | add a client or prospect with their basic contact details | keep a record of every professional relationship I manage. |
+| * * * | As a financial consultant | view all active clients and prospects | see the relationships currently under my care. |
+| * * | As a financial consultant preparing to contact someone | view one person's complete profile | recall the relevant relationship context before the conversation. |
+| * * | As a financial consultant | update a person's contact details | keep the record accurate when their information changes. |
+| * * * | As a financial consultant | delete a record that I created by mistake | prevent incorrect entries from cluttering my records. |
+
+#### Relationship Context
+
+| Priority | As a … | I want to … | So that I can … |
+| --- | --- | --- | --- |
+| * * | As a financial consultant handling different kinds of relationships | assign one or more meaningful tags to a person | organise contacts according to how I work. |
+| * * * | As a financial consultant managing a relationship pipeline | record whether a person is a prospect, active client, or inactive client | tell what kind of attention each relationship needs. |
+| * * | As a financial consultant who relies on personal rapport | record a person's preferences and interests | make future conversations more relevant and personal. |
+| * * | As a financial consultant | record important dates shared by a client | remember occasions that matter to the relationship. |
+| * * | As a financial consultant | record a person's preferred contact channel and timing | approach them in a way that is convenient for them. |
+| * * * | As a financial consultant | record a client's high-level financial needs, priorities, and areas of interest | continue the business discussion from the correct context. |
+
+#### Interaction History
+
+| Priority | As a … | I want to … | So that I can … |
+| --- | --- | --- | --- |
+| * | As a financial consultant after speaking with a client | add a dated interaction note | preserve important details while they are still fresh. |
+| * | As a financial consultant | record the type and outcome of an interaction | distinguish a meeting, call, message, or unsuccessful contact attempt. |
+| * | As a financial consultant reviewing a relationship | view interaction notes in chronological order | understand how the relationship has developed over time. |
+| * | As a financial consultant who entered an inaccurate interaction note | correct or remove that note | keep the relationship history trustworthy. |
+
+#### Follow Ups and Reminders
+
+| Priority | As a … | I want to … | So that I can … |
+| --- | --- | --- | --- |
+| * * | As a financial consultant after an interaction | record the next action and its due date | turn the conversation into a concrete follow-up. |
+| * * | As a financial consultant starting the workday | view follow-ups that are due or overdue | act on urgent relationships before they are forgotten. |
+| * * | As a financial consultant who has completed a follow-up | mark the action as completed | distinguish finished work from work that still needs attention. |
+| * * | As a financial consultant whose plan has changed | reschedule a follow-up | keep my next-action list realistic without losing the task. |
+| * * | As a financial consultant managing recurring relationship events | set reminders for dates such as birthdays or renewal periods | maintain relationships and prepare for time-sensitive conversations. |
+
+#### Retrieval and Prioritisation
+
+| Priority | As a … | I want to … | So that I can … |
+| --- | --- | --- | --- |
+| * * * | As a financial consultant looking for a specific person | find clients or prospects using one or more name keywords | quickly locate the relevant client record. |
+| * * | As a financial consultant who remembers context rather than a name | search across preferences and notes using keywords | find the relevant relationship from the detail I remember. |
+| * * | As a financial consultant focusing on a segment of contacts | filter people by relationship stage or tag | work with only the relevant group. |
+| * * | As a financial consultant planning the order of work | sort contacts by next follow-up or last interaction date | prioritise relationships using timely information. |
+| * | As a financial consultant maintaining long-term relationships | identify people I have not contacted recently | notice relationships that may otherwise be neglected. |
+| * * | As a busy financial consultant about to meet or call someone | view a concise summary of their preferences, recent interactions, and next action | refresh my memory without reading the entire record. |
+
+#### Long Term Use and Data Continuity
+
+| Priority | As a … | I want to … | So that I can … |
+| --- | --- | --- | --- |
+| * | As a long-time user | move inactive records out of my active view and restore them later | reduce clutter without permanently losing relationship history. |
+| * * | As a financial consultant moving or safeguarding my local data | create a backup copy of my records | protect the relationship information I have accumulated. |
+| * * | As a financial consultant recovering from data loss or changing computers | restore my records from a backup | resume work without rebuilding my relationship history. |
+
 
 ### Use cases
 
@@ -321,6 +374,32 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case resumes at step 2.
 
+**Use case: Update a client relationship**
+
+**MSS**
+
+1. User requests to find a client or prospect by name.
+2. AddressBook displays matching records.
+3. User updates the person’s relationship stage, preferences, or contact details.
+4. AddressBook saves the updated relationship context and displays a confirmation message.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. No matching record is found.
+
+  * 2a1. AddressBook shows a message that no matching records exist.
+
+    Use case ends.
+
+* 3a. The updated details are invalid.
+
+  * 3a1. AddressBook shows an error message.
+
+    Use case ends.
+
+
 *{More to be added}*
 
 ### Non-Functional Requirements
@@ -334,7 +413,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 ### Glossary
 
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
-* **Private contact detail**: A contact detail that is not meant to be shared with others
+
 
 --------------------------------------------------------------------------------------------------------------------
 
