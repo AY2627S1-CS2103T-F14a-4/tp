@@ -28,7 +28,7 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 [[github](https://github.com/Nicholas-gohh)]
 
 * Role: Team Member
-* Responsibilities: Git organization maintainence
+* Responsibilities: Git organization maintenance
 
 ### Johnny Doe
 
