@@ -4,6 +4,7 @@
     {
       "src": "AboutUs.md",
       "headings": {
+        "layout-default-md-title-and-quot-about-us-and-quot": "---\nlayout: default.md\ntitle: &quot;About Us&quot;",
         "about-us": "About Us",
         "project-team": "Project team",
         "phu-xien": "Phu Xien",
