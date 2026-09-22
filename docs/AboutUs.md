@@ -56,5 +56,5 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 [[github](http://github.com/JokThreee)]
 
-* Role: Developer
-* Responsibilities: UI
+* Role: Team Member
+* Responsibilities: Logic / Commands
