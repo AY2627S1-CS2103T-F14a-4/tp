@@ -28,7 +28,7 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 [[github](https://github.com/KoeyXianHan123)]
 
 * Role: Team Member
-* Responsibilities: Logic / Command
+* Responsibilities: Logic / Commands
 
 ### Johnny Doe
 
