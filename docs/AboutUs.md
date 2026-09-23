@@ -17,8 +17,8 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 [[github](https://github.com/PhuXien)]
 
-* Role: Team Member / Code quality
-* Responsibilities: Looks after code quality, ensures adherence to coding standards, etc.
+* Role: Team Member 
+* Responsibilities: Code quality
 
 ### Nicholas Goh
 
@@ -47,16 +47,6 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 * Role: Team Member
 * Responsibilities: Data and storage/Storage
-
-### Jean Doe
-
-<img src="images/johndoe.png" width="200px">
-
-[[github](http://github.com/johndoe)]
-[[portfolio](team/johndoe.md)]
-
-* Role: Developer
-* Responsibilities: Dev Ops + Threading
 
 ### Tan Wei Jie
 
