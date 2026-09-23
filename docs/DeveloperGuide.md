@@ -349,16 +349,16 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 ### Use cases
 
-(For all use cases below, the **System** is the `AddressBook` and the **Actor** is the `user`, unless specified otherwise)
+(For all use cases below, the **System** is `ClientBook` and the **Actor** is the `user`, unless specified otherwise)
 
 **Use case: Delete a person**
 
 **MSS**
 
 1.  User requests to list persons
-2.  AddressBook shows a list of persons
+2.  ClientBook shows a list of persons
 3.  User requests to delete a specific person in the list
-4.  AddressBook deletes the person
+4.  ClientBook deletes the person
 
     Use case ends.
 
@@ -370,7 +370,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 3a. The given index is invalid.
 
-    * 3a1. AddressBook shows an error message.
+    * 3a1. ClientBook shows an error message.
 
       Use case resumes at step 2.
 
@@ -379,9 +379,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 **MSS**
 
 1. User requests to find a client or prospect by name.
-2. AddressBook displays matching records.
+2. ClientBook displays matching records.
 3. User updates the person’s relationship stage, preferences, or contact details.
-4. AddressBook saves the updated relationship context and displays a confirmation message.
+4. ClientBook saves the updated relationship context and displays a confirmation message.
 
    Use case ends.
 
@@ -389,13 +389,13 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 2a. No matching record is found.
 
-  * 2a1. AddressBook shows a message that no matching records exist.
+  * 2a1. ClientBook shows a message that no matching records exist.
 
     Use case ends.
 
 * 3a. The updated details are invalid.
 
-  * 3a1. AddressBook shows an error message.
+  * 3a1. ClientBook shows an error message.
 
     Use case ends.
 
@@ -467,38 +467,68 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
     * Use case ends.
 
 * 3a. The user provides an invalid index number (e.g., out of bounds or non-numeric).
-    * 3a1. System displays an error message stating the index is invalid.
+    * 3a1. ClientBook displays an error message stating the index is invalid.
     * Use case resumes at step 3.
 
 * 4a. The selected contact is already classified as a client.
-    * 4a1. System displays an error message stating the contact cannot be converted because they are already a client.
+    * 4a1. ClientBook displays an error message stating the contact cannot be converted because they are already a client.
     * Use case ends.
 
 * 5a. The user provides invalid formatting for the onboarding details (e.g., an alphanumeric string for a strictly numeric tax ID).
-    * 5a1. System displays an error message detailing the specific parameter constraint and re-prompts the user for the details.
+    * 5a1. ClientBook displays an error message detailing the specific parameter constraint and re-prompts the user for the details.
     * Use case resumes at step 5.
 
 * 5b. The user inputs an abort command.
-  * 5b1. System cancels the conversion process and leaves the contact as a prospect.
+  * 5b1. ClientBook cancels the conversion process and leaves the contact as a prospect.
   * Use case ends.
 
-*{More to be added}*
+**Use case: Find clients or prospects by name**
+
+**MSS**
+
+1. User requests to find clients or prospects using one or more name keywords.
+2. ClientBook searches the stored records using the supplied keywords.
+3. ClientBook displays all matching clients and prospects.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. The user does not provide any keywords.
+  * 1a1. ClientBook displays an error message explaining that at least one keyword is required.
+  * Use case resumes at step 1.
+
+* 3a. No record matches any of the supplied keywords.
+  * 3a1. ClientBook informs the user that no matching record was found.
+  * Use case ends.
 
 ### Non-Functional Requirements
 
-1. Should work on any _mainstream OS_ as long as it has Java `25` or above installed.
-2. Should be able to hold up to 1000 persons without noticeable sluggishness in performance for typical usage.
-3. A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
-4. ClientBook should support all core client-record management features without requiring an Internet connection.
-5. ClientBook should save all changes to client records to local storage so that the data is available after the application is closed and restarted.
-6. The application must fail gracefully without crashing if the local storage file is missing, locked by another process, or corrupted via manual editing. It should present a clear error message to the user rather than freezing.
-7. The graphical user interface must reflect the results of any command execution (e.g., adding a client, filtering the list, or deleting a record) within 500 milliseconds to maintain the perception of instantaneous feedback.
-*{More to be added}*
+1. ClientBook should work on any _mainstream OS_ as long as Java `25` or above is installed.
+2. ClientBook should be able to store at least 1000 persons.
+3. For a data set of up to 1000 persons, ClientBook should process a command and update the graphical user interface within 1 second after the user submits the command.
+4. ClientBook should start within 10 seconds on a computer that meets the stated software requirements.
+5. A user with above-average typing speed for regular English text should be able to complete most core tasks faster using commands than using the mouse.
+6. All core client-record management features should remain available without an Internet connection.
+7. Every successful command that modifies client data should be saved automatically to local storage and remain available after ClientBook is restarted.
+8. An invalid command should not modify any existing client data.
+9. ClientBook should handle a missing, inaccessible, or corrupted data file without crashing or freezing, and should inform the user when recovery is required.
+10. ClientBook should not silently overwrite an unreadable or corrupted data file.
+11. If ClientBook cannot save a change to local storage, it should inform the user that the change may not persist.
+12. ClientBook should store client data locally and should not transmit it to external services.
+13. ClientBook should not require an online account or authentication credentials to access locally stored records.
+14. All core client-record management operations should be accessible using keyboard input.
+15. Error messages should identify the invalid input and provide sufficient information for the user to correct it.
+16. ClientBook should be distributed as a single executable JAR file that does not require a separate installation process.
+17. ClientBook should store its data in a human-readable JSON format to support inspection and manual backup.
+18. The codebase should comply with the project coding standard and pass the configured automated checks before changes are merged.
+19. Unexpected errors should be logged with sufficient diagnostic information for developers while avoiding unnecessary exposure of client information.
 
 ### Glossary
 
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
 * **Prospect**: A person who is being tracked as a potential future client but is not currently an active client.
+* **Client**: A person with whom the financial consultant has an active professional relationship.
 
 --------------------------------------------------------------------------------------------------------------------
 
