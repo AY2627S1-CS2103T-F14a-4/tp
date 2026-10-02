@@ -32,7 +32,9 @@ public class AddCommand extends Command {
             + PREFIX_PHONE + "98765432";
 
     public static final String MESSAGE_SUCCESS = "New person added: %1$s";
-    public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in the address book.";
+    public static final String MESSAGE_DUPLICATE_PERSON = "This contact already exists.";
+    public static final String MESSAGE_DUPLICATE_EMAIL = "A contact with this email address already exists.";
+    public static final String MESSAGE_DUPLICATE_PHONE = "A contact with this phone number already exists.";
     public static final String MESSAGE_RELATIONSHIP_REQUIRED = "Relationship is required.";
     public static final String MESSAGE_NAME_REQUIRED = "Name is required.";
     public static final String MESSAGE_EMAIL_REQUIRED = "Email is required.";
@@ -58,8 +60,22 @@ public class AddCommand extends Command {
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
 
-        if (model.hasPerson(toAdd)) {
+        boolean hasMatchingEmail = model.getAddressBook().getPersonList().stream()
+                .anyMatch(person -> person.getEmail().equals(toAdd.getEmail()));
+        boolean hasMatchingPhone = model.getAddressBook().getPersonList().stream()
+                .anyMatch(person -> person.getPhone().equals(toAdd.getPhone()));
+        boolean hasMatchingEmailAndPhone = model.getAddressBook().getPersonList().stream()
+                .anyMatch(person -> person.getEmail().equals(toAdd.getEmail())
+                        && person.getPhone().equals(toAdd.getPhone()));
+
+        if (hasMatchingEmailAndPhone) {
             throw new CommandException(MESSAGE_DUPLICATE_PERSON);
+        }
+        if (hasMatchingEmail) {
+            throw new CommandException(MESSAGE_DUPLICATE_EMAIL);
+        }
+        if (hasMatchingPhone) {
+            throw new CommandException(MESSAGE_DUPLICATE_PHONE);
         }
 
         model.addPerson(toAdd);
