@@ -20,21 +20,35 @@ public class Person {
     private final Name name;
     private final Phone phone;
     private final Email email;
+    private final Relationship relationship;
 
     // Data fields
-    private final Address address;
     private final Set<Tag> tags = new HashSet<>();
 
     /**
      * Every field must be present and not null.
      */
-    public Person(Name name, Phone phone, Email email, Address address, Set<Tag> tags) {
-        requireAllNonNull(name, phone, email, address, tags);
+    public Person(Name name, Phone phone, Email email, Set<Tag> tags) {
+        this(name, phone, email, tags, Relationship.PROSPECT);
+    }
+
+    /**
+     * Every field must be present and not null.
+     */
+    public Person(Name name, Phone phone, Email email, Set<Tag> tags, Relationship relationship) {
+        requireAllNonNull(name, phone, email, tags, relationship);
         this.name = name;
         this.phone = phone;
         this.email = email;
-        this.address = address;
         this.tags.addAll(tags);
+        this.relationship = relationship;
+    }
+
+    /**
+     * Creates a contact without tags, as required by the add command.
+     */
+    public Person(Name name, Phone phone, Email email, Relationship relationship) {
+        this(name, phone, email, Collections.emptySet(), relationship);
     }
 
     public Name getName() {
@@ -49,8 +63,8 @@ public class Person {
         return email;
     }
 
-    public Address getAddress() {
-        return address;
+    public Relationship getRelationship() {
+        return relationship;
     }
 
     /**
@@ -92,14 +106,14 @@ public class Person {
         return name.equals(otherPerson.name)
                 && phone.equals(otherPerson.phone)
                 && email.equals(otherPerson.email)
-                && address.equals(otherPerson.address)
-                && tags.equals(otherPerson.tags);
+                && tags.equals(otherPerson.tags)
+                && relationship.equals(otherPerson.relationship);
     }
 
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, phone, email, address, tags);
+        return Objects.hash(name, phone, email, tags, relationship);
     }
 
     @Override
@@ -108,7 +122,7 @@ public class Person {
                 .add("name", name)
                 .add("phone", phone)
                 .add("email", email)
-                .add("address", address)
+                .add("relationship", relationship)
                 .add("tags", tags)
                 .toString();
     }
