@@ -22,7 +22,8 @@ public class Email {
             "The part before @ cannot start or end with a dot, or contain consecutive dots.";
     public static final String MESSAGE_LOCAL_PART_CHARACTERS =
             "The part before @ contains unsupported characters.";
-    public static final String MESSAGE_DOMAIN_EMPTY_LABEL = "The domain cannot start, end, or contain consecutive dots.";
+    public static final String MESSAGE_DOMAIN_EMPTY_LABEL =
+            "The domain cannot start, end, or contain consecutive dots.";
     public static final String MESSAGE_DOMAIN_LABEL =
             "Each domain label must use letters, digits, or hyphens, and cannot start or end with a hyphen.";
 
