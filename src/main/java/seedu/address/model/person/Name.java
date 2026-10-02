@@ -3,6 +3,8 @@ package seedu.address.model.person;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.AppUtil.checkArgument;
 
+import java.util.regex.Pattern;
+
 /**
  * Represents a Person's name in the address book.
  * Guarantees: immutable; is valid as declared in {@link #isValidName(String)}
@@ -10,13 +12,13 @@ import static seedu.address.commons.util.AppUtil.checkArgument;
 public class Name {
 
     public static final String MESSAGE_CONSTRAINTS =
-            "Names should only contain alphanumeric characters and spaces, and should not be blank";
+            "Names must contain 1 to 100 characters after trimming. They may contain letters, spaces, hyphens, "
+                    + "apostrophes, and the relationship markers s/o, d/o, or w/o.";
 
-    /*
-     * The first character of the name must not be a whitespace,
-     * otherwise " " (a blank string) becomes a valid input.
-     */
-    public static final String VALIDATION_REGEX = "[\\p{Alnum}][\\p{Alnum} ]*";
+    private static final int MAX_NAME_LENGTH = 100;
+    private static final Pattern VALID_NAME_PATTERN = Pattern.compile(
+            "[\\p{L}]+(?:(?: +(?:s/o|d/o|w/o) +[\\p{L}]+)|(?: +|[-'])[\\p{L}]+)*",
+            Pattern.CASE_INSENSITIVE);
 
     public final String fullName;
 
@@ -35,7 +37,11 @@ public class Name {
      * Returns true if a given string is a valid name.
      */
     public static boolean isValidName(String test) {
-        return test.matches(VALIDATION_REGEX);
+        requireNonNull(test);
+        String trimmedName = test.trim();
+        return !trimmedName.isEmpty()
+                && trimmedName.length() <= MAX_NAME_LENGTH
+                && VALID_NAME_PATTERN.matcher(trimmedName).matches();
     }
 
 
