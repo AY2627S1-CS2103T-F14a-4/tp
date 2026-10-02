@@ -59,8 +59,9 @@ public class ParserUtil {
     public static Phone parsePhone(String phone) throws ParseException {
         requireNonNull(phone);
         String trimmedPhone = phone.trim();
-        if (!Phone.isValidPhone(trimmedPhone)) {
-            throw new ParseException(Phone.MESSAGE_CONSTRAINTS);
+        String validationError = Phone.getValidationError(trimmedPhone);
+        if (validationError != null) {
+            throw new ParseException(validationError);
         }
         return new Phone(trimmedPhone);
     }
