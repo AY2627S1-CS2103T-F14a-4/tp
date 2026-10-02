@@ -1,5 +1,6 @@
 package seedu.address.model.person;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
@@ -43,6 +44,12 @@ public class NameTest {
         assertTrue(Name.isValidName("Priya D/O Nair")); // case-insensitive daughter of marker
         assertTrue(Name.isValidName("Asha w/o Raj")); // wife of marker
         assertTrue(Name.isValidName("  Ravi s/o Kumar  ")); // surrounding whitespace
+    }
+
+    @Test
+    public void getValidationError() {
+        assertEquals(Name.MESSAGE_CONSTRAINTS, Name.getValidationError("Ravi/ Kumar"));
+        assertEquals(Name.MESSAGE_LENGTH, Name.getValidationError("A".repeat(101)));
     }
 
     @Test

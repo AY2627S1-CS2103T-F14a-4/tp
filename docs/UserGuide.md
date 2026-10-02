@@ -85,12 +85,17 @@ Format: `add r/RELATIONSHIP n/NAME e/EMAIL p/PHONE_NUMBER`
 <box type="tip" seamless>
 
 * `RELATIONSHIP` must be either `Client` or `Prospect`.
+* `NAME` must contain 1–100 characters after leading and trailing whitespace is removed. It may include letters,
+  spaces, hyphens (`-`), apostrophes (`'`), and the relationship markers `s/o`, `d/o`, or `w/o`.
+* `EMAIL` must contain one `@` and no whitespace. Its local part may use common characters such as `.`, `_`, `+`,
+  and `-`; each domain label may use letters, digits, and hyphens.
 * Parameters may be entered in any order.
 </box>
 
 Examples:
 * `add r/Client n/John Doe e/john.doe@example.com p/91234567`
-* `add n/Jane Tan p/98765432 r/Prospect e/jane.tan@example.com`
+* `add n/Ravi s/o Kumar p/98765432 r/Prospect e/ravi.kumar@example.com`
+* `add r/Client n/Jane Tan e/jane+client@firm.co.uk p/98765432`
 
 ### Listing all persons: `list`
 

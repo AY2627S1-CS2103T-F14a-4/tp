@@ -33,6 +33,16 @@ public class AddCommand extends Command {
 
     public static final String MESSAGE_SUCCESS = "New person added: %1$s";
     public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in the address book.";
+    public static final String MESSAGE_RELATIONSHIP_REQUIRED = "Relationship is required.";
+    public static final String MESSAGE_NAME_REQUIRED = "Name is required.";
+    public static final String MESSAGE_EMAIL_REQUIRED = "Email is required.";
+    public static final String MESSAGE_PHONE_REQUIRED = "Phone number is required.";
+    public static final String MESSAGE_ALL_PARAMETERS_REQUIRED =
+            "Relationship, name, email and phone number are required.";
+    public static final String MESSAGE_RELATIONSHIP_DUPLICATED = "Relationship can only be specified once.";
+    public static final String MESSAGE_NAME_DUPLICATED = "Name can only be specified once.";
+    public static final String MESSAGE_EMAIL_DUPLICATED = "Email can only be specified once.";
+    public static final String MESSAGE_PHONE_DUPLICATED = "Phone number can only be specified once.";
 
     private final Person toAdd;
 

@@ -1,6 +1,5 @@
 package seedu.address.logic.parser;
 
-import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
 
@@ -28,17 +27,35 @@ public class AddCommandParserTest {
     }
 
     @Test
-    public void parse_missingOrRepeatedPrefix_failure() {
-        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE);
-
-        assertParseFailure(parser, " n/John Doe e/john.doe@example.com p/91234567", expectedMessage);
-        assertParseFailure(parser, " r/Client n/John Doe e/john.doe@example.com p/91234567 r/Prospect",
-                "Multiple values specified for the following single-valued field(s): t/");
+    public void parse_missingPrefix_failure() {
+        assertParseFailure(parser, "", AddCommand.MESSAGE_ALL_PARAMETERS_REQUIRED);
+        assertParseFailure(parser, " n/John Doe e/john.doe@example.com p/91234567",
+                AddCommand.MESSAGE_RELATIONSHIP_REQUIRED);
+        assertParseFailure(parser, " r/Client e/john.doe@example.com p/91234567",
+                AddCommand.MESSAGE_NAME_REQUIRED);
+        assertParseFailure(parser, " r/Client n/John Doe p/91234567",
+                AddCommand.MESSAGE_EMAIL_REQUIRED);
+        assertParseFailure(parser, " r/Client n/John Doe e/john.doe@example.com",
+                AddCommand.MESSAGE_PHONE_REQUIRED);
     }
 
     @Test
-    public void parse_invalidType_failure() {
-        assertParseFailure(parser, " t/Partner n/John Doe e/john.doe@example.com p/91234567",
+    public void parse_repeatedPrefix_failure() {
+        assertParseFailure(parser, " r/Client n/John Doe e/john.doe@example.com p/91234567 r/Prospect",
+                AddCommand.MESSAGE_RELATIONSHIP_DUPLICATED);
+        assertParseFailure(parser, " r/Client n/John Doe n/Jane Doe e/john.doe@example.com p/91234567",
+                AddCommand.MESSAGE_NAME_DUPLICATED);
+        assertParseFailure(parser,
+                " r/Client n/John Doe e/john.doe@example.com e/jane.doe@example.com p/91234567",
+                AddCommand.MESSAGE_EMAIL_DUPLICATED);
+        assertParseFailure(parser,
+                " r/Client n/John Doe e/john.doe@example.com p/91234567 p/98765432",
+                AddCommand.MESSAGE_PHONE_DUPLICATED);
+    }
+
+    @Test
+    public void parse_invalidRelationship_failure() {
+        assertParseFailure(parser, " r/Partner n/John Doe e/john.doe@example.com p/91234567",
                 Relationship.MESSAGE_CONSTRAINTS);
     }
 }

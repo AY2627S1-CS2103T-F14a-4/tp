@@ -6,8 +6,6 @@ import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_RELATIONSHIP;
 
-import java.util.stream.Stream;
-
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.Email;
@@ -30,12 +28,12 @@ public class AddCommandParser implements Parser<AddCommand> {
         ArgumentMultimap argMultimap =
                 ArgumentTokenizer.tokenize(args, PREFIX_RELATIONSHIP, PREFIX_NAME, PREFIX_EMAIL, PREFIX_PHONE);
 
-        if (!arePrefixesPresent(argMultimap, PREFIX_RELATIONSHIP, PREFIX_NAME, PREFIX_EMAIL, PREFIX_PHONE)
-                || !argMultimap.getPreamble().isEmpty()) {
+        if (!argMultimap.getPreamble().isEmpty()) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE));
         }
 
-        argMultimap.verifyNoDuplicatePrefixesFor(PREFIX_RELATIONSHIP, PREFIX_NAME, PREFIX_EMAIL, PREFIX_PHONE);
+        validateRequiredPrefixes(argMultimap);
+        validateNoDuplicatePrefixes(argMultimap);
         Relationship relationship = ParserUtil.parseRelationship(argMultimap.getValue(PREFIX_RELATIONSHIP).get());
         Name name = ParserUtil.parseName(argMultimap.getValue(PREFIX_NAME).get());
         Phone phone = ParserUtil.parsePhone(argMultimap.getValue(PREFIX_PHONE).get());
@@ -47,12 +45,42 @@ public class AddCommandParser implements Parser<AddCommand> {
         return new AddCommand(person);
     }
 
-    /**
-     * Returns true if none of the prefixes contains empty {@code Optional} values in the given
-     * {@code ArgumentMultimap}.
-     */
-    private static boolean arePrefixesPresent(ArgumentMultimap argumentMultimap, Prefix... prefixes) {
-        return Stream.of(prefixes).allMatch(prefix -> argumentMultimap.getValue(prefix).isPresent());
+    private static void validateRequiredPrefixes(ArgumentMultimap argumentMultimap) throws ParseException {
+        boolean hasRelationship = argumentMultimap.getValue(PREFIX_RELATIONSHIP).isPresent();
+        boolean hasName = argumentMultimap.getValue(PREFIX_NAME).isPresent();
+        boolean hasEmail = argumentMultimap.getValue(PREFIX_EMAIL).isPresent();
+        boolean hasPhone = argumentMultimap.getValue(PREFIX_PHONE).isPresent();
+
+        if (!hasRelationship && !hasName && !hasEmail && !hasPhone) {
+            throw new ParseException(AddCommand.MESSAGE_ALL_PARAMETERS_REQUIRED);
+        }
+        if (!hasRelationship) {
+            throw new ParseException(AddCommand.MESSAGE_RELATIONSHIP_REQUIRED);
+        }
+        if (!hasName) {
+            throw new ParseException(AddCommand.MESSAGE_NAME_REQUIRED);
+        }
+        if (!hasEmail) {
+            throw new ParseException(AddCommand.MESSAGE_EMAIL_REQUIRED);
+        }
+        if (!hasPhone) {
+            throw new ParseException(AddCommand.MESSAGE_PHONE_REQUIRED);
+        }
+    }
+
+    private static void validateNoDuplicatePrefixes(ArgumentMultimap argumentMultimap) throws ParseException {
+        if (argumentMultimap.getAllValues(PREFIX_RELATIONSHIP).size() > 1) {
+            throw new ParseException(AddCommand.MESSAGE_RELATIONSHIP_DUPLICATED);
+        }
+        if (argumentMultimap.getAllValues(PREFIX_NAME).size() > 1) {
+            throw new ParseException(AddCommand.MESSAGE_NAME_DUPLICATED);
+        }
+        if (argumentMultimap.getAllValues(PREFIX_EMAIL).size() > 1) {
+            throw new ParseException(AddCommand.MESSAGE_EMAIL_DUPLICATED);
+        }
+        if (argumentMultimap.getAllValues(PREFIX_PHONE).size() > 1) {
+            throw new ParseException(AddCommand.MESSAGE_PHONE_DUPLICATED);
+        }
     }
 
 }

@@ -14,6 +14,7 @@ public class Name {
     public static final String MESSAGE_CONSTRAINTS =
             "Names must contain 1 to 100 characters after trimming. They may contain letters, spaces, hyphens, "
                     + "apostrophes, and the relationship markers s/o, d/o, or w/o.";
+    public static final String MESSAGE_LENGTH = "The name must not exceed 100 characters.";
 
     private static final int MAX_NAME_LENGTH = 100;
     private static final Pattern VALID_NAME_PATTERN = Pattern.compile(
@@ -29,7 +30,8 @@ public class Name {
      */
     public Name(String name) {
         requireNonNull(name);
-        checkArgument(isValidName(name), MESSAGE_CONSTRAINTS);
+        String validationError = getValidationError(name);
+        checkArgument(validationError == null, validationError);
         fullName = name;
     }
 
@@ -37,11 +39,25 @@ public class Name {
      * Returns true if a given string is a valid name.
      */
     public static boolean isValidName(String test) {
-        requireNonNull(test);
-        String trimmedName = test.trim();
-        return !trimmedName.isEmpty()
-                && trimmedName.length() <= MAX_NAME_LENGTH
-                && VALID_NAME_PATTERN.matcher(trimmedName).matches();
+        return getValidationError(test) == null;
+    }
+
+    /**
+     * Returns the reason a name is invalid, or {@code null} if it is valid.
+     *
+     * @param name The name to validate.
+     * @return The validation error, or {@code null} when valid.
+     */
+    public static String getValidationError(String name) {
+        requireNonNull(name);
+        String trimmedName = name.trim();
+        if (trimmedName.length() > MAX_NAME_LENGTH) {
+            return MESSAGE_LENGTH;
+        }
+        if (trimmedName.isEmpty() || !VALID_NAME_PATTERN.matcher(trimmedName).matches()) {
+            return MESSAGE_CONSTRAINTS;
+        }
+        return null;
     }
 
 
