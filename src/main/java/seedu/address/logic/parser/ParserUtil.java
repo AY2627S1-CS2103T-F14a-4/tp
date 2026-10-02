@@ -75,8 +75,9 @@ public class ParserUtil {
     public static Email parseEmail(String email) throws ParseException {
         requireNonNull(email);
         String trimmedEmail = email.trim();
-        if (!Email.isValidEmail(trimmedEmail)) {
-            throw new ParseException(Email.MESSAGE_CONSTRAINTS);
+        String validationError = Email.getValidationError(trimmedEmail);
+        if (validationError != null) {
+            throw new ParseException(validationError);
         }
         return new Email(trimmedEmail);
     }
