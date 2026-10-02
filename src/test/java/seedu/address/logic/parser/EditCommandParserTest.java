@@ -37,7 +37,7 @@ public class EditCommandParserTest {
     @Test
     public void parse_missingOrInvalidField_failure() {
         assertParseFailure(parser, "1", EditCommand.MESSAGE_NOT_EDITED);
-        assertParseFailure(parser, "1" + INVALID_NAME_DESC, Name.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "1" + INVALID_NAME_DESC, Name.MESSAGE_INVALID_CHARACTERS);
         assertParseFailure(parser, "1" + PHONE_DESC_AMY + PHONE_DESC_BOB,
                 Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_PHONE));
     }

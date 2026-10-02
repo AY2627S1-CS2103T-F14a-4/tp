@@ -48,7 +48,8 @@ public class NameTest {
 
     @Test
     public void getValidationError() {
-        assertEquals(Name.MESSAGE_CONSTRAINTS, Name.getValidationError("Ravi/ Kumar"));
+        assertEquals(Name.MESSAGE_BLANK, Name.getValidationError(" "));
+        assertEquals(Name.MESSAGE_INVALID_CHARACTERS, Name.getValidationError("Ravi/ Kumar"));
         assertEquals(Name.MESSAGE_LENGTH, Name.getValidationError("A".repeat(101)));
     }
 

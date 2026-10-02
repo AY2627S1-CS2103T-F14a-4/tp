@@ -11,9 +11,8 @@ import java.util.regex.Pattern;
  */
 public class Name {
 
-    public static final String MESSAGE_CONSTRAINTS =
-            "Names must contain 1 to 100 characters after trimming. They may contain letters, spaces, hyphens, "
-                    + "apostrophes, and the relationship markers s/o, d/o, or w/o.";
+    public static final String MESSAGE_BLANK = "Name cannot be blank.";
+    public static final String MESSAGE_INVALID_CHARACTERS = "The name contains invalid characters.";
     public static final String MESSAGE_LENGTH = "The name must not exceed 100 characters.";
 
     private static final int MAX_NAME_LENGTH = 100;
@@ -54,8 +53,11 @@ public class Name {
         if (trimmedName.length() > MAX_NAME_LENGTH) {
             return MESSAGE_LENGTH;
         }
-        if (trimmedName.isEmpty() || !VALID_NAME_PATTERN.matcher(trimmedName).matches()) {
-            return MESSAGE_CONSTRAINTS;
+        if (trimmedName.isEmpty()) {
+            return MESSAGE_BLANK;
+        }
+        if (!VALID_NAME_PATTERN.matcher(trimmedName).matches()) {
+            return MESSAGE_INVALID_CHARACTERS;
         }
         return null;
     }

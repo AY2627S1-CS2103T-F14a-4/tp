@@ -17,8 +17,7 @@ public class Phone {
             "Phone number cannot contain line breaks or other control characters.";
     public static final String MESSAGE_NO_DIGITS = "Phone number must contain at least one digit.";
     public static final String MESSAGE_INCOMPLETE =
-            "Phone number must contain at least one complete sequence of 8 digits. "
-                    + "Digits may be separated by spaces, hyphens, parentheses, or full stops.";
+            "Phone number must contain at least one complete sequence of 8 digits.";
     private static final Pattern FULL_PHONE_NUMBER =
             Pattern.compile("(?:\\+?\\d)(?:[\\s().-]*\\d){7,}");
     public final String value;
