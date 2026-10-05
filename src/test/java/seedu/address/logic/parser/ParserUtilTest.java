@@ -12,9 +12,12 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.person.AreaOfInterest;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.FinancialNeed;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Phone;
+import seedu.address.model.person.Priority;
 import seedu.address.model.tag.Tag;
 
 public class ParserUtilTest {
@@ -165,4 +168,43 @@ public class ParserUtilTest {
 
         assertEquals(expectedTagSet, actualTagSet);
     }
+    @Test
+    public void parseFinancialNeed_validAndInvalidValues() throws Exception {
+        assertEquals(new FinancialNeed("Long  term"), ParserUtil.parseFinancialNeed("  Long  term  "));
+        assertThrows(NullPointerException.class, () -> ParserUtil.parseFinancialNeed(null));
+        assertThrows(ParseException.class, FinancialNeed.MESSAGE_BLANK, () -> ParserUtil.parseFinancialNeed(" "));
+        assertThrows(ParseException.class, FinancialNeed.MESSAGE_LENGTH, () ->
+                ParserUtil.parseFinancialNeed("A".repeat(201)));
+        for (String value : new String[] {"Needs/Wants", "\tPlan", "Plan\n", "Plan\r"}) {
+            assertThrows(ParseException.class, FinancialNeed.MESSAGE_INVALID_CHARACTERS, () ->
+                    ParserUtil.parseFinancialNeed(value));
+        }
+    }
+
+    @Test
+    public void parsePriority_validAndInvalidValues() throws Exception {
+        assertEquals(new Priority("Long  term"), ParserUtil.parsePriority("  Long  term  "));
+        assertThrows(NullPointerException.class, () -> ParserUtil.parsePriority(null));
+        assertThrows(ParseException.class, Priority.MESSAGE_BLANK, () -> ParserUtil.parsePriority(" "));
+        assertThrows(ParseException.class, Priority.MESSAGE_LENGTH, () ->
+                ParserUtil.parsePriority("A".repeat(201)));
+        for (String value : new String[] {"Needs/Wants", "\tPlan", "Plan\n", "Plan\r"}) {
+            assertThrows(ParseException.class, Priority.MESSAGE_INVALID_CHARACTERS, () ->
+                    ParserUtil.parsePriority(value));
+        }
+    }
+
+    @Test
+    public void parseAreaOfInterest_validAndInvalidValues() throws Exception {
+        assertEquals(new AreaOfInterest("Long  term"), ParserUtil.parseAreaOfInterest("  Long  term  "));
+        assertThrows(NullPointerException.class, () -> ParserUtil.parseAreaOfInterest(null));
+        assertThrows(ParseException.class, AreaOfInterest.MESSAGE_BLANK, () -> ParserUtil.parseAreaOfInterest(" "));
+        assertThrows(ParseException.class, AreaOfInterest.MESSAGE_LENGTH, () ->
+                ParserUtil.parseAreaOfInterest("A".repeat(201)));
+        for (String value : new String[] {"Needs/Wants", "\tPlan", "Plan\n", "Plan\r"}) {
+            assertThrows(ParseException.class, AreaOfInterest.MESSAGE_INVALID_CHARACTERS, () ->
+                    ParserUtil.parseAreaOfInterest(value));
+        }
+    }
+
 }
