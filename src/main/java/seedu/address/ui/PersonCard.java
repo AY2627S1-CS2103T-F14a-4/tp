@@ -1,6 +1,7 @@
 package seedu.address.ui;
 
 import java.util.Comparator;
+import java.util.Optional;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -40,6 +41,12 @@ public class PersonCard extends UiPart<Region> {
     private Label relationship;
     @FXML
     private FlowPane tags;
+    @FXML
+    private Label financialNeed;
+    @FXML
+    private Label priority;
+    @FXML
+    private Label areaOfInterest;
 
     /**
      * Creates a {@code PersonCard} with the given {@code Person} and index to display.
@@ -52,8 +59,22 @@ public class PersonCard extends UiPart<Region> {
         phone.setText(person.getPhone().value);
         email.setText(person.getEmail().value);
         relationship.setText(person.getRelationship().toString());
+        setOptionalInformation(financialNeed, "Financial need: ", person.getFinancialNeed().map(value -> value.value));
+        setOptionalInformation(priority, "Priority: ", person.getPriority().map(value -> value.value));
+        setOptionalInformation(areaOfInterest, "Area of interest: ",
+                person.getAreaOfInterest().map(value -> value.value));
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.tagName))
                 .forEach(tag -> tags.getChildren().add(new Label(tag.tagName)));
     }
+
+    /**
+     * Displays optional information without reserving layout space when it is absent.
+     */
+    private void setOptionalInformation(Label label, String prefix, Optional<String> value) {
+        label.setText(value.map(text -> prefix + text).orElse(""));
+        label.setVisible(value.isPresent());
+        label.setManaged(value.isPresent());
+    }
+
 }
