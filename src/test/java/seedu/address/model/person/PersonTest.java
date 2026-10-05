@@ -11,6 +11,8 @@ import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BOB;
 
+import java.util.Optional;
+
 import org.junit.jupiter.api.Test;
 
 import seedu.address.testutil.PersonBuilder;
@@ -82,10 +84,85 @@ public class PersonTest {
     }
 
     @Test
+    public void constructors_withoutFinancialInformation_fieldsAbsent() {
+        Person[] persons = {
+            new PersonBuilder().build(),
+            new Person(ALICE.getName(), ALICE.getPhone(), ALICE.getEmail(), ALICE.getTags()),
+            new Person(ALICE.getName(), ALICE.getPhone(), ALICE.getEmail(), ALICE.getTags(), Relationship.CLIENT),
+            new Person(ALICE.getName(), ALICE.getPhone(), ALICE.getEmail(), Relationship.CLIENT)
+        };
+        for (Person person : persons) {
+            assertTrue(person.getFinancialNeed().isEmpty());
+            assertTrue(person.getPriority().isEmpty());
+            assertTrue(person.getAreaOfInterest().isEmpty());
+        }
+    }
+
+    @Test
+    public void financialInformation_fieldsIndependentlyOptional() {
+        Person needOnly = new PersonBuilder().withFinancialNeed("Retirement").build();
+        assertEquals(Optional.of(new FinancialNeed("Retirement")), needOnly.getFinancialNeed());
+        assertTrue(needOnly.getPriority().isEmpty());
+        assertTrue(needOnly.getAreaOfInterest().isEmpty());
+
+        Person priorityOnly = new PersonBuilder().withPriority("High").build();
+        assertEquals(Optional.of(new Priority("High")), priorityOnly.getPriority());
+        assertTrue(priorityOnly.getFinancialNeed().isEmpty());
+        assertTrue(priorityOnly.getAreaOfInterest().isEmpty());
+
+        Person interestOnly = new PersonBuilder().withAreaOfInterest("Insurance").build();
+        assertEquals(Optional.of(new AreaOfInterest("Insurance")), interestOnly.getAreaOfInterest());
+        assertTrue(interestOnly.getFinancialNeed().isEmpty());
+        assertTrue(interestOnly.getPriority().isEmpty());
+    }
+
+    @Test
+    public void personBuilder_copy_preservesFinancialInformationAndRelationship() {
+        Person original = new Person(ALICE.getName(), ALICE.getPhone(), ALICE.getEmail(), ALICE.getTags(),
+                Relationship.CLIENT, new FinancialNeed("Retirement"), new Priority("High"),
+                new AreaOfInterest("Insurance"));
+        Person copy = new PersonBuilder(original).build();
+        assertEquals(original.getFinancialNeed(), copy.getFinancialNeed());
+        assertEquals(original.getPriority(), copy.getPriority());
+        assertEquals(original.getAreaOfInterest(), copy.getAreaOfInterest());
+        assertEquals(original, copy);
+        assertEquals(original.hashCode(), copy.hashCode());
+        assertEquals(ALICE, new PersonBuilder(ALICE).build());
+    }
+
+    @Test
+    public void equals_differentFinancialInformation_returnsFalse() {
+        Person person = new PersonBuilder(ALICE).withFinancialNeed("Retirement").withPriority("High")
+                .withAreaOfInterest("Insurance").build();
+        Person[] differentPersons = {
+            new PersonBuilder(person).withFinancialNeed("Education").build(),
+            new PersonBuilder(person).withPriority("Low").build(),
+            new PersonBuilder(person).withAreaOfInterest("Investments").build(),
+            new PersonBuilder(ALICE).withPriority("High").withAreaOfInterest("Insurance").build(),
+            new PersonBuilder(ALICE).withFinancialNeed("Retirement").withAreaOfInterest("Insurance").build(),
+            new PersonBuilder(ALICE).withFinancialNeed("Retirement").withPriority("High").build()
+        };
+        for (Person different : differentPersons) {
+            assertFalse(person.equals(different));
+            assertFalse(different.equals(person));
+            assertTrue(person.isSamePerson(different));
+        }
+    }
+
+    @Test
+    public void toString_financialInformationPresent_includesValues() {
+        Person person = new PersonBuilder().withFinancialNeed("Retirement").withPriority("High")
+                .withAreaOfInterest("Insurance").build();
+        assertTrue(person.toString().contains("financialNeed=Retirement"));
+        assertTrue(person.toString().contains("priority=High"));
+        assertTrue(person.toString().contains("areaOfInterest=Insurance"));
+    }
+
+    @Test
     public void toStringMethod() {
         String expected = Person.class.getCanonicalName() + "{name=" + ALICE.getName() + ", phone=" + ALICE.getPhone()
                 + ", email=" + ALICE.getEmail() + ", relationship=" + ALICE.getRelationship() + ", tags="
-                + ALICE.getTags() + "}";
+                + ALICE.getTags() + ", financialNeed=null, priority=null, areaOfInterest=null}";
         assertEquals(expected, ALICE.toString());
     }
 }

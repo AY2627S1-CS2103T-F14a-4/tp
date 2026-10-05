@@ -36,6 +36,38 @@ public class EditCommandTest {
     private Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
 
     @Test
+    public void execute_normalEdits_preserveFinancialInformation() {
+        Person original = new PersonBuilder(model.getFilteredPersonList().get(0))
+                .withFinancialNeed("Retirement").withPriority("High").withAreaOfInterest("Insurance").build();
+        model.setPerson(model.getFilteredPersonList().get(0), original);
+        EditPersonDescriptor[] descriptors = {
+            new EditPersonDescriptorBuilder().withName("Updated Name").build(),
+            new EditPersonDescriptorBuilder().withPhone("81234567").build(),
+            new EditPersonDescriptorBuilder().withEmail("updated@example.com").build(),
+            new EditPersonDescriptorBuilder().withTags("updated").build()
+        };
+        Person[] expectedPersons = {
+            new PersonBuilder(original).withName("Updated Name").build(),
+            new PersonBuilder(original).withPhone("81234567").build(),
+            new PersonBuilder(original).withEmail("updated@example.com").build(),
+            new PersonBuilder(original).withTags("updated").build()
+        };
+        for (int i = 0; i < descriptors.length; i++) {
+            model.setPerson(model.getFilteredPersonList().get(0), original);
+            Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
+            expectedModel.setPerson(original, expectedPersons[i]);
+            String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS,
+                    Messages.format(expectedPersons[i]));
+            assertCommandSuccess(new EditCommand(INDEX_FIRST_PERSON, descriptors[i]), model,
+                    expectedMessage, expectedModel);
+            Person edited = model.getFilteredPersonList().get(0);
+            assertEquals(original.getFinancialNeed(), edited.getFinancialNeed());
+            assertEquals(original.getPriority(), edited.getPriority());
+            assertEquals(original.getAreaOfInterest(), edited.getAreaOfInterest());
+        }
+    }
+
+    @Test
     public void execute_allFieldsSpecifiedUnfilteredList_success() {
         Person editedPerson = new PersonBuilder().build();
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder(editedPerson).build();

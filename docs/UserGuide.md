@@ -119,6 +119,29 @@ Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.
 *  `edit 2 n/Betsy Crower t/` Edits the name of the 2nd person to be `Betsy Crower` and clears all existing tags.
 
+### Updating client financial information: `info`
+
+Adds or updates a person's financial need, priority, and area of interest. Present fields appear on the person's card as
+`Financial need: VALUE`, `Priority: VALUE`, and `Area of interest: VALUE`. Absent fields are hidden.
+
+Format: `info INDEX [/fn FINANCIAL_NEED] [/pr PRIORITY] [/ai AREA_OF_INTEREST]`
+
+* `INDEX` refers to the index in the currently displayed list, including filtered search results. It must be a positive
+  integer (1, 2, 3, ...) corresponding to an existing person in that list.
+* At least one of `/fn`, `/pr`, or `/ai` is required. Each parameter may be supplied at most once, in any order.
+* Supplied values replace existing values. Unspecified fields remain unchanged.
+* Each value must contain 1-200 characters after leading and trailing ordinary spaces are ignored. Internal spaces are
+  preserved. Empty values are rejected and cannot be used to clear a field.
+* Allowed characters are letters, digits, spaces, periods (`.`), commas (`,`), apostrophes (`'`), hyphens (`-`),
+  parentheses (`(` and `)`), and ampersands (`&`). Tabs and line breaks are not allowed.
+* Forward slash (`/`) is not allowed in a value because it is reserved for parameter prefixes.
+
+Examples:
+
+* `info 1 /fn retirement planning`
+* `info 2 /pr protect family income /ai life insurance`
+* `info 1 /ai investment products /fn wealth accumulation /pr preserve capital`
+
 ### Locating persons by name: `find`
 
 Finds persons whose names contain any of the given keywords.
@@ -206,5 +229,6 @@ Action     | Format, Examples
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [t/TAG]... `<br> e.g.,`edit 2 n/James Lee e/jameslee@example.com`
 **Find**   | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
+**Info**   | `info INDEX [/fn FINANCIAL_NEED] [/pr PRIORITY] [/ai AREA_OF_INTEREST]`<br> e.g., `info 1 /fn retirement planning`
 **List**   | `list`
 **Help**   | `help`

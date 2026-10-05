@@ -9,9 +9,12 @@ import java.util.Set;
 import seedu.address.commons.core.index.Index;
 import seedu.address.commons.util.StringUtil;
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.person.AreaOfInterest;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.FinancialNeed;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Phone;
+import seedu.address.model.person.Priority;
 import seedu.address.model.person.Relationship;
 import seedu.address.model.tag.Tag;
 
@@ -21,6 +24,45 @@ import seedu.address.model.tag.Tag;
 public class ParserUtil {
 
     public static final String MESSAGE_INVALID_INDEX = "Index must be a positive integer.";
+
+    /**
+     * Parses a {@code FinancialNeed}, using its validation and ordinary-space trimming rules.
+     * @throws ParseException if the value is invalid.
+     */
+    public static FinancialNeed parseFinancialNeed(String financialNeed) throws ParseException {
+        requireNonNull(financialNeed);
+        String error = FinancialNeed.getValidationError(financialNeed);
+        if (error != null) {
+            throw new ParseException(error);
+        }
+        return new FinancialNeed(financialNeed);
+    }
+
+    /**
+     * Parses a {@code Priority}, using its validation and ordinary-space trimming rules.
+     * @throws ParseException if the value is invalid.
+     */
+    public static Priority parsePriority(String priority) throws ParseException {
+        requireNonNull(priority);
+        String error = Priority.getValidationError(priority);
+        if (error != null) {
+            throw new ParseException(error);
+        }
+        return new Priority(priority);
+    }
+
+    /**
+     * Parses a {@code AreaOfInterest}, using its validation and ordinary-space trimming rules.
+     * @throws ParseException if the value is invalid.
+     */
+    public static AreaOfInterest parseAreaOfInterest(String areaOfInterest) throws ParseException {
+        requireNonNull(areaOfInterest);
+        String error = AreaOfInterest.getValidationError(areaOfInterest);
+        if (error != null) {
+            throw new ParseException(error);
+        }
+        return new AreaOfInterest(areaOfInterest);
+    }
 
     /**
      * Parses {@code oneBasedIndex} into an {@code Index} and returns it. Leading and trailing whitespaces will be
