@@ -1,0 +1,126 @@
+[1mdiff --git a/src/main/java/seedu/address/logic/commands/ListCommand.java b/src/main/java/seedu/address/logic/commands/ListCommand.java[m
+[1mindex 465ff1cc..0030cb5a 100644[m
+[1m--- a/src/main/java/seedu/address/logic/commands/ListCommand.java[m
+[1m+++ b/src/main/java/seedu/address/logic/commands/ListCommand.java[m
+[36m@@ -12,7 +12,7 @@[m [mpublic class ListCommand extends Command {[m
+ [m
+     public static final String COMMAND_WORD = "list";[m
+ [m
+[31m-    public static final String MESSAGE_SUCCESS = "Listed all persons.";[m
+[32m+[m[32m    public static final String MESSAGE_SUCCESS = "Listed all clients and prospects.";[m
+ [m
+ [m
+     @Override[m
+[1mdiff --git a/src/test/java/seedu/address/logic/LogicManagerTest.java b/src/test/java/seedu/address/logic/LogicManagerTest.java[m
+[1mindex efedab59..144cf1d5 100644[m
+[1m--- a/src/test/java/seedu/address/logic/LogicManagerTest.java[m
+[1m+++ b/src/test/java/seedu/address/logic/LogicManagerTest.java[m
+[36m@@ -8,10 +8,12 @@[m [mimport static seedu.address.logic.commands.CommandTestUtil.NAME_DESC_AMY;[m
+ import static seedu.address.logic.commands.CommandTestUtil.PHONE_DESC_AMY;[m
+ import static seedu.address.testutil.Assert.assertThrows;[m
+ import static seedu.address.testutil.TypicalPersons.AMY;[m
+[32m+[m[32mimport static seedu.address.testutil.TypicalPersons.BOB;[m
+ [m
+ import java.io.IOException;[m
+ import java.nio.file.AccessDeniedException;[m
+ import java.nio.file.Path;[m
+[32m+[m[32mimport java.util.List;[m
+ [m
+ import org.junit.jupiter.api.BeforeEach;[m
+ import org.junit.jupiter.api.Test;[m
+[36m@@ -66,7 +68,38 @@[m [mpublic class LogicManagerTest {[m
+     @Test[m
+     public void execute_validCommand_success() throws Exception {[m
+         String listCommand = ListCommand.COMMAND_WORD;[m
+[31m-        assertCommandSuccess(listCommand, ListCommand.MESSAGE_SUCCESS, model);[m
+[32m+[m[32m        assertCommandSuccess(listCommand, "Listed all clients and prospects.", model);[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    @Test[m
+[32m+[m[32m    public void execute_findThenList_restoresCompleteList() throws Exception {[m
+[32m+[m[32m        model.addPerson(AMY);[m
+[32m+[m[32m        model.addPerson(BOB);[m
+[32m+[m[32m        Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());[m
+[32m+[m
+[32m+[m[32m        logic.execute("find Amy");[m
+[32m+[m[32m        assertEquals(List.of(AMY), logic.getFilteredPersonList());[m
+[32m+[m[32m        assertCommandSuccess("list", "Listed all clients and prospects.", expectedModel);[m
+[32m+[m[32m        assertEquals(List.of(AMY, BOB), logic.getFilteredPersonList());[m
+[32m+[m
+[32m+[m[32m        logic.execute("find NoMatchingName");[m
+[32m+[m[32m        assertEquals(List.of(), logic.getFilteredPersonList());[m
+[32m+[m[32m        assertCommandSuccess("list", "Listed all clients and prospects.", expectedModel);[m
+[32m+[m[32m        assertEquals(List.of(AMY, BOB), logic.getFilteredPersonList());[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    @Test[m
+[32m+[m[32m    public void execute_listVariants_restoreSameCompleteList() throws Exception {[m
+[32m+[m[32m        model.addPerson(AMY);[m
+[32m+[m[32m        model.addPerson(BOB);[m
+[32m+[m[32m        Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());[m
+[32m+[m
+[32m+[m[32m        for (String command : List.of("list", "  list  ", "list clients", "  list clients  ")) {[m
+[32m+[m[32m            logic.execute("find Amy");[m
+[32m+[m[32m            assertEquals(List.of(AMY), logic.getFilteredPersonList());[m
+[32m+[m[32m            assertCommandSuccess(command, "Listed all clients and prospects.", expectedModel);[m
+[32m+[m[32m            assertEquals(List.of(AMY, BOB), logic.getFilteredPersonList());[m
+[32m+[m[32m        }[m
+     }[m
+ [m
+     @Test[m
+[1mdiff --git a/src/test/java/seedu/address/logic/commands/ListCommandTest.java b/src/test/java/seedu/address/logic/commands/ListCommandTest.java[m
+[1mindex 435ff1f7..b9be8f65 100644[m
+[1m--- a/src/test/java/seedu/address/logic/commands/ListCommandTest.java[m
+[1m+++ b/src/test/java/seedu/address/logic/commands/ListCommandTest.java[m
+[36m@@ -1,16 +1,23 @@[m
+ package seedu.address.logic.commands;[m
+ [m
+[32m+[m[32mimport static org.junit.jupiter.api.Assertions.assertEquals;[m
+ import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;[m
+ import static seedu.address.logic.commands.CommandTestUtil.showPersonAtIndex;[m
+ import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;[m
+[32m+[m[32mimport static seedu.address.testutil.TypicalPersons.ALICE;[m
+[32m+[m[32mimport static seedu.address.testutil.TypicalPersons.BENSON;[m
+ import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;[m
+ [m
+[32m+[m[32mimport java.util.List;[m
+[32m+[m
+ import org.junit.jupiter.api.BeforeEach;[m
+ import org.junit.jupiter.api.Test;[m
+ [m
+ import seedu.address.model.Model;[m
+ import seedu.address.model.ModelManager;[m
+ import seedu.address.model.UserPrefs;[m
+[32m+[m[32mimport seedu.address.model.person.Person;[m
+[32m+[m[32mimport seedu.address.model.person.Relationship;[m
+ [m
+ /**[m
+  * Contains integration tests (interaction with the Model) and unit tests for ListCommand.[m
+[36m@@ -36,4 +43,27 @@[m [mpublic class ListCommandTest {[m
+         showPersonAtIndex(model, INDEX_FIRST_PERSON);[m
+         assertCommandSuccess(new ListCommand(), model, ListCommand.MESSAGE_SUCCESS, expectedModel);[m
+     }[m
+[32m+[m
+[32m+[m[32m    @Test[m
+[32m+[m[32m    public void execute_mixedClientsAndProspects_showsEverything() {[m
+[32m+[m[32m        Person client = new Person(ALICE.getName(), ALICE.getPhone(), ALICE.getEmail(), Relationship.CLIENT);[m
+[32m+[m[32m        Person prospect = new Person(BENSON.getName(), BENSON.getPhone(), BENSON.getEmail(), Relationship.PROSPECT);[m
+[32m+[m[32m        model = new ModelManager();[m
+[32m+[m[32m        model.addPerson(client);[m
+[32m+[m[32m        model.addPerson(prospect);[m
+[32m+[m[32m        expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());[m
+[32m+[m[32m        model.updateFilteredPersonList(person -> person.getRelationship() == Relationship.CLIENT);[m
+[32m+[m
+[32m+[m[32m        assertCommandSuccess(new ListCommand(), model, "Listed all clients and prospects.", expectedModel);[m
+[32m+[m[32m        assertEquals(List.of(client, prospect), model.getFilteredPersonList());[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    @Test[m
+[32m+[m[32m    public void execute_emptyAddressBook_success() {[m
+[32m+[m[32m        model = new ModelManager();[m
+[32m+[m[32m        expectedModel = new ModelManager();[m
+[32m+[m
+[32m+[m[32m        assertCommandSuccess(new ListCommand(), model, "Listed all clients and prospects.", expectedModel);[m
+[32m+[m[32m        assertEquals(List.of(), model.getFilteredPersonList());[m
+[32m+[m[32m    }[m
+ }[m

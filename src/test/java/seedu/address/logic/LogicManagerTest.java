@@ -8,10 +8,12 @@ import static seedu.address.logic.commands.CommandTestUtil.NAME_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.PHONE_DESC_AMY;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.AMY;
+import static seedu.address.testutil.TypicalPersons.BOB;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -66,7 +68,38 @@ public class LogicManagerTest {
     @Test
     public void execute_validCommand_success() throws Exception {
         String listCommand = ListCommand.COMMAND_WORD;
-        assertCommandSuccess(listCommand, ListCommand.MESSAGE_SUCCESS, model);
+        assertCommandSuccess(listCommand, "Listed all clients and prospects.", model);
+    }
+
+    @Test
+    public void execute_findThenList_restoresCompleteList() throws Exception {
+        model.addPerson(AMY);
+        model.addPerson(BOB);
+        Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+
+        logic.execute("find Amy");
+        assertEquals(List.of(AMY), logic.getFilteredPersonList());
+        assertCommandSuccess("list", "Listed all clients and prospects.", expectedModel);
+        assertEquals(List.of(AMY, BOB), logic.getFilteredPersonList());
+
+        logic.execute("find NoMatchingName");
+        assertEquals(List.of(), logic.getFilteredPersonList());
+        assertCommandSuccess("list", "Listed all clients and prospects.", expectedModel);
+        assertEquals(List.of(AMY, BOB), logic.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_listVariants_restoreSameCompleteList() throws Exception {
+        model.addPerson(AMY);
+        model.addPerson(BOB);
+        Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+
+        for (String command : List.of("list", "  list  ", "list clients", "  list clients  ")) {
+            logic.execute("find Amy");
+            assertEquals(List.of(AMY), logic.getFilteredPersonList());
+            assertCommandSuccess(command, "Listed all clients and prospects.", expectedModel);
+            assertEquals(List.of(AMY, BOB), logic.getFilteredPersonList());
+        }
     }
 
     @Test
