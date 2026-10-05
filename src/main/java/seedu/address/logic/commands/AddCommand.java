@@ -1,11 +1,10 @@
 package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
-import static seedu.address.logic.parser.CliSyntax.PREFIX_ADDRESS;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_EMAIL;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
-import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_RELATIONSHIP;
 
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.Messages;
@@ -22,21 +21,30 @@ public class AddCommand extends Command {
 
     public static final String MESSAGE_USAGE = COMMAND_WORD + ": Adds a person to the address book. "
             + "Parameters: "
+            + PREFIX_RELATIONSHIP + "RELATIONSHIP "
             + PREFIX_NAME + "NAME "
-            + PREFIX_PHONE + "PHONE "
             + PREFIX_EMAIL + "EMAIL "
-            + PREFIX_ADDRESS + "ADDRESS "
-            + "[" + PREFIX_TAG + "TAG]...\n"
+            + PREFIX_PHONE + "PHONE_NUMBER\n"
             + "Example: " + COMMAND_WORD + " "
+            + PREFIX_RELATIONSHIP + "Client "
             + PREFIX_NAME + "John Doe "
-            + PREFIX_PHONE + "98765432 "
             + PREFIX_EMAIL + "johnd@example.com "
-            + PREFIX_ADDRESS + "311, Clementi Ave 2, #02-25 "
-            + PREFIX_TAG + "friends "
-            + PREFIX_TAG + "owesMoney";
+            + PREFIX_PHONE + "98765432";
 
     public static final String MESSAGE_SUCCESS = "New person added: %1$s";
-    public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in the address book.";
+    public static final String MESSAGE_DUPLICATE_PERSON = "This contact already exists.";
+    public static final String MESSAGE_DUPLICATE_EMAIL = "A contact with this email address already exists.";
+    public static final String MESSAGE_DUPLICATE_PHONE = "A contact with this phone number already exists.";
+    public static final String MESSAGE_RELATIONSHIP_REQUIRED = "Relationship is required.";
+    public static final String MESSAGE_NAME_REQUIRED = "Name is required.";
+    public static final String MESSAGE_EMAIL_REQUIRED = "Email is required.";
+    public static final String MESSAGE_PHONE_REQUIRED = "Phone number is required.";
+    public static final String MESSAGE_ALL_PARAMETERS_REQUIRED =
+            "Relationship, name, email and phone number are required.";
+    public static final String MESSAGE_RELATIONSHIP_DUPLICATED = "Relationship can only be specified once.";
+    public static final String MESSAGE_NAME_DUPLICATED = "Name can only be specified once.";
+    public static final String MESSAGE_EMAIL_DUPLICATED = "Email can only be specified once.";
+    public static final String MESSAGE_PHONE_DUPLICATED = "Phone number can only be specified once.";
 
     private final Person toAdd;
 
@@ -52,8 +60,22 @@ public class AddCommand extends Command {
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
 
-        if (model.hasPerson(toAdd)) {
+        boolean hasMatchingEmail = model.getAddressBook().getPersonList().stream()
+                .anyMatch(person -> person.getEmail().equals(toAdd.getEmail()));
+        boolean hasMatchingPhone = model.getAddressBook().getPersonList().stream()
+                .anyMatch(person -> person.getPhone().equals(toAdd.getPhone()));
+        boolean hasMatchingEmailAndPhone = model.getAddressBook().getPersonList().stream()
+                .anyMatch(person -> person.getEmail().equals(toAdd.getEmail())
+                        && person.getPhone().equals(toAdd.getPhone()));
+
+        if (hasMatchingEmailAndPhone) {
             throw new CommandException(MESSAGE_DUPLICATE_PERSON);
+        }
+        if (hasMatchingEmail) {
+            throw new CommandException(MESSAGE_DUPLICATE_EMAIL);
+        }
+        if (hasMatchingPhone) {
+            throw new CommandException(MESSAGE_DUPLICATE_PHONE);
         }
 
         model.addPerson(toAdd);

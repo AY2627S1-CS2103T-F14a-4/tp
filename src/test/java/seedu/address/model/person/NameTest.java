@@ -1,5 +1,6 @@
 package seedu.address.model.person;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
@@ -27,15 +28,29 @@ public class NameTest {
         // invalid name
         assertFalse(Name.isValidName("")); // empty string
         assertFalse(Name.isValidName(" ")); // spaces only
-        assertFalse(Name.isValidName("^")); // only non-alphanumeric characters
-        assertFalse(Name.isValidName("peter*")); // contains non-alphanumeric characters
+        assertFalse(Name.isValidName("^")); // only invalid characters
+        assertFalse(Name.isValidName("peter*")); // contains an invalid character
+        assertFalse(Name.isValidName("Peter123")); // contains digits
+        assertFalse(Name.isValidName("John/Smith")); // arbitrary slash usage
+        assertFalse(Name.isValidName("Ravi s/o")); // incomplete relationship marker
+        assertFalse(Name.isValidName("A".repeat(101))); // more than 100 characters
 
         // valid name
-        assertTrue(Name.isValidName("peter jack")); // alphabets only
-        assertTrue(Name.isValidName("12345")); // numbers only
-        assertTrue(Name.isValidName("peter the 2nd")); // alphanumeric characters
+        assertTrue(Name.isValidName("peter jack")); // letters and spaces
         assertTrue(Name.isValidName("Capital Tan")); // with capital letters
-        assertTrue(Name.isValidName("David Roger Jackson Ray Jr 2nd")); // long names
+        assertTrue(Name.isValidName("Nur-Aisyah")); // hyphenated name
+        assertTrue(Name.isValidName("O'Connor")); // apostrophe in name
+        assertTrue(Name.isValidName("Ravi s/o Kumar")); // son of marker
+        assertTrue(Name.isValidName("Priya D/O Nair")); // case-insensitive daughter of marker
+        assertTrue(Name.isValidName("Asha w/o Raj")); // wife of marker
+        assertTrue(Name.isValidName("  Ravi s/o Kumar  ")); // surrounding whitespace
+    }
+
+    @Test
+    public void getValidationError() {
+        assertEquals(Name.MESSAGE_BLANK, Name.getValidationError(" "));
+        assertEquals(Name.MESSAGE_INVALID_CHARACTERS, Name.getValidationError("Ravi/ Kumar"));
+        assertEquals(Name.MESSAGE_LENGTH, Name.getValidationError("A".repeat(101)));
     }
 
     @Test
