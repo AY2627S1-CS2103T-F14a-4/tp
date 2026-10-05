@@ -5,6 +5,7 @@ import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import seedu.address.commons.util.ToStringBuilder;
@@ -12,7 +13,7 @@ import seedu.address.model.tag.Tag;
 
 /**
  * Represents a Person in the address book.
- * Guarantees: details are present and not null, field values are validated, immutable.
+ * Guarantees: required details are not null, field values are validated, immutable.
  */
 public class Person {
 
@@ -23,6 +24,9 @@ public class Person {
     private final Relationship relationship;
 
     // Data fields
+    private final FinancialNeed financialNeed;
+    private final Priority priority;
+    private final AreaOfInterest areaOfInterest;
     private final Set<Tag> tags = new HashSet<>();
 
     /**
@@ -36,12 +40,24 @@ public class Person {
      * Every field must be present and not null.
      */
     public Person(Name name, Phone phone, Email email, Set<Tag> tags, Relationship relationship) {
+        this(name, phone, email, tags, relationship, null, null, null);
+    }
+
+    /**
+     * Creates a person with optional financial information.
+     * Required fields must not be null; a null financial need, priority, or area of interest represents absence.
+     */
+    public Person(Name name, Phone phone, Email email, Set<Tag> tags, Relationship relationship,
+            FinancialNeed financialNeed, Priority priority, AreaOfInterest areaOfInterest) {
         requireAllNonNull(name, phone, email, tags, relationship);
         this.name = name;
         this.phone = phone;
         this.email = email;
         this.tags.addAll(tags);
         this.relationship = relationship;
+        this.financialNeed = financialNeed;
+        this.priority = priority;
+        this.areaOfInterest = areaOfInterest;
     }
 
     /**
@@ -65,6 +81,18 @@ public class Person {
 
     public Relationship getRelationship() {
         return relationship;
+    }
+
+    public Optional<FinancialNeed> getFinancialNeed() {
+        return Optional.ofNullable(financialNeed);
+    }
+
+    public Optional<Priority> getPriority() {
+        return Optional.ofNullable(priority);
+    }
+
+    public Optional<AreaOfInterest> getAreaOfInterest() {
+        return Optional.ofNullable(areaOfInterest);
     }
 
     /**
@@ -108,13 +136,16 @@ public class Person {
                 && phone.equals(otherPerson.phone)
                 && email.equals(otherPerson.email)
                 && tags.equals(otherPerson.tags)
-                && relationship.equals(otherPerson.relationship);
+                && relationship.equals(otherPerson.relationship)
+                && Objects.equals(financialNeed, otherPerson.financialNeed)
+                && Objects.equals(priority, otherPerson.priority)
+                && Objects.equals(areaOfInterest, otherPerson.areaOfInterest);
     }
 
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, phone, email, tags, relationship);
+        return Objects.hash(name, phone, email, tags, relationship, financialNeed, priority, areaOfInterest);
     }
 
     @Override
@@ -125,6 +156,9 @@ public class Person {
                 .add("email", email)
                 .add("relationship", relationship)
                 .add("tags", tags)
+                .add("financialNeed", financialNeed)
+                .add("priority", priority)
+                .add("areaOfInterest", areaOfInterest)
                 .toString();
     }
 
