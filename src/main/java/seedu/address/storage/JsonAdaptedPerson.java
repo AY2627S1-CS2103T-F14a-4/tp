@@ -10,10 +10,13 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import seedu.address.commons.exceptions.IllegalValueException;
+import seedu.address.model.person.AreaOfInterest;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.FinancialNeed;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
+import seedu.address.model.person.Priority;
 import seedu.address.model.person.Relationship;
 import seedu.address.model.tag.Tag;
 
@@ -28,6 +31,9 @@ class JsonAdaptedPerson {
     private final String phone;
     private final String email;
     private final String relationship;
+    private final String financialNeed;
+    private final String priority;
+    private final String areaOfInterest;
     private final List<JsonAdaptedTag> tags = new ArrayList<>();
 
     JsonAdaptedPerson(String name, String phone, String email, List<JsonAdaptedTag> tags) {
@@ -37,14 +43,27 @@ class JsonAdaptedPerson {
     /**
      * Constructs a {@code JsonAdaptedPerson} with the given person details.
      */
+    public JsonAdaptedPerson(String name, String phone, String email, List<JsonAdaptedTag> tags,
+            String relationship) {
+        this(name, phone, email, tags, relationship, null, null, null);
+    }
+
+    /**
+     * Constructs an adapted person with optional financial information; null represents absence.
+     */
     @JsonCreator
     public JsonAdaptedPerson(@JsonProperty("name") String name, @JsonProperty("phone") String phone,
             @JsonProperty("email") String email, @JsonProperty("tags") List<JsonAdaptedTag> tags,
-            @JsonProperty("relationship") String relationship) {
+            @JsonProperty("relationship") String relationship,
+            @JsonProperty("financialNeed") String financialNeed, @JsonProperty("priority") String priority,
+            @JsonProperty("areaOfInterest") String areaOfInterest) {
         this.name = name;
         this.phone = phone;
         this.email = email;
         this.relationship = relationship;
+        this.financialNeed = financialNeed;
+        this.priority = priority;
+        this.areaOfInterest = areaOfInterest;
         if (tags != null) {
             this.tags.addAll(tags);
         }
@@ -58,6 +77,9 @@ class JsonAdaptedPerson {
         phone = source.getPhone().value;
         email = source.getEmail().value;
         relationship = source.getRelationship().toString();
+        financialNeed = source.getFinancialNeed().map(value -> value.value).orElse(null);
+        priority = source.getPriority().map(value -> value.value).orElse(null);
+        areaOfInterest = source.getAreaOfInterest().map(value -> value.value).orElse(null);
         tags.addAll(source.getTags().stream()
                 .map(JsonAdaptedTag::new)
                 .collect(Collectors.toList()));
@@ -104,7 +126,35 @@ class JsonAdaptedPerson {
         final Set<Tag> modelTags = new HashSet<>(personTags);
         Relationship modelRelationship = relationship == null
                 ? Relationship.PROSPECT : parseRelationship(relationship);
-        return new Person(modelName, modelPhone, modelEmail, modelTags, modelRelationship);
+        FinancialNeed modelFinancialNeed = null;
+        if (financialNeed != null) {
+            String validationError = FinancialNeed.getValidationError(financialNeed);
+            if (validationError != null) {
+                throw new IllegalValueException(validationError);
+            }
+            modelFinancialNeed = new FinancialNeed(financialNeed);
+        }
+
+        Priority modelPriority = null;
+        if (priority != null) {
+            String validationError = Priority.getValidationError(priority);
+            if (validationError != null) {
+                throw new IllegalValueException(validationError);
+            }
+            modelPriority = new Priority(priority);
+        }
+
+        AreaOfInterest modelAreaOfInterest = null;
+        if (areaOfInterest != null) {
+            String validationError = AreaOfInterest.getValidationError(areaOfInterest);
+            if (validationError != null) {
+                throw new IllegalValueException(validationError);
+            }
+            modelAreaOfInterest = new AreaOfInterest(areaOfInterest);
+        }
+
+        return new Person(modelName, modelPhone, modelEmail, modelTags, modelRelationship,
+                modelFinancialNeed, modelPriority, modelAreaOfInterest);
     }
 
     private static Relationship parseRelationship(String relationship) throws IllegalValueException {
