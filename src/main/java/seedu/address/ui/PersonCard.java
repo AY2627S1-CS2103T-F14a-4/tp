@@ -72,7 +72,11 @@ public class PersonCard extends UiPart<Region> {
             Label label = new Label(note.toString());
             label.getStyleClass().add("cell_small_label");
             label.setWrapText(true);
-            label.prefWidthProperty().bind(cardPane.widthProperty().subtract(30));
+            // Let the parent supply the width during measurement, before the card is laid out.
+            // Binding to the card's actual width makes the first wrapped-height measurement stale.
+            label.setMinWidth(0);
+            label.setPrefWidth(0);
+            label.setMaxWidth(Double.MAX_VALUE);
             interactionNotes.getChildren().add(label);
         });
         person.getTags().stream()
