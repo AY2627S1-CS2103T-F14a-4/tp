@@ -72,6 +72,27 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_notesThenUpdates_savedHistorySurvivesReopening() throws Exception {
+        model.addPerson(new Person(AMY.getName(), AMY.getPhone(), AMY.getEmail(), Relationship.CLIENT));
+        logic.execute("note 1 d/2000-02-29 n/Discussed retirement; https://example.com/a/b n/text d/text");
+        logic.execute("note 1 d/2000-02-29 n/Discussed retirement; https://example.com/a/b n/text d/text");
+        assertEquals(2, model.getFilteredPersonList().get(0).getInteractionNotes().size());
+        logic.execute("edit 1 p/81234567");
+        logic.execute("info 1 /fn Retirement");
+
+        JsonAddressBookStorage reopenedStorage =
+                new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json"));
+        Model reopened = new ModelManager(reopenedStorage.readAddressBook().orElseThrow(), new UserPrefs());
+        assertEquals(model.getAddressBook(), reopened.getAddressBook());
+        Person restored = reopened.getFilteredPersonList().get(0);
+        assertEquals(2, restored.getInteractionNotes().size());
+        assertEquals(restored.getInteractionNotes().get(0), restored.getInteractionNotes().get(1));
+        assertEquals("81234567", restored.getPhone().value);
+        assertEquals("Retirement", restored.getFinancialNeed().orElseThrow().value);
+        assertEquals(Relationship.CLIENT, restored.getRelationship());
+    }
+
+    @Test
     public void execute_findThenList_restoresCompleteList() throws Exception {
         model.addPerson(AMY);
         model.addPerson(BOB);
