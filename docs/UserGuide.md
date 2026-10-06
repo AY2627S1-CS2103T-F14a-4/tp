@@ -142,6 +142,21 @@ Examples:
 * `info 2 /pr protect family income /ai life insurance`
 * `info 1 /ai investment products /fn wealth accumulation /pr preserve capital`
 
+### Adding a dated interaction note: `note`
+
+Appends a dated note to a client or prospect. Notes appear on the person's card in the order they were added.
+
+Format: `note INDEX d/DATE n/NOTE`
+
+* `INDEX` refers to the currently displayed list, including search results.
+* `DATE` must be a real calendar date in `yyyy-MM-dd` format. Past dates are accepted.
+* Put the date before `n/`. Everything after `n/` is note text, including URLs, punctuation and prefix-like text.
+* Note text cannot be blank. Surrounding whitespace is removed; case and internal text are preserved.
+* Adding a note keeps all previous notes. Same-date and identical notes are allowed.
+* Notes are saved automatically and preserved when using `edit` or `info`.
+
+Example: `note 1 d/2026-10-06 n/Discussed retirement planning and agreed to follow up next month.`
+
 ### Locating persons by name: `find`
 
 Finds persons whose names contain any of the given keywords.
@@ -230,5 +245,6 @@ Action     | Format, Examples
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [t/TAG]... `<br> e.g.,`edit 2 n/James Lee e/jameslee@example.com`
 **Find**   | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **Info**   | `info INDEX [/fn FINANCIAL_NEED] [/pr PRIORITY] [/ai AREA_OF_INTEREST]`<br> e.g., `info 1 /fn retirement planning`
+**Note**   | `note INDEX d/DATE n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
 **List**   | `list`
 **Help**   | `help`
