@@ -55,6 +55,16 @@ filtered indices, old JSON compatibility, persistence across reopening, and pres
 The JavaFX tests check the preferred height before first layout, immediate ListView resizing after model replacement,
 additional/long wrapped notes, compact unaffected cards and scrolling. These tests require a graphical environment.
 
+On headless Linux, provide a virtual display rather than skipping the JavaFX tests:
+
+```sh
+xvfb-run --auto-servernum ./gradlew check coverage
+```
+
+The Linux GitHub Actions job uses this command. Windows and macOS use `./gradlew check coverage` with their
+desktop display. `PersonCardTest` starts the real JavaFX toolkit; `java.awt.headless=true` does not supply a JavaFX
+display. Xvfb and its `xauth` dependency must be installed when running on other headless Linux machines.
+
 For manual checks, use disposable records and a separate data file:
 
 1. Display at least three records. Run `note 1 d/2026-10-06 n/Test note`. Confirm the dated entry appears immediately
