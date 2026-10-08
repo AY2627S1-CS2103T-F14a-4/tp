@@ -18,6 +18,11 @@ import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
+import seedu.address.model.person.Person;
+import seedu.address.model.person.Relationship;
+import seedu.address.model.person.RelationshipMatchesPredicate;
+import seedu.address.testutil.AddressBookBuilder;
+import seedu.address.testutil.PersonBuilder;
 
 /**
  * Contains integration tests (interaction with the Model) for {@code FindCommand}.
@@ -71,6 +76,26 @@ public class FindCommandTest {
         expectedModel.updateFilteredPersonList(predicate);
         assertCommandSuccess(command, model, expectedMessage, expectedModel);
         assertEquals(List.of(CARL, ELLE, FIONA), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_relationship_multiplePersonsFoundInOriginalOrder() {
+        Person clientCarl = new PersonBuilder(CARL).withRelationship(Relationship.CLIENT).build();
+        Person clientFiona = new PersonBuilder(FIONA).withRelationship(Relationship.CLIENT).build();
+        Model relationshipModel = new ModelManager(new AddressBookBuilder()
+                .withPerson(ELLE)
+                .withPerson(clientCarl)
+                .withPerson(clientFiona)
+                .build(), new UserPrefs());
+        Model expectedRelationshipModel = new ModelManager(relationshipModel.getAddressBook(), new UserPrefs());
+        RelationshipMatchesPredicate predicate = new RelationshipMatchesPredicate(Relationship.CLIENT);
+        FindCommand command = new FindCommand(predicate);
+        String expectedMessage = String.format(MESSAGE_PERSONS_LISTED_OVERVIEW, 2);
+
+        expectedRelationshipModel.updateFilteredPersonList(predicate);
+
+        assertCommandSuccess(command, relationshipModel, expectedMessage, expectedRelationshipModel);
+        assertEquals(List.of(clientCarl, clientFiona), relationshipModel.getFilteredPersonList());
     }
 
     @Test
