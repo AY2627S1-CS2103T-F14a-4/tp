@@ -159,19 +159,23 @@ Examples:
 * `find alex david` returns `Alex Yeoh`, `David Li`<br>
   ![result for 'find alex david'](images/findAlexDavidResult.png)
 
-### Deleting a person: `delete`
+### Deleting a client/prospect: `delete`
 
-Deletes the specified person from the address book.
+Deletes the specified client or prospect from the client list.
 
 Format: `delete INDEX`
 
-* Deletes the person at the specified `INDEX`.
-* The index refers to the index number shown in the displayed person list.
+* Deletes the client/prospect at the specified `INDEX`.
+* The index refers to the index number shown in the displayed list.
 * The index **must be a positive integer** 1, 2, 3, ...
+* Leading and trailing spaces around the index are ignored. Only one index can be given.
+* After deletion, the remaining clients/prospects are shown with updated index numbers.
 
 Examples:
-* `list` followed by `delete 2` deletes the 2nd person in the address book.
-* `find Betsy` followed by `delete 1` deletes the 1st person in the results of the `find` command.
+* `list` followed by `delete 2` deletes the 2nd client/prospect in the list.
+* `find Betsy` followed by `delete 1` deletes the 1st client/prospect in the results of the `find` command.
+
+Expected output: `Client John Doe has been deleted successfully.` (or `Prospect Jane Tan has been deleted successfully.`)
 
 ### Clearing all entries: `clear`
 
