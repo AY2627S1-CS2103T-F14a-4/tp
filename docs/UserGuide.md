@@ -175,22 +175,31 @@ Missing indices, dates or note prefixes produce an error. Dates such as `2026-02
 Notes are displayed in insertion order, including backdated entries; they are not sorted by date.
 Editing, deleting and searching interaction notes are not currently supported.
 
-### Locating persons by name: `find`
+### Locating persons by name or relationship: `find`
 
-Finds persons whose names contain any of the given keywords.
+Finds persons whose names contain any of the given keywords, or filters persons by their relationship.
 
-Format: `find KEYWORD [MORE_KEYWORDS]`
+Formats:
 
-* The search is case-insensitive; for example, `hans` matches `Hans`.
+* `find KEYWORD [MORE_KEYWORDS]`
+* `find r/RELATIONSHIP`
+
+* Name keywords and relationship values are case-insensitive; for example, `hans` matches `Hans`, and `client`
+  matches `Client`.
 * Keyword order does not matter; for example, `Hans Bo` matches `Bo Hans`.
-* The search considers only names.
+* Keyword searches consider only names.
 * Only full words match; for example, `Han` does not match `Hans`.
 * Persons matching at least one keyword are returned (an `OR` search); for example, `Hans Bo` returns `Hans Gruber` and `Bo Yang`.
+* `RELATIONSHIP` must be either `client` or `prospect` and is case-insensitive.
+* A name search cannot be combined with a relationship filter in the same command.
+* Persons filtered by relationship retain the same order as in the `list` command.
 
 Examples:
 * `find John` returns `john` and `John Doe`
 * `find alex david` returns `Alex Yeoh`, `David Li`<br>
   ![result for 'find alex david'](images/findAlexDavidResult.png)
+* `find r/client` returns all clients.
+* `find r/Prospect` returns all prospects.
 
 ### Deleting a person: `delete`
 
@@ -261,7 +270,7 @@ Action     | Format, Examples
 **Clear**  | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [t/TAG]... `<br> e.g.,`edit 2 n/James Lee e/jameslee@example.com`
-**Find**   | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
+**Find**   | `find KEYWORD [MORE_KEYWORDS]` or `find r/RELATIONSHIP`<br> e.g., `find James Jake`, `find r/client`
 **Info**   | `info INDEX [/fn FINANCIAL_NEED] [/pr PRIORITY] [/ai AREA_OF_INTEREST]`<br> e.g., `info 1 /fn retirement planning`
 **Note**   | `note INDEX d/DATE n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
 **List**   | `list`

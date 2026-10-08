@@ -93,6 +93,14 @@ public class PersonBuilder {
     }
 
     /**
+     * Sets the {@code Relationship} of the {@code Person} that we are building.
+     */
+    public PersonBuilder withRelationship(Relationship relationship) {
+        this.relationship = relationship;
+        return this;
+    }
+
+    /**
      * Sets the {@code FinancialNeed} of the {@code Person} that we are building.
      */
     public PersonBuilder withFinancialNeed(String financialNeed) {
