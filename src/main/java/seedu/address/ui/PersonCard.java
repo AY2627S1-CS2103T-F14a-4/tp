@@ -8,6 +8,7 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import seedu.address.model.person.Person;
 
 /**
@@ -47,6 +48,8 @@ public class PersonCard extends UiPart<Region> {
     private Label priority;
     @FXML
     private Label areaOfInterest;
+    @FXML
+    private VBox interactionNotes;
 
     /**
      * Creates a {@code PersonCard} with the given {@code Person} and index to display.
@@ -63,6 +66,19 @@ public class PersonCard extends UiPart<Region> {
         setOptionalInformation(priority, "Priority: ", person.getPriority().map(value -> value.value));
         setOptionalInformation(areaOfInterest, "Area of interest: ",
                 person.getAreaOfInterest().map(value -> value.value));
+        interactionNotes.setVisible(!person.getInteractionNotes().isEmpty());
+        interactionNotes.setManaged(!person.getInteractionNotes().isEmpty());
+        person.getInteractionNotes().forEach(note -> {
+            Label label = new Label(note.toString());
+            label.getStyleClass().add("cell_small_label");
+            label.setWrapText(true);
+            // Let the parent supply the width during measurement, before the card is laid out.
+            // Binding to the card's actual width makes the first wrapped-height measurement stale.
+            label.setMinWidth(0);
+            label.setPrefWidth(0);
+            label.setMaxWidth(Double.MAX_VALUE);
+            interactionNotes.getChildren().add(label);
+        });
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.tagName))
                 .forEach(tag -> tags.getChildren().add(new Label(tag.tagName)));

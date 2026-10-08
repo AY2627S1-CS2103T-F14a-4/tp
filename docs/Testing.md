@@ -39,3 +39,42 @@ This project has three types of tests:
    For example: `seedu.address.storage.StorageManagerTest`
 1. *Hybrid tests* combine unit and integration testing. These tests check both the individual units and how they work together.<br>
    For example: `seedu.address.logic.LogicManagerTest`
+
+## US14 interaction-note regression checks
+
+Run the full suite and coding checks on Windows with:
+
+```powershell
+.\gradlew.bat test checkstyleMain checkstyleTest
+git diff --check
+```
+
+Relevant tests include `InteractionNoteTest`, `NoteCommandParserTest`, `NoteCommandTest`, `JsonAdaptedPersonTest`,
+`LogicManagerTest` and `PersonCardTest`. They cover strict date parsing, realistic note text, first/repeated entries,
+filtered indices, old JSON compatibility, persistence across reopening, and preservation through `edit` and `info`.
+The JavaFX tests check the preferred height before first layout, immediate ListView resizing after model replacement,
+additional/long wrapped notes, compact unaffected cards and scrolling. These tests require a graphical environment.
+
+On headless Linux, provide a virtual display rather than skipping the JavaFX tests:
+
+```sh
+xvfb-run --auto-servernum ./gradlew check coverage
+```
+
+The Linux GitHub Actions job uses this command. Windows and macOS use `./gradlew check coverage` with their
+desktop display. `PersonCardTest` starts the real JavaFX toolkit; `java.awt.headless=true` does not supply a JavaFX
+display. Xvfb and its `xauth` dependency must be installed when running on other headless Linux machines.
+
+For manual checks, use disposable records and a separate data file:
+
+1. Display at least three records. Run `note 1 d/2026-10-06 n/Test note`. Confirm the dated entry appears immediately
+   and the next card remains directly underneath without clicking or scrolling to correct the layout.
+2. Repeat the command. Confirm both identical entries remain visible and the card grows only as needed.
+3. Add a long note containing Unicode, punctuation and a URL. Confirm wrapping is readable and scrolling reaches
+   other records; records without notes remain compact.
+4. Run `find` to display another person, then `note 1 d/2020-02-29 n/Backdated interaction`. Confirm only the person
+   at index 1 in the search results changes.
+5. Update that person's phone with `edit`, then their financial need with `info`. Confirm all notes remain.
+6. Close and reopen the app using the same data file. Confirm the entries, order and duplicates remain.
+7. Try an impossible date, blank note and out-of-range index. Confirm clear errors and unchanged records.
+8. Load an older valid JSON file without `interactionNotes`. Confirm its records load with no note entries.

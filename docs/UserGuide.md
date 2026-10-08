@@ -142,6 +142,39 @@ Examples:
 * `info 2 /pr protect family income /ai life insurance`
 * `info 1 /ai investment products /fn wealth accumulation /pr preserve capital`
 
+### Adding a dated interaction note: `note`
+
+Appends a dated note to a client or prospect. Notes appear on the person's card in the order they were added.
+
+Format: `note INDEX d/DATE n/NOTE`
+
+* `INDEX` refers to the currently displayed list, including search results.
+* `DATE` must be a real calendar date in `yyyy-MM-dd` format. Past dates are accepted.
+* Put the date before `n/`. Everything after `n/` is note text, including URLs, punctuation and prefix-like text.
+* Note text cannot be blank. Surrounding whitespace is removed; case and internal text are preserved.
+* Adding a note keeps all previous notes. Same-date and identical notes are allowed.
+* Notes are saved automatically and preserved when using `edit` or `info`.
+* Each entry shows its date and text under **Interaction notes:** on the person's card. Long text wraps, and the
+  card grows to fit its contents immediately. Scroll the client list to read longer histories.
+* There is no maximum note length imposed by this command. Enter a note on one command line.
+
+Example: `note 1 d/2026-10-06 n/Discussed retirement planning and agreed to follow up next month.`
+
+Success message: `Added interaction note for PERSON_NAME.`
+
+Examples of other accepted notes:
+
+* `note 1 d/2020-02-29 n/Reviewed the client's long-term goals.` (Backdated entry.)
+* `note 1 d/2026-10-06 n/Shared https://example.com/plans/retirement; discussed option A/B.`
+
+Missing indices, dates or note prefixes produce an error. Dates such as `2026-02-30` are rejected with
+`Interaction date must be a valid date in yyyy-MM-dd format.` Blank note text produces
+`Interaction note cannot be empty.` An index outside the displayed list produces
+`The person index provided is invalid.` These input errors leave the stored records unchanged.
+
+Notes are displayed in insertion order, including backdated entries; they are not sorted by date.
+Editing, deleting and searching interaction notes are not currently supported.
+
 ### Locating persons by name: `find`
 
 Finds persons whose names contain any of the given keywords.
@@ -230,5 +263,6 @@ Action     | Format, Examples
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [t/TAG]... `<br> e.g.,`edit 2 n/James Lee e/jameslee@example.com`
 **Find**   | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **Info**   | `info INDEX [/fn FINANCIAL_NEED] [/pr PRIORITY] [/ai AREA_OF_INTEREST]`<br> e.g., `info 1 /fn retirement planning`
+**Note**   | `note INDEX d/DATE n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
 **List**   | `list`
 **Help**   | `help`
