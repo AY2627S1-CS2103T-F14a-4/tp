@@ -6,6 +6,7 @@ import static seedu.address.storage.JsonAdaptedPerson.MISSING_FIELD_MESSAGE_FORM
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.BENSON;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -17,6 +18,7 @@ import seedu.address.commons.util.JsonUtil;
 import seedu.address.model.person.AreaOfInterest;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.FinancialNeed;
+import seedu.address.model.person.InteractionNote;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
@@ -36,6 +38,33 @@ public class JsonAdaptedPersonTest {
             .map(JsonAdaptedTag::new)
             .collect(Collectors.toList());
 
+    @Test
+    public void interactionNotes_jsonRoundTrip_preservesOrderAndDuplicates() throws Exception {
+        InteractionNote first = new InteractionNote(LocalDate.of(2026, 10, 6), "客户 https://example.com/a/b");
+        InteractionNote second = new InteractionNote(LocalDate.of(2000, 1, 1), "Backdated interaction");
+        Person person = new PersonBuilder(BENSON).withInteractionNotes(first, second, first).build();
+        String json = JsonUtil.toJsonString(new JsonAdaptedPerson(person));
+        assertEquals(person, JsonUtil.fromJsonString(json, JsonAdaptedPerson.class).toModelType());
+    }
+
+    @Test
+    public void interactionNotes_missingOrNullJson_loadsEmptyHistory() throws Exception {
+        String base = "{\"name\":\"Benson Meier\",\"phone\":\"98765432\",\"email\":\"benson@example.com\"";
+        for (String json : List.of(base + "}", base + ",\"interactionNotes\":null}")) {
+            assertTrue(JsonUtil.fromJsonString(json, JsonAdaptedPerson.class).toModelType()
+                    .getInteractionNotes().isEmpty());
+        }
+    }
+
+    @Test
+    public void interactionNotes_invalidStoredData_clearErrors() {
+        assertThrows(IllegalValueException.class, InteractionNote.MESSAGE_INVALID_DATE, () ->
+                new JsonAdaptedInteractionNote("2026-02-30", "Called").toModelType());
+        assertThrows(IllegalValueException.class, InteractionNote.MESSAGE_BLANK, () ->
+                new JsonAdaptedInteractionNote("2026-10-06", " ").toModelType());
+        assertThrows(IllegalValueException.class, InteractionNote.MESSAGE_BLANK, () ->
+                new JsonAdaptedInteractionNote("2026-10-06", null).toModelType());
+    }
     @Test
     public void toModelType_validPersonDetails_returnsPerson() throws Exception {
         JsonAdaptedPerson person = new JsonAdaptedPerson(BENSON);

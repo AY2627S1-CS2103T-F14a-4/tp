@@ -172,6 +172,49 @@ Because filtering does not reorder the source list, matching persons appear in t
 
 Name searches continue to use `NameContainsKeywordsPredicate`. The two search forms are deliberately kept separate:
 a command cannot combine name keywords with an `r/` filter.
+### Dated interaction notes (US14)
+
+`note INDEX d/yyyy-MM-dd n/NOTE` appends an interaction note to the person at the index in the currently displayed
+list. It works for clients and prospects, preserves the current filter, and does not replace earlier entries.
+
+#### Model and command flow
+
+1. `AddressBookParser` routes the command to `NoteCommandParser`. The parser reads the index and date before `n/`,
+   then treats the entire remaining body as text. URLs, slashes and further prefix-like strings remain note content.
+2. `InteractionNote` stores an immutable `LocalDate` and nonblank text. Date parsing checks the `yyyy-MM-dd` shape
+   and uses strict ISO calendar validation. Past dates are allowed. Surrounding text whitespace is stripped;
+   internal content and case are preserved without a character whitelist or maximum length.
+3. `NoteCommand` checks the displayed index, copies the selected person's history, appends the new entry and calls
+   `Model#setPerson` with a replacement `Person`. Other fields remain unchanged. Same-date and identical entries
+   are retained in insertion order.
+4. The observable list updates the corresponding `PersonListViewCell`. `LogicManager` saves the address book through
+   the existing storage pipeline and returns `Added interaction note for NAME.` on success.
+
+`Person#getInteractionNotes()` exposes an immutable defensive copy. History participates in `Person` equality and
+hashing, but not duplicate identity detection. Both `EditCommand` and `InfoCommand` carry the existing history into
+their replacement persons. `PersonBuilder` also preserves it when copying a person.
+
+#### Persistence and display
+
+`JsonAdaptedPerson` stores an `interactionNotes` array of `JsonAdaptedInteractionNote` objects, each containing
+`date` and `text`. Missing or null arrays in older JSON files become empty histories. Loading validates stored
+dates and note text; serialization preserves entry order and duplicates.
+
+`PersonCard` displays dated, wrapped labels in the existing card's interaction-note container. Empty histories are
+hidden and unmanaged. Labels have a zero minimum/preferred width and an unbounded maximum width so the parent
+provides their available width during measurement. Their preferred width must not be bound to the card's actual
+width: a newly replaced card has not yet been laid out, and that binding causes an excessive first wrapped-height
+measurement. No fixed card height or forced list refresh is needed.
+
+#### Validation and scope
+
+The parser distinguishes missing index, date and note prefix; malformed calendar dates and blank text have specific
+errors. Execution rejects indices outside the currently displayed list before changing the model.
+
+This feature provides adding and displaying dated notes only. Chronological sorting, note correction/removal,
+structured interaction outcomes, follow-ups and note search remain separate user stories.
+
+Automated and manual regression checks are described in the [Testing guide](Testing.md#us14-interaction-note-regression-checks).
 
 ### \[Proposed\] Undo/redo feature
 

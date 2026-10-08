@@ -14,6 +14,7 @@ Class UserPrefs
 
 Class UniquePersonList
 Class Person
+Class InteractionNote
 Class Address
 Class Email
 Class Name
@@ -42,6 +43,7 @@ Person *--> Phone
 Person *--> Email
 Person *--> Address
 Person *--> "*" Tag
+Person *--> "* insertion order" InteractionNote
 
 Person -[hidden]up--> I
 UniquePersonList -[hidden]right-> I

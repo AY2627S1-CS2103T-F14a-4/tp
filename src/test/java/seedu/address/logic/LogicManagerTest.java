@@ -8,10 +8,12 @@ import static seedu.address.logic.commands.CommandTestUtil.NAME_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.PHONE_DESC_AMY;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.AMY;
+import static seedu.address.testutil.TypicalPersons.BOB;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -66,7 +68,59 @@ public class LogicManagerTest {
     @Test
     public void execute_validCommand_success() throws Exception {
         String listCommand = ListCommand.COMMAND_WORD;
-        assertCommandSuccess(listCommand, ListCommand.MESSAGE_SUCCESS, model);
+        assertCommandSuccess(listCommand, "Listed all clients and prospects.", model);
+    }
+
+    @Test
+    public void execute_notesThenUpdates_savedHistorySurvivesReopening() throws Exception {
+        model.addPerson(new Person(AMY.getName(), AMY.getPhone(), AMY.getEmail(), Relationship.CLIENT));
+        logic.execute("note 1 d/2000-02-29 n/Discussed retirement; https://example.com/a/b n/text d/text");
+        logic.execute("note 1 d/2000-02-29 n/Discussed retirement; https://example.com/a/b n/text d/text");
+        assertEquals(2, model.getFilteredPersonList().get(0).getInteractionNotes().size());
+        logic.execute("edit 1 p/81234567");
+        logic.execute("info 1 /fn Retirement");
+
+        JsonAddressBookStorage reopenedStorage =
+                new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json"));
+        Model reopened = new ModelManager(reopenedStorage.readAddressBook().orElseThrow(), new UserPrefs());
+        assertEquals(model.getAddressBook(), reopened.getAddressBook());
+        Person restored = reopened.getFilteredPersonList().get(0);
+        assertEquals(2, restored.getInteractionNotes().size());
+        assertEquals(restored.getInteractionNotes().get(0), restored.getInteractionNotes().get(1));
+        assertEquals("81234567", restored.getPhone().value);
+        assertEquals("Retirement", restored.getFinancialNeed().orElseThrow().value);
+        assertEquals(Relationship.CLIENT, restored.getRelationship());
+    }
+
+    @Test
+    public void execute_findThenList_restoresCompleteList() throws Exception {
+        model.addPerson(AMY);
+        model.addPerson(BOB);
+        Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+
+        logic.execute("find Amy");
+        assertEquals(List.of(AMY), logic.getFilteredPersonList());
+        assertCommandSuccess("list", "Listed all clients and prospects.", expectedModel);
+        assertEquals(List.of(AMY, BOB), logic.getFilteredPersonList());
+
+        logic.execute("find NoMatchingName");
+        assertEquals(List.of(), logic.getFilteredPersonList());
+        assertCommandSuccess("list", "Listed all clients and prospects.", expectedModel);
+        assertEquals(List.of(AMY, BOB), logic.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_listVariants_restoreSameCompleteList() throws Exception {
+        model.addPerson(AMY);
+        model.addPerson(BOB);
+        Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+
+        for (String command : List.of("list", "  list  ", "list clients", "  list clients  ")) {
+            logic.execute("find Amy");
+            assertEquals(List.of(AMY), logic.getFilteredPersonList());
+            assertCommandSuccess(command, "Listed all clients and prospects.", expectedModel);
+            assertEquals(List.of(AMY, BOB), logic.getFilteredPersonList());
+        }
     }
 
     @Test

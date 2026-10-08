@@ -13,6 +13,7 @@ import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.model.person.AreaOfInterest;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.FinancialNeed;
+import seedu.address.model.person.InteractionNote;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
@@ -35,6 +36,7 @@ class JsonAdaptedPerson {
     private final String priority;
     private final String areaOfInterest;
     private final List<JsonAdaptedTag> tags = new ArrayList<>();
+    private final List<JsonAdaptedInteractionNote> interactionNotes = new ArrayList<>();
 
     JsonAdaptedPerson(String name, String phone, String email, List<JsonAdaptedTag> tags) {
         this(name, phone, email, tags, null);
@@ -51,12 +53,19 @@ class JsonAdaptedPerson {
     /**
      * Constructs an adapted person with optional financial information; null represents absence.
      */
+    public JsonAdaptedPerson(String name, String phone, String email, List<JsonAdaptedTag> tags,
+            String relationship, String financialNeed, String priority, String areaOfInterest) {
+        this(name, phone, email, tags, relationship, financialNeed, priority, areaOfInterest, null);
+    }
+
+    /** Missing interaction history in older files is treated as empty. */
     @JsonCreator
     public JsonAdaptedPerson(@JsonProperty("name") String name, @JsonProperty("phone") String phone,
             @JsonProperty("email") String email, @JsonProperty("tags") List<JsonAdaptedTag> tags,
             @JsonProperty("relationship") String relationship,
             @JsonProperty("financialNeed") String financialNeed, @JsonProperty("priority") String priority,
-            @JsonProperty("areaOfInterest") String areaOfInterest) {
+            @JsonProperty("areaOfInterest") String areaOfInterest,
+            @JsonProperty("interactionNotes") List<JsonAdaptedInteractionNote> interactionNotes) {
         this.name = name;
         this.phone = phone;
         this.email = email;
@@ -66,6 +75,9 @@ class JsonAdaptedPerson {
         this.areaOfInterest = areaOfInterest;
         if (tags != null) {
             this.tags.addAll(tags);
+        }
+        if (interactionNotes != null) {
+            this.interactionNotes.addAll(interactionNotes);
         }
     }
 
@@ -80,6 +92,7 @@ class JsonAdaptedPerson {
         financialNeed = source.getFinancialNeed().map(value -> value.value).orElse(null);
         priority = source.getPriority().map(value -> value.value).orElse(null);
         areaOfInterest = source.getAreaOfInterest().map(value -> value.value).orElse(null);
+        source.getInteractionNotes().stream().map(JsonAdaptedInteractionNote::new).forEach(interactionNotes::add);
         tags.addAll(source.getTags().stream()
                 .map(JsonAdaptedTag::new)
                 .collect(Collectors.toList()));
@@ -153,8 +166,15 @@ class JsonAdaptedPerson {
             modelAreaOfInterest = new AreaOfInterest(areaOfInterest);
         }
 
+        List<InteractionNote> modelNotes = new ArrayList<>();
+        for (JsonAdaptedInteractionNote note : interactionNotes) {
+            if (note == null) {
+                throw new IllegalValueException("Interaction note cannot be null.");
+            }
+            modelNotes.add(note.toModelType());
+        }
         return new Person(modelName, modelPhone, modelEmail, modelTags, modelRelationship,
-                modelFinancialNeed, modelPriority, modelAreaOfInterest);
+                modelFinancialNeed, modelPriority, modelAreaOfInterest, modelNotes);
     }
 
     private static Relationship parseRelationship(String relationship) throws IllegalValueException {
