@@ -151,12 +151,14 @@ Formats:
 * `find KEYWORD [MORE_KEYWORDS]`
 * `find r/RELATIONSHIP`
 
-* The search is case-insensitive; for example, `hans` matches `Hans`.
+* Name keywords and relationship values are case-insensitive; for example, `hans` matches `Hans`, and `client`
+  matches `Client`.
 * Keyword order does not matter; for example, `Hans Bo` matches `Bo Hans`.
-* The search considers only names.
+* Keyword searches consider only names.
 * Only full words match; for example, `Han` does not match `Hans`.
 * Persons matching at least one keyword are returned (an `OR` search); for example, `Hans Bo` returns `Hans Gruber` and `Bo Yang`.
 * `RELATIONSHIP` must be either `client` or `prospect` and is case-insensitive.
+* A name search cannot be combined with a relationship filter in the same command.
 * Persons filtered by relationship retain the same order as in the `list` command.
 
 Examples:

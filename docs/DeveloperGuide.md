@@ -159,6 +159,20 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
+### Find by relationship
+
+The `find` command supports either name keywords or one relationship filter. `FindCommandParser` tokenizes the
+`r/` prefix and delegates validation to `ParserUtil#parseRelationship(String)`. The parser accepts only `Client` or
+`Prospect`, with case-insensitive matching provided by `Relationship#fromString(String)`.
+
+For a relationship search, the parser creates a `RelationshipMatchesPredicate`. `FindCommand` passes this predicate
+to `Model#updateFilteredPersonList(Predicate<Person>)`, which updates the `FilteredList<Person>` observed by the UI.
+Because filtering does not reorder the source list, matching persons appear in the same order as they do for the
+`list` command.
+
+Name searches continue to use `NameContainsKeywordsPredicate`. The two search forms are deliberately kept separate:
+a command cannot combine name keywords with an `r/` filter.
+
 ### \[Proposed\] Undo/redo feature
 
 #### Proposed Implementation
@@ -333,7 +347,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | --- | --- | --- | --- |
 | * * * | As a financial consultant looking for a specific person | find clients or prospects using one or more name keywords | quickly locate the relevant client record. |
 | * * | As a financial consultant who remembers context rather than a name | search across preferences and notes using keywords | find the relevant relationship from the detail I remember. |
-| * * | As a financial consultant focusing on a segment of contacts | filter people by relationship stage or tag | work with only the relevant group. |
+| * * | As a financial consultant focusing on a segment of contacts | filter people by client or prospect relationship status | work with only the relevant group. |
 | * * | As a financial consultant planning the order of work | sort contacts by next follow-up or last interaction date | prioritise relationships using timely information. |
 | * | As a financial consultant maintaining long-term relationships | identify people I have not contacted recently | notice relationships that may otherwise be neglected. |
 | * * | As a busy financial consultant about to meet or call someone | view a concise summary of their preferences, recent interactions, and next action | refresh my memory without reading the entire record. |
@@ -482,23 +496,31 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
   * 5b1. ClientBook cancels the conversion process and leaves the contact as a prospect.
   * Use case ends.
 
-**Use case: Find clients or prospects by name**
+**Use case: Find clients or prospects by name or relationship**
 
 **MSS**
 
-1. User requests to find clients or prospects using one or more name keywords.
-2. ClientBook searches the stored records using the supplied keywords.
+1. User requests to find clients or prospects using one or more name keywords, or a client/prospect relationship.
+2. ClientBook searches the stored records using the supplied criterion.
 3. ClientBook displays all matching clients and prospects.
 
    Use case ends.
 
 **Extensions**
 
-* 1a. The user does not provide any keywords.
-  * 1a1. ClientBook displays an error message explaining that at least one keyword is required.
+* 1a. The user does not provide a search criterion.
+  * 1a1. ClientBook displays an error message explaining the valid command formats.
   * Use case resumes at step 1.
 
-* 3a. No record matches any of the supplied keywords.
+* 1b. The user provides an unsupported relationship value.
+  * 1b1. ClientBook displays an error message explaining the valid relationship values.
+  * Use case resumes at step 1.
+
+* 1c. The user combines name keywords with a relationship filter.
+  * 1c1. ClientBook displays an error message explaining the valid command formats.
+  * Use case resumes at step 1.
+
+* 3a. No record matches the supplied criterion.
   * 3a1. ClientBook informs the user that no matching record was found.
   * Use case ends.
 
@@ -576,6 +598,29 @@ testers are expected to do more *exploratory* testing.
       Expected: Similar to previous.
 
 1. _{ more test cases … }_
+
+### Finding persons by relationship
+
+1. Filtering clients and prospects
+
+   1. Prerequisites: Add multiple clients and prospects, then display all persons using the `list` command.
+
+   1. Test case: `find r/client`<br>
+      Expected: Only clients are displayed, in the same relative order as in the full list.
+
+   1. Test case: `find r/PROSPECT`<br>
+      Expected: Only prospects are displayed, in the same relative order as in the full list.
+
+   1. Test case: `find r/Client`<br>
+      Expected: The same persons are displayed as for `find r/client`.
+
+1. Invalid relationship filters
+
+   1. Test case: `find r/customer`<br>
+      Expected: No filtering occurs. The status message explains that the relationship must be `Client` or `Prospect`.
+
+   1. Other incorrect commands to try: `find r/`, `find r/client r/prospect`, `find Alex r/client`.<br>
+      Expected: No filtering occurs. The status message shows the relevant error details.
 
 ### Saving data
 
