@@ -11,6 +11,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.commands.FindCommand;
+import seedu.address.model.person.NameAndRelationshipMatchesPredicate;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Relationship;
 import seedu.address.model.person.RelationshipMatchesPredicate;
@@ -52,6 +53,7 @@ public class FindCommandParserTest {
     @Test
     public void parse_invalidRelationship_throwsParseException() {
         assertParseFailure(parser, " r/customer", Relationship.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "Alice r/customer", Relationship.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, " r/", Relationship.MESSAGE_CONSTRAINTS);
     }
 
@@ -62,9 +64,12 @@ public class FindCommandParserTest {
     }
 
     @Test
-    public void parse_nameAndRelationship_throwsParseException() {
-        assertParseFailure(parser, "Alice r/client",
-                String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE));
+    public void parse_nameAndRelationship_returnsFindCommand() {
+        FindCommand expectedFindCommand = new FindCommand(
+                new NameAndRelationshipMatchesPredicate(List.of("Alice", "Bob"), Relationship.CLIENT));
+
+        assertParseSuccess(parser, "Alice Bob r/client", expectedFindCommand);
+        assertParseSuccess(parser, " \n Alice \t Bob  r/CLIENT ", expectedFindCommand);
     }
 
 }
