@@ -15,6 +15,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.geometry.Bounds;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
@@ -37,6 +39,43 @@ public class PersonCardTest {
         Platform.startup(() -> started.complete(null));
         started.get(10, TimeUnit.SECONDS);
         Platform.setImplicitExit(false);
+    }
+
+    @Test
+    public void financialInformation_hiddenWhenAbsent() throws Exception {
+        CompletableFuture<Void> checked = new CompletableFuture<>();
+        Platform.runLater(() -> {
+            try {
+                Region card = new PersonCard(new PersonBuilder().build(), 1).getRoot();
+                for (String field : new String[] {"financialNeed", "priority", "areaOfInterest"}) {
+                    Label label = (Label) card.lookup("#" + field);
+                    assertFalse(label.isVisible());
+                    assertFalse(label.isManaged());
+                }
+                checked.complete(null);
+            } catch (Throwable error) {
+                checked.completeExceptionally(error);
+            }
+        });
+        checked.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void financialInformation_longValuesWrap() throws Exception {
+        CompletableFuture<Void> checked = new CompletableFuture<>();
+        Platform.runLater(() -> {
+            try {
+                String longValue = "Retirement planning ".repeat(10).strip();
+                // Exercise both word wrapping and a maximum-length value without spaces.
+                for (String value : new String[] {longValue, "A".repeat(200)}) {
+                    assertFinancialInformationWraps(layoutFinancialCards(value), value);
+                }
+                checked.complete(null);
+            } catch (Throwable error) {
+                checked.completeExceptionally(error);
+            }
+        });
+        checked.get(10, TimeUnit.SECONDS);
     }
 
     @Test
@@ -142,6 +181,57 @@ public class PersonCardTest {
             }
         });
         checked.get(10, TimeUnit.SECONDS);
+    }
+
+    private ListView<?> layoutFinancialCards(String value) {
+        PersonListPanel panel = new PersonListPanel(FXCollections.observableArrayList(
+                new PersonBuilder().withFinancialNeed("Short").withPriority("Short")
+                        .withAreaOfInterest("Short").build(),
+                new PersonBuilder().withFinancialNeed(value).withPriority(value)
+                        .withAreaOfInterest(value).build()));
+        StackPane root = new StackPane(panel.getRoot());
+        Scene scene = new Scene(root, 300, 600);
+        scene.getStylesheets().add(PersonCardTest.class.getResource("/view/DarkTheme.css")
+                .toExternalForm());
+        root.applyCss();
+        root.layout();
+        ListView<?> list = (ListView<?>) root.lookup("#personListView");
+        return list;
+    }
+
+    private void assertFinancialInformationWraps(ListView<?> list, String value) {
+        ListCell<?> shortCell = displayedCell(list, 0);
+        ListCell<?> longCell = displayedCell(list, 1);
+        Region shortCard = (Region) shortCell.getGraphic();
+        Region card = (Region) longCell.getGraphic();
+        assertEquals(shortCard.getWidth(), card.getWidth(), 1,
+                "Both cards must be compared at the same available width");
+        assertTrue(card.getWidth() <= list.getWidth());
+        assertTrue(card.getHeight() > shortCard.getHeight(),
+                "Long financial information must increase the laid-out card height");
+        assertTrue(longCell.getHeight() > shortCell.getHeight(),
+                "The list cell must grow to accommodate the taller card");
+        Bounds cardInCell = longCell.sceneToLocal(card.localToScene(card.getBoundsInLocal()));
+        assertTrue(cardInCell.getMaxY() <= longCell.getHeight() + 1,
+                "The card must fit vertically inside its list cell");
+        for (String field : new String[] {"financialNeed", "priority", "areaOfInterest"}) {
+            Label label = (Label) card.lookup("#" + field);
+            Label shortLabel = (Label) shortCard.lookup("#" + field);
+            assertTrue(label.isVisible());
+            assertTrue(label.isManaged());
+            assertTrue(label.isWrapText());
+            assertTrue(label.getText().endsWith(value));
+            assertEquals(shortLabel.getWidth(), label.getWidth(), 1);
+            assertTrue(label.getHeight() > shortLabel.getHeight(),
+                    field + " must wrap to more lines than its short-value control");
+            Bounds labelInCard = card.sceneToLocal(label.localToScene(label.getBoundsInLocal()));
+            assertTrue(labelInCard.getMinX() >= -1);
+            assertTrue(labelInCard.getMaxX() <= card.getWidth() + 1,
+                    field + " must stay within the card width");
+            assertTrue(labelInCard.getMinY() >= -1);
+            assertTrue(labelInCard.getMaxY() <= card.getHeight() + 1,
+                    field + " must fit vertically inside the card");
+        }
     }
 
     private ListCell<?> displayedCell(ListView<?> list, int index) {
