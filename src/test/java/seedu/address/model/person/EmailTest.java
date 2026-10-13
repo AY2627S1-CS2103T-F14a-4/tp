@@ -50,6 +50,7 @@ public class EmailTest {
         assertFalse(Email.isValidEmail("peterjack@example..com")); // consecutive periods
         assertFalse(Email.isValidEmail("peterjack@-example.com")); // domain name starts with a hyphen
         assertFalse(Email.isValidEmail("peterjack@example.com-")); // domain name ends with a hyphen
+        assertFalse(Email.isValidEmail("peterjack@localhost")); // domain name has no dot
         assertFalse(Email.isValidEmail("a@")); // fewer than 3 characters
         assertFalse(Email.isValidEmail("a".repeat(255) + "@b")); // more than 254 characters
 
@@ -59,9 +60,8 @@ public class EmailTest {
         assertTrue(Email.isValidEmail("PeterJack+1190@example.com")); // '+' symbol in local part
         assertTrue(Email.isValidEmail("PeterJack-1190@example.com")); // hyphen in local part
         assertTrue(Email.isValidEmail("Peter!Jack@example.com")); // common local-part character
-        assertTrue(Email.isValidEmail("a@bc")); // minimal
-        assertTrue(Email.isValidEmail("test@localhost")); // alphabets only
-        assertTrue(Email.isValidEmail("123@145")); // numeric local part and domain name
+        assertTrue(Email.isValidEmail("a@b.c")); // minimal
+        assertTrue(Email.isValidEmail("123@145.678")); // numeric local part and domain name
         assertTrue(Email.isValidEmail("a1+be.d@example1.com")); // mixture of alphanumeric and special characters
         assertTrue(Email.isValidEmail("peter_jack@very-very-very-long-example.com")); // long domain name
         assertTrue(Email.isValidEmail("if.you.dream.it_you.can.do.it@example.com")); // long local part
@@ -76,6 +76,7 @@ public class EmailTest {
         assertEquals(Email.MESSAGE_AT_SIGN, Email.getValidationError("abc.example.com"));
         assertEquals(Email.MESSAGE_LOCAL_PART_DOTS, Email.getValidationError("a..b@example.com"));
         assertEquals(Email.MESSAGE_LOCAL_PART_CHARACTERS, Email.getValidationError("a,b@example.com"));
+        assertEquals(Email.MESSAGE_DOMAIN_DOT, Email.getValidationError("a@localhost"));
         assertEquals(Email.MESSAGE_DOMAIN_EMPTY_LABEL, Email.getValidationError("a@example..com"));
         assertEquals(Email.MESSAGE_DOMAIN_LABEL, Email.getValidationError("a@-example.com"));
     }

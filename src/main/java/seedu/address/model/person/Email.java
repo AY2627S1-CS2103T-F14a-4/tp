@@ -24,6 +24,8 @@ public class Email {
             "The part before @ contains unsupported characters.";
     public static final String MESSAGE_DOMAIN_EMPTY_LABEL =
             "The domain cannot start, end, or contain consecutive dots.";
+    public static final String MESSAGE_DOMAIN_DOT =
+            "The domain must contain at least one dot.";
     public static final String MESSAGE_DOMAIN_LABEL =
             "Each domain label must use letters, digits, or hyphens, and cannot start or end with a hyphen.";
 
@@ -89,6 +91,9 @@ public class Email {
         }
         if (!LOCAL_PART_PATTERN.matcher(localPart).matches()) {
             return MESSAGE_LOCAL_PART_CHARACTERS;
+        }
+        if (!domain.contains(".")) {
+            return MESSAGE_DOMAIN_DOT;
         }
 
         String[] domainLabels = domain.split("\\.", -1);

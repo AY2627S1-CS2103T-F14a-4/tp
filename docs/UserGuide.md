@@ -87,8 +87,9 @@ Format: `add r/RELATIONSHIP n/NAME e/EMAIL p/PHONE_NUMBER`
 * `RELATIONSHIP` must be either `Client` or `Prospect`.
 * `NAME` must contain 1–100 characters after leading and trailing whitespace is removed. It may include letters,
   spaces, hyphens (`-`), apostrophes (`'`), and the relationship markers `s/o`, `d/o`, or `w/o`.
-* `EMAIL` must contain one `@` and no whitespace. Its local part may use common characters such as `.`, `_`, `+`,
-  and `-`; each domain label may use letters, digits, and hyphens.
+* `EMAIL` must contain one `@`, no whitespace, text in both the local and domain parts, and at least one dot in the
+  domain. Its local part may use common characters such as `.`, `_`, `+`, and `-`; each domain label may use
+  letters, digits, and hyphens.
 * Parameters may be entered in any order.
 </box>
 
