@@ -51,7 +51,8 @@ public class EmailTest {
         assertFalse(Email.isValidEmail("peterjack@-example.com")); // domain name starts with a hyphen
         assertFalse(Email.isValidEmail("peterjack@example.com-")); // domain name ends with a hyphen
         assertFalse(Email.isValidEmail("peterjack@localhost")); // domain name has no dot
-        assertFalse(Email.isValidEmail("a@")); // fewer than 3 characters
+        assertFalse(Email.isValidEmail("a@")); // fewer than 5 characters
+        assertFalse(Email.isValidEmail("a@b")); // fewer than 5 characters
         assertFalse(Email.isValidEmail("a".repeat(255) + "@b")); // more than 254 characters
 
         // valid email
@@ -71,7 +72,8 @@ public class EmailTest {
     @Test
     public void getValidationError() {
         assertEquals(Email.MESSAGE_BLANK, Email.getValidationError(" "));
-        assertEquals(Email.MESSAGE_CONTROL_CHARACTERS, Email.getValidationError("a@b\n"));
+        assertEquals(Email.MESSAGE_LENGTH, Email.getValidationError("a@b"));
+        assertEquals(Email.MESSAGE_CONTROL_CHARACTERS, Email.getValidationError("ab@c\n"));
         assertEquals(Email.MESSAGE_WHITESPACE, Email.getValidationError("a b@example.com"));
         assertEquals(Email.MESSAGE_AT_SIGN, Email.getValidationError("abc.example.com"));
         assertEquals(Email.MESSAGE_LOCAL_PART_DOTS, Email.getValidationError("a..b@example.com"));
@@ -83,10 +85,10 @@ public class EmailTest {
 
     @Test
     public void equals() {
-        Email email = new Email("valid@email");
+        Email email = new Email("valid@email.com");
 
         // same values -> returns true
-        assertTrue(email.equals(new Email("valid@email")));
+        assertTrue(email.equals(new Email("valid@email.com")));
 
         // same object -> returns true
         assertTrue(email.equals(email));
@@ -98,6 +100,6 @@ public class EmailTest {
         assertFalse(email.equals(5.0f));
 
         // different values -> returns false
-        assertFalse(email.equals(new Email("other.valid@email")));
+        assertFalse(email.equals(new Email("other.valid@email.com")));
     }
 }

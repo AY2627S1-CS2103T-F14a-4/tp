@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 public class Email {
 
     public static final String MESSAGE_BLANK = "Email cannot be blank.";
-    public static final String MESSAGE_LENGTH = "Email must contain between 3 and 254 characters.";
+    public static final String MESSAGE_LENGTH = "Email must contain between 5 and 254 characters.";
     public static final String MESSAGE_CONTROL_CHARACTERS =
             "Email cannot contain line breaks or other control characters.";
     public static final String MESSAGE_WHITESPACE = "Email cannot contain spaces or other whitespace characters.";
@@ -29,7 +29,7 @@ public class Email {
     public static final String MESSAGE_DOMAIN_LABEL =
             "Each domain label must use letters, digits, or hyphens, and cannot start or end with a hyphen.";
 
-    private static final int MIN_EMAIL_LENGTH = 3;
+    private static final int MIN_EMAIL_LENGTH = 5;
     private static final int MAX_EMAIL_LENGTH = 254;
     private static final Pattern LOCAL_PART_PATTERN =
             Pattern.compile("[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+");
