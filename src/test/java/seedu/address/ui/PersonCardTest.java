@@ -40,6 +40,68 @@ public class PersonCardTest {
     }
 
     @Test
+    public void financialInformation_hiddenWhenAbsent() throws Exception {
+        CompletableFuture<Void> checked = new CompletableFuture<>();
+        Platform.runLater(() -> {
+            try {
+                Region card = new PersonCard(new PersonBuilder().build(), 1).getRoot();
+                for (String field : new String[] {"financialNeed", "priority", "areaOfInterest"}) {
+                    Label label = (Label) card.lookup("#" + field);
+                    assertFalse(label.isVisible());
+                    assertFalse(label.isManaged());
+                }
+                checked.complete(null);
+            } catch (Throwable error) {
+                checked.completeExceptionally(error);
+            }
+        });
+        checked.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void financialInformation_longValuesWrapWithinCardAndIncreaseHeight() throws Exception {
+        CompletableFuture<Void> checked = new CompletableFuture<>();
+        Platform.runLater(() -> {
+            try {
+                String longValue = "Retirement planning ".repeat(10).strip();
+                // Exercise both word wrapping and a maximum-length value without spaces.
+                for (String value : new String[] {longValue, "A".repeat(200)}) {
+                    Region card = new PersonCard(new PersonBuilder().withFinancialNeed(value)
+                            .withPriority(value).withAreaOfInterest(value).build(), 1).getRoot();
+                    StackPane root = new StackPane(card);
+                    Scene scene = new Scene(root, 600, 600);
+                    scene.getStylesheets().add(PersonCardTest.class.getResource("/view/DarkTheme.css")
+                            .toExternalForm());
+                    root.applyCss();
+                    double wideHeight = card.prefHeight(600);
+                    double narrowHeight = card.prefHeight(300);
+                    assertTrue(narrowHeight > wideHeight);
+                    card.resize(300, narrowHeight);
+                    card.layout();
+                    assertEquals(narrowHeight, card.prefHeight(300), 1,
+                            "Wrapped height must be correct before the first layout");
+                    for (String field : new String[] {"financialNeed", "priority", "areaOfInterest"}) {
+                        Label label = (Label) card.lookup("#" + field);
+                        assertTrue(label.isVisible());
+                        assertTrue(label.isManaged());
+                        assertTrue(label.isWrapText());
+                        assertTrue(label.getText().endsWith(value));
+                        assertTrue(label.getWidth() <= 300);
+                        assertTrue(label.getHeight() > label.prefHeight(600));
+                        assertEquals(label.prefHeight(label.getWidth()), label.getHeight(), 1);
+                        assertTrue(card.sceneToLocal(label.localToScene(label.getBoundsInLocal()))
+                                .getMaxX() <= card.getWidth());
+                    }
+                }
+                checked.complete(null);
+            } catch (Throwable error) {
+                checked.completeExceptionally(error);
+            }
+        });
+        checked.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
     public void interactionNotes_hiddenWhenEmpty_visibleAndWrappedWhenPresent() throws Exception {
         CompletableFuture<Void> checked = new CompletableFuture<>();
         Platform.runLater(() -> {
