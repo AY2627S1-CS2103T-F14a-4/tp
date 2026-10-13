@@ -435,137 +435,165 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1. User requests to find a client or prospect by name.
-2. ClientBook displays matching records.
-3. User updates the person’s relationship stage, preferences, or contact details.
-4. ClientBook saves the updated relationship context and displays a confirmation message.
+1.  User requests to find a client or prospect by name.
+2.  ClientBook displays matching records.
+3.  User updates the person’s relationship stage, preferences, or contact details.
+4.  ClientBook saves the updated relationship context and displays a confirmation message.
 
-   Use case ends.
+    Use case ends.
 
 **Extensions**
 
 * 2a. No matching record is found.
 
-  * 2a1. ClientBook shows a message that no matching records exist.
+    * 2a1. ClientBook shows a message that no matching records exist.
 
-    Use case ends.
+      Use case ends.
 
 * 3a. The updated details are invalid.
 
-  * 3a1. ClientBook shows an error message.
+    * 3a1. ClientBook shows an error message.
 
-    Use case ends.
+      Use case ends.
 
 **Use case: Record a follow-up after a client interaction**
 
 **MSS**
 
-1. User requests to find a client or prospect.
-2. ClientBook displays the matching record.
-3. User records the outcome of the interaction.
-4. User records the next action and its due date.
-5. ClientBook saves the interaction details and follow-up.
+1.  User requests to find a client or prospect.
+2.  ClientBook displays the matching record.
+3.  User records the outcome of the interaction.
+4.  User records the next action and its due date.
+5.  ClientBook saves the interaction details and follow-up.
 
     Use case ends.
 
 **Extensions**
 
 * 2a. No matching client or prospect is found.
-  * 2a1. ClientBook shows a message that no matching record exists.
-  * Use case ends.
+
+    * 2a1. ClientBook shows a message that no matching record exists.
+
+      Use case ends.
 
 * 4a. The supplied due date is invalid.
-  * 4a1. ClientBook shows an error message.
-  * Use case resumes at step 4.
+
+    * 4a1. ClientBook shows an error message.
+
+      Use case resumes at step 4.
 
 **Use case: Add an important date**
 
 **MSS**
 
-1. User requests to add an important date to an existing client or prospect.
-2. ClientBook identifies the specified client or prospect.
-3. User provides the important date and its description.
-4. ClientBook validates the supplied information.
-5. ClientBook adds the important date to the person's record and displays a confirmation message.
+1.  User requests to add an important date to an existing client or prospect.
+2.  ClientBook identifies the specified client or prospect.
+3.  User provides the important date and its description.
+4.  ClientBook validates the supplied information.
+5.  ClientBook adds the important date to the person's record and displays a confirmation message.
 
-   Use case ends.
+    Use case ends.
 
 **Extensions**
 
 * 2a. The specified client or prospect does not exist.
+
     * 2a1. ClientBook shows an error message.
-    * Use case ends.
+
+      Use case ends.
 
 * 3a. The required information is not supplied.
+
     * 3a1. ClientBook shows an error message.
-    * Use case ends.
+
+      Use case ends.
 
 * 4a. The supplied date is invalid.
+
     * 4a1. ClientBook shows an error message.
-    * Use case resumes at step 3.
+
+      Use case resumes at step 3.
 
 **Use case: Convert a prospect to a client**
 
 **MSS**
 
-1. User issues a search command with name keywords to locate the target prospect.
-2. ClientBook identifies the specified prospect.
-3. User issues a conversion command specifying the target prospect's index number.
-4. ClientBook verifies the contact is currently classified as a prospect and prompts the user to input mandatory client-specific onboarding details (e.g., billing address and tax ID).
-5. User inputs the required onboarding details.
-6. ClientBook validates the new information, changes the contact's classification from "prospect" to "client", saves the data, and displays a confirmation message.
+1.  User issues a search command with name keywords to locate the target prospect.
+2.  ClientBook identifies the specified prospect.
+3.  User issues a conversion command specifying the target prospect's index number.
+4.  ClientBook verifies the contact is currently classified as a prospect and prompts the user to input mandatory client-specific onboarding details (e.g., billing address and tax ID).
+5.  User inputs the required onboarding details.
+6.  ClientBook validates the new information, changes the contact's classification from "prospect" to "client", saves the data, and displays a confirmation message.
 
-   Use case ends.
+    Use case ends.
 
 **Extensions**
 
 * 1a. The specified client or prospect does not exist.
+
     * 1a1. ClientBook shows an error message.
-    * Use case ends.
+
+      Use case ends.
 
 * 3a. The user provides an invalid index number (e.g., out of bounds or non-numeric).
+
     * 3a1. ClientBook displays an error message stating the index is invalid.
-    * Use case resumes at step 3.
+
+      Use case resumes at step 3.
 
 * 4a. The selected contact is already classified as a client.
+
     * 4a1. ClientBook displays an error message stating the contact cannot be converted because they are already a client.
-    * Use case ends.
+
+      Use case ends.
 
 * 5a. The user provides invalid formatting for the onboarding details (e.g., an alphanumeric string for a strictly numeric tax ID).
+
     * 5a1. ClientBook displays an error message detailing the specific parameter constraint and re-prompts the user for the details.
-    * Use case resumes at step 5.
+
+      Use case resumes at step 5.
 
 * 5b. The user inputs an abort command.
-  * 5b1. ClientBook cancels the conversion process and leaves the contact as a prospect.
-  * Use case ends.
+
+    * 5b1. ClientBook cancels the conversion process and leaves the contact as a prospect.
+
+      Use case ends.
 
 **Use case: Find clients or prospects by name or relationship**
 
 **MSS**
 
-1. User requests to find clients or prospects using one or more name keywords, or a client/prospect relationship.
-2. ClientBook searches the stored records using the supplied criterion.
-3. ClientBook displays all matching clients and prospects.
+1.  User requests to find clients or prospects using one or more name keywords, or a client/prospect relationship.
+2.  ClientBook searches the stored records using the supplied criterion.
+3.  ClientBook displays all matching clients and prospects.
 
-   Use case ends.
+    Use case ends.
 
 **Extensions**
 
 * 1a. The user does not provide a search criterion.
-  * 1a1. ClientBook displays an error message explaining the valid command formats.
-  * Use case resumes at step 1.
+
+    * 1a1. ClientBook displays an error message explaining the valid command formats.
+
+      Use case resumes at step 1.
 
 * 1b. The user provides an unsupported relationship value.
-  * 1b1. ClientBook displays an error message explaining the valid relationship values.
-  * Use case resumes at step 1.
+
+    * 1b1. ClientBook displays an error message explaining the valid relationship values.
+
+      Use case resumes at step 1.
 
 * 1c. The user combines name keywords with a relationship filter.
-  * 1c1. ClientBook displays an error message explaining the valid command formats.
-  * Use case resumes at step 1.
+
+    * 1c1. ClientBook displays an error message explaining the valid command formats.
+
+      Use case resumes at step 1.
 
 * 3a. No record matches the supplied criterion.
-  * 3a1. ClientBook informs the user that no matching record was found.
-  * Use case ends.
+
+    * 3a1. ClientBook informs the user that no matching record was found.
+
+      Use case ends.
 
 ### Non-Functional Requirements
 
@@ -588,6 +616,12 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 17. ClientBook should store its data in a human-readable JSON format to support inspection and manual backup.
 18. The codebase should comply with the project coding standard and pass the configured automated checks before changes are merged.
 19. Unexpected errors should be logged with sufficient diagnostic information for developers while avoiding unnecessary exposure of client information.
+20. ClientBook should support a single user only; its data file should not be accessed concurrently or shared during normal operation.
+21. ClientBook should read and write files only within its home folder (the folder containing the JAR file) and its subfolders,
+    and should not change OS-level configuration settings.
+22. The graphical user interface should work well at resolutions of 1920x1080 and above at 100% and 125% screen scaling, and
+    should remain usable at resolutions of 1280x720 and above at 150% screen scaling.
+23. The distributable JAR file should not exceed 100 MB.
 
 ### Glossary
 
