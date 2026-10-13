@@ -1,11 +1,13 @@
 package seedu.address.testutil;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import seedu.address.model.person.AreaOfInterest;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.FinancialNeed;
+import seedu.address.model.person.InteractionNote;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
@@ -31,6 +33,7 @@ public class PersonBuilder {
     private FinancialNeed financialNeed;
     private Priority priority;
     private AreaOfInterest areaOfInterest;
+    private List<InteractionNote> interactionNotes = List.of();
 
     /**
      * Creates a {@code PersonBuilder} with the default details.
@@ -54,6 +57,7 @@ public class PersonBuilder {
         financialNeed = personToCopy.getFinancialNeed().orElse(null);
         priority = personToCopy.getPriority().orElse(null);
         areaOfInterest = personToCopy.getAreaOfInterest().orElse(null);
+        interactionNotes = personToCopy.getInteractionNotes();
     }
 
     /**
@@ -120,8 +124,16 @@ public class PersonBuilder {
         return this;
     }
 
+    /** Builds the person with all supplied information. */
     public Person build() {
-        return new Person(name, phone, email, tags, relationship, financialNeed, priority, areaOfInterest);
+        return new Person(name, phone, email, tags, relationship, financialNeed, priority, areaOfInterest,
+                interactionNotes);
+    }
+
+    /** Sets the interaction history. */
+    public PersonBuilder withInteractionNotes(InteractionNote... notes) {
+        interactionNotes = List.of(notes);
+        return this;
     }
 
 }

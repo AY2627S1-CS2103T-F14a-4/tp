@@ -174,6 +174,51 @@ Name searches use `NameContainsKeywordsPredicate`, which matches when at least o
 person's name. When both criteria are supplied, the parser creates a `NameAndRelationshipMatchesPredicate`. This
 predicate applies `OR` between the name keywords, then applies `AND` between the name result and the relationship
 filter. For example, `find Alex David r/client` returns clients whose names contain either `Alex` or `David`.
+Name searches continue to use `NameContainsKeywordsPredicate`. The two search forms are deliberately kept separate:
+a command cannot combine name keywords with an `r/` filter.
+### Dated interaction notes (US14)
+
+`note INDEX d/yyyy-MM-dd n/NOTE` appends an interaction note to the person at the index in the currently displayed
+list. It works for clients and prospects, preserves the current filter, and does not replace earlier entries.
+
+#### Model and command flow
+
+1. `AddressBookParser` routes the command to `NoteCommandParser`. The parser reads the index and date before `n/`,
+   then treats the entire remaining body as text. URLs, slashes and further prefix-like strings remain note content.
+2. `InteractionNote` stores an immutable `LocalDate` and nonblank text. Date parsing checks the `yyyy-MM-dd` shape
+   and uses strict ISO calendar validation. Past dates are allowed. Surrounding text whitespace is stripped;
+   internal content and case are preserved without a character whitelist or maximum length.
+3. `NoteCommand` checks the displayed index, copies the selected person's history, appends the new entry and calls
+   `Model#setPerson` with a replacement `Person`. Other fields remain unchanged. Same-date and identical entries
+   are retained in insertion order.
+4. The observable list updates the corresponding `PersonListViewCell`. `LogicManager` saves the address book through
+   the existing storage pipeline and returns `Added interaction note for NAME.` on success.
+
+`Person#getInteractionNotes()` exposes an immutable defensive copy. History participates in `Person` equality and
+hashing, but not duplicate identity detection. Both `EditCommand` and `InfoCommand` carry the existing history into
+their replacement persons. `PersonBuilder` also preserves it when copying a person.
+
+#### Persistence and display
+
+`JsonAdaptedPerson` stores an `interactionNotes` array of `JsonAdaptedInteractionNote` objects, each containing
+`date` and `text`. Missing or null arrays in older JSON files become empty histories. Loading validates stored
+dates and note text; serialization preserves entry order and duplicates.
+
+`PersonCard` displays dated, wrapped labels in the existing card's interaction-note container. Empty histories are
+hidden and unmanaged. Labels have a zero minimum/preferred width and an unbounded maximum width so the parent
+provides their available width during measurement. Their preferred width must not be bound to the card's actual
+width: a newly replaced card has not yet been laid out, and that binding causes an excessive first wrapped-height
+measurement. No fixed card height or forced list refresh is needed.
+
+#### Validation and scope
+
+The parser distinguishes missing index, date and note prefix; malformed calendar dates and blank text have specific
+errors. Execution rejects indices outside the currently displayed list before changing the model.
+
+This feature provides adding and displaying dated notes only. Chronological sorting, note correction/removal,
+structured interaction outcomes, follow-ups and note search remain separate user stories.
+
+Automated and manual regression checks are described in the [Testing guide](Testing.md#us14-interaction-note-regression-checks).
 
 ### \[Proposed\] Undo/redo feature
 
@@ -394,109 +439,129 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1. User requests to find a client or prospect by name.
-2. ClientBook displays matching records.
-3. User updates the person’s relationship stage, preferences, or contact details.
-4. ClientBook saves the updated relationship context and displays a confirmation message.
+1.  User requests to find a client or prospect by name.
+2.  ClientBook displays matching records.
+3.  User updates the person’s relationship stage, preferences, or contact details.
+4.  ClientBook saves the updated relationship context and displays a confirmation message.
 
-   Use case ends.
+    Use case ends.
 
 **Extensions**
 
 * 2a. No matching record is found.
 
-  * 2a1. ClientBook shows a message that no matching records exist.
+    * 2a1. ClientBook shows a message that no matching records exist.
 
-    Use case ends.
+      Use case ends.
 
 * 3a. The updated details are invalid.
 
-  * 3a1. ClientBook shows an error message.
+    * 3a1. ClientBook shows an error message.
 
-    Use case ends.
+      Use case ends.
 
 **Use case: Record a follow-up after a client interaction**
 
 **MSS**
 
-1. User requests to find a client or prospect.
-2. ClientBook displays the matching record.
-3. User records the outcome of the interaction.
-4. User records the next action and its due date.
-5. ClientBook saves the interaction details and follow-up.
+1.  User requests to find a client or prospect.
+2.  ClientBook displays the matching record.
+3.  User records the outcome of the interaction.
+4.  User records the next action and its due date.
+5.  ClientBook saves the interaction details and follow-up.
 
     Use case ends.
 
 **Extensions**
 
 * 2a. No matching client or prospect is found.
-  * 2a1. ClientBook shows a message that no matching record exists.
-  * Use case ends.
+
+    * 2a1. ClientBook shows a message that no matching record exists.
+
+      Use case ends.
 
 * 4a. The supplied due date is invalid.
-  * 4a1. ClientBook shows an error message.
-  * Use case resumes at step 4.
+
+    * 4a1. ClientBook shows an error message.
+
+      Use case resumes at step 4.
 
 **Use case: Add an important date**
 
 **MSS**
 
-1. User requests to add an important date to an existing client or prospect.
-2. ClientBook identifies the specified client or prospect.
-3. User provides the important date and its description.
-4. ClientBook validates the supplied information.
-5. ClientBook adds the important date to the person's record and displays a confirmation message.
+1.  User requests to add an important date to an existing client or prospect.
+2.  ClientBook identifies the specified client or prospect.
+3.  User provides the important date and its description.
+4.  ClientBook validates the supplied information.
+5.  ClientBook adds the important date to the person's record and displays a confirmation message.
 
-   Use case ends.
+    Use case ends.
 
 **Extensions**
 
 * 2a. The specified client or prospect does not exist.
+
     * 2a1. ClientBook shows an error message.
-    * Use case ends.
+
+      Use case ends.
 
 * 3a. The required information is not supplied.
+
     * 3a1. ClientBook shows an error message.
-    * Use case ends.
+
+      Use case ends.
 
 * 4a. The supplied date is invalid.
+
     * 4a1. ClientBook shows an error message.
-    * Use case resumes at step 3.
+
+      Use case resumes at step 3.
 
 **Use case: Convert a prospect to a client**
 
 **MSS**
 
-1. User issues a search command with name keywords to locate the target prospect.
-2. ClientBook identifies the specified prospect.
-3. User issues a conversion command specifying the target prospect's index number.
-4. ClientBook verifies the contact is currently classified as a prospect and prompts the user to input mandatory client-specific onboarding details (e.g., billing address and tax ID).
-5. User inputs the required onboarding details.
-6. ClientBook validates the new information, changes the contact's classification from "prospect" to "client", saves the data, and displays a confirmation message.
+1.  User issues a search command with name keywords to locate the target prospect.
+2.  ClientBook identifies the specified prospect.
+3.  User issues a conversion command specifying the target prospect's index number.
+4.  ClientBook verifies the contact is currently classified as a prospect and prompts the user to input mandatory client-specific onboarding details (e.g., billing address and tax ID).
+5.  User inputs the required onboarding details.
+6.  ClientBook validates the new information, changes the contact's classification from "prospect" to "client", saves the data, and displays a confirmation message.
 
-   Use case ends.
+    Use case ends.
 
 **Extensions**
 
 * 1a. The specified client or prospect does not exist.
+
     * 1a1. ClientBook shows an error message.
-    * Use case ends.
+
+      Use case ends.
 
 * 3a. The user provides an invalid index number (e.g., out of bounds or non-numeric).
+
     * 3a1. ClientBook displays an error message stating the index is invalid.
-    * Use case resumes at step 3.
+
+      Use case resumes at step 3.
 
 * 4a. The selected contact is already classified as a client.
+
     * 4a1. ClientBook displays an error message stating the contact cannot be converted because they are already a client.
-    * Use case ends.
+
+      Use case ends.
 
 * 5a. The user provides invalid formatting for the onboarding details (e.g., an alphanumeric string for a strictly numeric tax ID).
+
     * 5a1. ClientBook displays an error message detailing the specific parameter constraint and re-prompts the user for the details.
-    * Use case resumes at step 5.
+
+      Use case resumes at step 5.
 
 * 5b. The user inputs an abort command.
-  * 5b1. ClientBook cancels the conversion process and leaves the contact as a prospect.
-  * Use case ends.
+
+    * 5b1. ClientBook cancels the conversion process and leaves the contact as a prospect.
+
+      Use case ends.
 
 **Use case: Find clients or prospects by name or relationship**
 
@@ -506,21 +571,27 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 2. ClientBook searches the stored records using the supplied criteria.
 3. ClientBook displays all matching clients and prospects.
 
-   Use case ends.
+    Use case ends.
 
 **Extensions**
 
 * 1a. The user does not provide a search criterion.
-  * 1a1. ClientBook displays an error message explaining the valid command formats.
-  * Use case resumes at step 1.
+
+    * 1a1. ClientBook displays an error message explaining the valid command formats.
+
+      Use case resumes at step 1.
 
 * 1b. The user provides an unsupported relationship value.
-  * 1b1. ClientBook displays an error message explaining the valid relationship values.
-  * Use case resumes at step 1.
+
+    * 1b1. ClientBook displays an error message explaining the valid relationship values.
+
+      Use case resumes at step 1.
 
 * 3a. No record matches the supplied criterion.
-  * 3a1. ClientBook informs the user that no matching record was found.
-  * Use case ends.
+
+    * 3a1. ClientBook informs the user that no matching record was found.
+
+      Use case ends.
 
 ### Non-Functional Requirements
 
@@ -543,6 +614,12 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 17. ClientBook should store its data in a human-readable JSON format to support inspection and manual backup.
 18. The codebase should comply with the project coding standard and pass the configured automated checks before changes are merged.
 19. Unexpected errors should be logged with sufficient diagnostic information for developers while avoiding unnecessary exposure of client information.
+20. ClientBook should support a single user only; its data file should not be accessed concurrently or shared during normal operation.
+21. ClientBook should read and write files only within its home folder (the folder containing the JAR file) and its subfolders,
+    and should not change OS-level configuration settings.
+22. The graphical user interface should work well at resolutions of 1920x1080 and above at 100% and 125% screen scaling, and
+    should remain usable at resolutions of 1280x720 and above at 150% screen scaling.
+23. The distributable JAR file should not exceed 100 MB.
 
 ### Glossary
 

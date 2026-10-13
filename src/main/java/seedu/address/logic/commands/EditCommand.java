@@ -99,7 +99,7 @@ public class EditCommand extends Command {
 
         return new Person(updatedName, updatedPhone, updatedEmail, updatedTags, personToEdit.getRelationship(),
                 personToEdit.getFinancialNeed().orElse(null), personToEdit.getPriority().orElse(null),
-                personToEdit.getAreaOfInterest().orElse(null));
+                personToEdit.getAreaOfInterest().orElse(null), personToEdit.getInteractionNotes());
     }
 
     @Override

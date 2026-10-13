@@ -87,8 +87,9 @@ Format: `add r/RELATIONSHIP n/NAME e/EMAIL p/PHONE_NUMBER`
 * `RELATIONSHIP` must be either `Client` or `Prospect`.
 * `NAME` must contain 1–100 characters after leading and trailing whitespace is removed. It may include letters,
   spaces, hyphens (`-`), apostrophes (`'`), and the relationship markers `s/o`, `d/o`, or `w/o`.
-* `EMAIL` must contain one `@` and no whitespace. Its local part may use common characters such as `.`, `_`, `+`,
-  and `-`; each domain label may use letters, digits, and hyphens.
+* `EMAIL` must contain one `@`, no whitespace, text in both the local and domain parts, and at least one dot in the
+  domain. Its local part may use common characters such as `.`, `_`, `+`, and `-`; each domain label may use
+  letters, digits, and hyphens.
 * Parameters may be entered in any order.
 </box>
 
@@ -142,7 +143,40 @@ Examples:
 * `info 2 /pr protect family income /ai life insurance`
 * `info 1 /ai investment products /fn wealth accumulation /pr preserve capital`
 
-### Locating persons by name and/or relationship: `find`
+### Adding a dated interaction note: `note`
+
+Appends a dated note to a client or prospect. Notes appear on the person's card in the order they were added.
+
+Format: `note INDEX d/DATE n/NOTE`
+
+* `INDEX` refers to the currently displayed list, including search results.
+* `DATE` must be a real calendar date in `yyyy-MM-dd` format. Past dates are accepted.
+* Put the date before `n/`. Everything after `n/` is note text, including URLs, punctuation and prefix-like text.
+* Note text cannot be blank. Surrounding whitespace is removed; case and internal text are preserved.
+* Adding a note keeps all previous notes. Same-date and identical notes are allowed.
+* Notes are saved automatically and preserved when using `edit` or `info`.
+* Each entry shows its date and text under **Interaction notes:** on the person's card. Long text wraps, and the
+  card grows to fit its contents immediately. Scroll the client list to read longer histories.
+* There is no maximum note length imposed by this command. Enter a note on one command line.
+
+Example: `note 1 d/2026-10-06 n/Discussed retirement planning and agreed to follow up next month.`
+
+Success message: `Added interaction note for PERSON_NAME.`
+
+Examples of other accepted notes:
+
+* `note 1 d/2020-02-29 n/Reviewed the client's long-term goals.` (Backdated entry.)
+* `note 1 d/2026-10-06 n/Shared https://example.com/plans/retirement; discussed option A/B.`
+
+Missing indices, dates or note prefixes produce an error. Dates such as `2026-02-30` are rejected with
+`Interaction date must be a valid date in yyyy-MM-dd format.` Blank note text produces
+`Interaction note cannot be empty.` An index outside the displayed list produces
+`The person index provided is invalid.` These input errors leave the stored records unchanged.
+
+Notes are displayed in insertion order, including backdated entries; they are not sorted by date.
+Editing, deleting and searching interaction notes are not currently supported.
+
+### Locating persons by name or relationship: `find`
 
 Finds persons whose names contain any of the given keywords, filters persons by their relationship, or combines both
 criteria.
@@ -172,19 +206,23 @@ Examples:
 * `find r/Prospect` returns all prospects.
 * `find alex david r/client` returns clients named `Alex Yeoh` or `David Li`.
 
-### Deleting a person: `delete`
+### Deleting a client/prospect: `delete`
 
-Deletes the specified person from the address book.
+Deletes the specified client or prospect from the client list.
 
 Format: `delete INDEX`
 
-* Deletes the person at the specified `INDEX`.
-* The index refers to the index number shown in the displayed person list.
+* Deletes the client/prospect at the specified `INDEX`.
+* The index refers to the index number shown in the displayed list.
 * The index **must be a positive integer** 1, 2, 3, ...
+* Leading and trailing spaces around the index are ignored. Only one index can be given.
+* After deletion, the remaining clients/prospects are shown with updated index numbers.
 
 Examples:
-* `list` followed by `delete 2` deletes the 2nd person in the address book.
-* `find Betsy` followed by `delete 1` deletes the 1st person in the results of the `find` command.
+* `list` followed by `delete 2` deletes the 2nd client/prospect in the list.
+* `find Betsy` followed by `delete 1` deletes the 1st client/prospect in the results of the `find` command.
+
+Expected output: `Client John Doe has been deleted successfully.` (or `Prospect Jane Tan has been deleted successfully.`)
 
 ### Clearing all entries: `clear`
 
@@ -243,5 +281,6 @@ Action     | Format, Examples
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [t/TAG]... `<br> e.g.,`edit 2 n/James Lee e/jameslee@example.com`
 **Find**   | `find KEYWORD [MORE_KEYWORDS] [r/RELATIONSHIP]` or `find r/RELATIONSHIP`<br> e.g., `find James Jake`, `find r/client`, `find James r/client`
 **Info**   | `info INDEX [/fn FINANCIAL_NEED] [/pr PRIORITY] [/ai AREA_OF_INTEREST]`<br> e.g., `info 1 /fn retirement planning`
+**Note**   | `note INDEX d/DATE n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
 **List**   | `list`
 **Help**   | `help`
