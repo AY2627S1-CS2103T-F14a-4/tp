@@ -18,6 +18,8 @@
 * Junhan Liu (`ZachL1113`) used OpenAI ChatGPT/Codex to draft the v1.3 delete integration tests, additional parser
   boundary tests, and the accompanying delete documentation. This assistance covers `DeleteIntegrationTest`,
   the new cases in `DeleteCommandParserTest`, the UG delete section additions, and the DG deletion test instructions.
+  Codex also helped correct the UG product/download references and synchronise UG/DG find instructions with the
+  combined name-and-relationship search already merged in PR #67.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -165,7 +167,7 @@ This section describes some noteworthy details on how certain features are imple
 
 ### Find by relationship
 
-The `find` command supports either name keywords or one relationship filter. `FindCommandParser` tokenizes the
+The `find` command supports name keywords, one relationship filter, or both together. `FindCommandParser` tokenizes the
 `r/` prefix and delegates validation to `ParserUtil#parseRelationship(String)`. The parser accepts only `Client` or
 `Prospect`, with case-insensitive matching provided by `Relationship#fromString(String)`.
 
@@ -740,8 +742,13 @@ real JSON storage. `DeleteCommandParserTest` also covers whitespace, extra argum
    1. Test case: `find r/customer`<br>
       Expected: No filtering occurs. The status message explains that the relationship must be `Client` or `Prospect`.
 
-   1. Other incorrect commands to try: `find r/`, `find r/client r/prospect`, `find Alex r/client`.<br>
+   1. Other incorrect commands to try: `find r/`, `find r/client r/prospect`.<br>
       Expected: No filtering occurs. The status message shows the relevant error details.
+
+1. Combined name and relationship filtering
+
+   1. Test case: `find Alex r/client`.<br>
+      Expected: Only clients whose names contain the full word `Alex` are displayed. Matching is case-insensitive.
 
 ### Saving data
 

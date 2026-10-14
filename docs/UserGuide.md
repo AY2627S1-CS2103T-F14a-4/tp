@@ -4,9 +4,11 @@
   pageNav: 3
 ---
 
-# AB-3 User Guide
+# ClientBook User Guide
 
-AddressBook Level 3 (AB3) is a **desktop application for managing contacts, optimized for use through a Command Line Interface (CLI)** while retaining the benefits of a Graphical User Interface (GUI). If you type quickly, AB3 can help you manage contacts faster than traditional GUI applications.
+ClientBook is a desktop application for financial consultants to manage clients and prospects, recall their
+high-level financial needs, and record dated interactions. It supports typed commands with a graphical interface
+and stores records locally.
 
 <!-- * Table of Contents -->
 <page-nav-print />
@@ -18,7 +20,7 @@ AddressBook Level 3 (AB3) is a **desktop application for managing contacts, opti
 1. Ensure that Java `25` or later is installed on your computer.<br>
    **Mac users:** Ensure you have the precise JDK version prescribed [here](https://se-education.org/guides/tutorials/javaInstallationMac.html).
 
-1. Download the latest `.jar` file from [here](https://github.com/se-edu/addressbook-level3/releases).
+1. Download the latest `.jar` file from the [ClientBook releases](https://github.com/AY2627S1-CS2103T-F14a-4/tp/releases).
 
 1. Copy the file to the folder you want to use as the _home folder_ for your AddressBook.
 
@@ -184,6 +186,7 @@ Formats:
 
 * `find KEYWORD [MORE_KEYWORDS]`
 * `find r/RELATIONSHIP`
+* `find KEYWORD [MORE_KEYWORDS] r/RELATIONSHIP`
 
 * Name keywords and relationship values are case-insensitive; for example, `hans` matches `Hans`, and `client`
   matches `Client`.
@@ -192,7 +195,8 @@ Formats:
 * Only full words match; for example, `Han` does not match `Hans`.
 * Persons matching at least one keyword are returned (an `OR` search); for example, `Hans Bo` returns `Hans Gruber` and `Bo Yang`.
 * `RELATIONSHIP` must be either `client` or `prospect` and is case-insensitive.
-* A name search cannot be combined with a relationship filter in the same command.
+* Name keywords can be combined with a relationship filter. A result must match at least one name keyword
+  **and** the relationship. Put name keywords before `r/`.
 * Persons filtered by relationship retain the same order as in the `list` command.
 
 Examples:
@@ -201,6 +205,7 @@ Examples:
   ![result for 'find alex david'](images/findAlexDavidResult.png)
 * `find r/client` returns all clients.
 * `find r/Prospect` returns all prospects.
+* `find alex david r/prospect` returns prospects whose names contain the full word `alex` or `david`.
 
 ### Deleting a client/prospect: `delete`
 
@@ -294,7 +299,7 @@ Action     | Format, Examples
 **Clear**  | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [t/TAG]... `<br> e.g.,`edit 2 n/James Lee e/jameslee@example.com`
-**Find**   | `find KEYWORD [MORE_KEYWORDS]` or `find r/RELATIONSHIP`<br> e.g., `find James Jake`, `find r/client`
+**Find**   | `find KEYWORD [MORE_KEYWORDS] [r/RELATIONSHIP]` or `find r/RELATIONSHIP`<br> e.g., `find James Jake`, `find r/client`, `find James r/prospect`
 **Info**   | `info INDEX [/fn FINANCIAL_NEED] [/pr PRIORITY] [/ai AREA_OF_INTEREST]`<br> e.g., `info 1 /fn retirement planning`
 **Note**   | `note INDEX d/DATE n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
 **List**   | `list`
