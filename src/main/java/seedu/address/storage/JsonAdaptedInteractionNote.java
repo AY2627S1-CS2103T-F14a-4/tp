@@ -31,7 +31,7 @@ class JsonAdaptedInteractionNote {
         try {
             return new InteractionNote(InteractionNote.parseDate(date), text);
         } catch (IllegalArgumentException e) {
-            throw new IllegalValueException(e.getMessage());
+            throw new IllegalValueException(e.getMessage(), e);
         }
     }
 }
