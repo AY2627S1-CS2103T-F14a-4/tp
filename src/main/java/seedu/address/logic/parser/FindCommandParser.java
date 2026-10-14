@@ -8,7 +8,6 @@ import java.util.Optional;
 
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
-import seedu.address.model.person.NameAndRelationshipMatchesPredicate;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Relationship;
 import seedu.address.model.person.RelationshipMatchesPredicate;
@@ -34,14 +33,11 @@ public class FindCommandParser implements Parser<FindCommand> {
         argumentMultimap.verifyNoDuplicatePrefixesFor(PREFIX_RELATIONSHIP);
         Optional<String> relationshipValue = argumentMultimap.getValue(PREFIX_RELATIONSHIP);
         if (relationshipValue.isPresent()) {
-            Relationship relationship = ParserUtil.parseRelationship(relationshipValue.get());
-            String nameKeywordsValue = argumentMultimap.getPreamble();
-            if (!nameKeywordsValue.isEmpty()) {
-                String[] nameKeywords = nameKeywordsValue.split("\\s+");
-                return new FindCommand(
-                        new NameAndRelationshipMatchesPredicate(List.of(nameKeywords), relationship));
+            if (!argumentMultimap.getPreamble().isEmpty()) {
+                throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE));
             }
 
+            Relationship relationship = ParserUtil.parseRelationship(relationshipValue.get());
             return new FindCommand(new RelationshipMatchesPredicate(relationship));
         }
 
