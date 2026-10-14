@@ -51,7 +51,7 @@
         "storage-component": "Storage component",
         "common-classes": "Common classes",
         "implementation": "Implementation",
-        "find-by-relationship": "Find by relationship",
+        "find-by-name-and-relationship": "Find by name and relationship",
         "dated-interaction-notes-us14": "Dated interaction notes (US14)",
         "proposed-undo-redo-feature": "[Proposed] Undo/redo feature",
         "proposed-data-archiving": "[Proposed] Data archiving",
@@ -64,7 +64,7 @@
         "glossary": "Glossary",
         "appendix-instructions-for-manual-testing": "Appendix: Instructions for manual testing",
         "launch-and-shutdown": "Launch and shutdown",
-        "deleting-a-person": "Deleting a person",
+        "deleting-a-client-prospect": "Deleting a client/prospect",
         "finding-persons-by-relationship": "Finding persons by relationship",
         "saving-data": "Saving data"
       },
@@ -111,7 +111,7 @@
       "src": "UserGuide.md",
       "title": "User Guide",
       "headings": {
-        "ab-3-user-guide": "AB-3 User Guide",
+        "clientbook-user-guide": "ClientBook User Guide",
         "quick-start": "Quick start",
         "features": "Features",
         "viewing-help-help": "Viewing help: help",
