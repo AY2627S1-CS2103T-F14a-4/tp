@@ -209,28 +209,24 @@ Examples:
 
 ### Deleting a client/prospect: `delete`
 
-Deletes the specified client or prospect from the client list.
+Deletes a client or prospect, including their financial information and interaction notes.
 
 Format: `delete INDEX`
 
-* Deletes the client/prospect at the specified `INDEX`.
-* The index refers to the index number shown in the displayed list.
-* The index **must be a positive integer** 1, 2, 3, ...
-* Leading and trailing spaces around the index are ignored. Only one index can be given.
-* After deletion, the remaining clients/prospects are shown with updated index numbers.
+Use the positive index number shown beside the person you want to delete. Only one index is accepted;
+spaces before and after it are ignored. The remaining records are renumbered after deletion.
 
-Examples:
-* `list` followed by `delete 2` deletes the 2nd client/prospect in the list.
-* `find Betsy` followed by `delete 1` deletes the 1st client/prospect in the results of the `find` command.
+For example, `list` followed by `delete 2` deletes the second person in the full list.
+After `find Jane`, `delete 1` deletes the first search result, even if that person had a different index
+in the full list. The search stays active; use `list` to see everyone who remains.
 
-Expected output: `Client John Doe has been deleted successfully.` (or `Prospect Jane Tan has been deleted successfully.`)
+The success message includes the person's relationship and name: `Client John Doe has been deleted successfully.`
+or `Prospect Jane Tan has been deleted successfully.`
 
-Deletion removes the entire selected record, including its financial information, tags and interaction notes.
-Other clients/prospects and their details are preserved. The current search filter stays active; use `list` to
-show all remaining records. Deletions are saved automatically and remain in effect after restarting the app.
-There is no undo command; check the displayed name and index before deleting a record.
+Deletion is saved automatically and cannot be undone, so check the displayed name and index before proceeding.
+Other records and their details are kept.
 
-Invalid input leaves the records and the current search results unchanged:
+If a delete command is rejected, the records and search results stay unchanged:
 
 Input | Error message
 ------|--------------
@@ -238,11 +234,6 @@ Input | Error message
 `delete 1 2` or `delete 1 abc` | `Delete command only accepts a client index.`
 `delete 0`, `delete -1`, `delete abc`, or `delete 1.5` | `Client index must be a positive integer.`
 `delete 3` when fewer than three records are displayed | `No client exists at index 3.`
-
-An index must fit within Java's positive integer range (1 to 2147483647) and refer to a displayed record.
-For example, after `find Jane`, `delete 1` removes the first result, even if it was the second record in the full list.
-If the search shows no results, no index can be deleted. After deleting a result, use the updated displayed indices
-for any subsequent command.
 
 ### Clearing all entries: `clear`
 
