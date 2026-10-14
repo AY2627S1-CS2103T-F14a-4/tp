@@ -170,8 +170,12 @@ to `Model#updateFilteredPersonList(Predicate<Person>)`, which updates the `Filte
 Because filtering does not reorder the source list, matching persons appear in the same order as they do for the
 `list` command.
 
-Name searches continue to use `NameContainsKeywordsPredicate`. The two search forms are deliberately kept separate:
-a command cannot combine name keywords with an `r/` filter.
+Name searches use `NameContainsKeywordsPredicate`, which matches when at least one keyword occurs as a full word in a
+person's name. When both criteria are supplied, the parser creates a `NameAndRelationshipMatchesPredicate`. This
+predicate applies `OR` between the name keywords, then applies `AND` between the name result and the relationship
+filter. For example, `find Alex David r/client` returns clients whose names contain either `Alex` or `David`.
+
+
 ### Dated interaction notes (US14)
 
 `note INDEX d/yyyy-MM-dd n/NOTE` appends an interaction note to the person at the index in the currently displayed
