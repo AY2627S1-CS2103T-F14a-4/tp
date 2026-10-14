@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
+import seedu.address.model.person.NameAndRelationshipMatchesPredicate;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Relationship;
@@ -120,7 +121,7 @@ public class FindCommandTest {
     }
 
     @Test
-    public void execute_nameAndRelationship_multipleClientsMatchDifferentKeywords_allFound() {
+    public void execute_multipleClientsMatchDifferentKeywords_allFound() {
         Person clientCarl = new PersonBuilder(CARL).withRelationship(Relationship.CLIENT).build();
         Person clientFiona = new PersonBuilder(FIONA).withRelationship(Relationship.CLIENT).build();
         Model combinedFilterModel = new ModelManager(new AddressBookBuilder()
