@@ -18,14 +18,12 @@ public class FindCommand extends Command {
     public static final String COMMAND_WORD = "find";
 
     public static final String MESSAGE_USAGE = COMMAND_WORD + ": Finds all persons whose names contain any of "
-            + "the specified keywords and/or whose relationship matches the specified relationship "
+            + "the specified keywords, or whose relationship matches the specified relationship "
             + "(case-insensitive), and displays them as a list with index numbers.\n"
-            + "Parameters: KEYWORD [MORE_KEYWORDS]... [" + PREFIX_RELATIONSHIP + "RELATIONSHIP] | "
-            + PREFIX_RELATIONSHIP + "RELATIONSHIP\n"
+            + "Parameters: KEYWORD [MORE_KEYWORDS]... | " + PREFIX_RELATIONSHIP + "RELATIONSHIP\n"
             + "Examples:\n"
             + COMMAND_WORD + " alice bob charlie\n"
-            + COMMAND_WORD + " " + PREFIX_RELATIONSHIP + "client\n"
-            + COMMAND_WORD + " alice bob " + PREFIX_RELATIONSHIP + "prospect";
+            + COMMAND_WORD + " " + PREFIX_RELATIONSHIP + "client";
 
     private final Predicate<Person> predicate;
 
