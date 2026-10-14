@@ -121,6 +121,27 @@ public class FindCommandTest {
     }
 
     @Test
+    public void execute_nameAndRelationship_multipleClientsMatchDifferentKeywords_allFound() {
+        Person clientCarl = new PersonBuilder(CARL).withRelationship(Relationship.CLIENT).build();
+        Person clientFiona = new PersonBuilder(FIONA).withRelationship(Relationship.CLIENT).build();
+        Model combinedFilterModel = new ModelManager(new AddressBookBuilder()
+                .withPerson(ELLE)
+                .withPerson(clientCarl)
+                .withPerson(clientFiona)
+                .build(), new UserPrefs());
+        Model expectedCombinedFilterModel = new ModelManager(combinedFilterModel.getAddressBook(), new UserPrefs());
+        NameAndRelationshipMatchesPredicate predicate =
+                new NameAndRelationshipMatchesPredicate(List.of("Elle", "Kurz", "Kunz"), Relationship.CLIENT);
+        FindCommand command = new FindCommand(predicate);
+        String expectedMessage = String.format(MESSAGE_PERSONS_LISTED_OVERVIEW, 2);
+
+        expectedCombinedFilterModel.updateFilteredPersonList(predicate);
+
+        assertCommandSuccess(command, combinedFilterModel, expectedMessage, expectedCombinedFilterModel);
+        assertEquals(List.of(clientCarl, clientFiona), combinedFilterModel.getFilteredPersonList());
+    }
+
+    @Test
     public void toStringMethod() {
         NameContainsKeywordsPredicate predicate = new NameContainsKeywordsPredicate(List.of("keyword"));
         FindCommand findCommand = new FindCommand(predicate);
