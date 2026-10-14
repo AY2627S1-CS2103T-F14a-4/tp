@@ -51,7 +51,7 @@
         "storage-component": "Storage component",
         "common-classes": "Common classes",
         "implementation": "Implementation",
-        "find-by-relationship": "Find by relationship",
+        "find-by-name-and-relationship": "Find by name and relationship",
         "dated-interaction-notes-us14": "Dated interaction notes (US14)",
         "proposed-undo-redo-feature": "[Proposed] Undo/redo feature",
         "proposed-data-archiving": "[Proposed] Data archiving",
@@ -65,7 +65,7 @@
         "appendix-instructions-for-manual-testing": "Appendix: Instructions for manual testing",
         "launch-and-shutdown": "Launch and shutdown",
         "deleting-a-person": "Deleting a person",
-        "finding-persons-by-relationship": "Finding persons by relationship",
+        "finding-persons-by-name-and-relationship": "Finding persons by name and relationship",
         "saving-data": "Saving data"
       },
       "headingKeywords": {}
