@@ -752,11 +752,16 @@ These cases are covered in `DeleteIntegrationTest`. Parser whitespace and intege
 
 2. Invalid relationship filters
 
-   1. Test case: `find r/customer`<br>
-      Expected: No filtering occurs. The status message explains that the relationship must be `Client` or `Prospect`.
-
-   2. Other incorrect commands to try: `find r/`, `find r/client r/prospect`.<br>
-      Expected: No filtering occurs. The status message shows the relevant error details.
+    <ol type="i">
+      <li>
+        <p>Test case: <code>find r/customer</code><br>
+        Expected: No filtering occurs. The status message explains that the relationship must be <code>Client</code> or <code>Prospect</code>.</p>
+      </li>
+      <li>
+        <p>Other incorrect commands to try: <code>find r/</code>, <code>find r/client r/prospect</code>.<br>
+        Expected: No filtering occurs. The status message shows the relevant error details.</p>
+      </li>
+    </ol>
 
 3. Combined name and relationship filtering
 
