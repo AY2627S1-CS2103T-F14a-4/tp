@@ -65,6 +65,32 @@ public class JsonAdaptedPersonTest {
         assertThrows(IllegalValueException.class, InteractionNote.MESSAGE_BLANK, () ->
                 new JsonAdaptedInteractionNote("2026-10-06", null).toModelType());
     }
+
+    @Test
+    public void interactionNotes_nullJsonEntry_throwsIllegalValueException() throws Exception {
+        String json = "{\"name\":\"Benson Meier\",\"phone\":\"98765432\",\"email\":\"benson@example.com\","
+                + "\"interactionNotes\":[null]}";
+        JsonAdaptedPerson person = JsonUtil.fromJsonString(json, JsonAdaptedPerson.class);
+
+        assertThrows(IllegalValueException.class, "Interaction note cannot be null.", person::toModelType);
+    }
+
+    @Test
+    public void interactionNotes_invalidNestedJson_throwsExactValidationMessage() throws Exception {
+        String base = "{\"name\":\"Benson Meier\",\"phone\":\"98765432\",\"email\":\"benson@example.com\","
+                + "\"interactionNotes\":[";
+        for (String note : List.of("{\"text\":\"Called\"}", "{\"date\":null,\"text\":\"Called\"}",
+                "{\"date\":\"2026-02-30\",\"text\":\"Called\"}")) {
+            JsonAdaptedPerson person = JsonUtil.fromJsonString(base + note + "]}", JsonAdaptedPerson.class);
+            assertThrows(IllegalValueException.class, InteractionNote.MESSAGE_INVALID_DATE, person::toModelType);
+        }
+        for (String note : List.of("{\"date\":\"2026-10-06\"}", "{\"date\":\"2026-10-06\",\"text\":null}",
+                "{\"date\":\"2026-10-06\",\"text\":\" \"}")) {
+            JsonAdaptedPerson person = JsonUtil.fromJsonString(base + note + "]}", JsonAdaptedPerson.class);
+            assertThrows(IllegalValueException.class, InteractionNote.MESSAGE_BLANK, person::toModelType);
+        }
+    }
+
     @Test
     public void toModelType_validPersonDetails_returnsPerson() throws Exception {
         JsonAdaptedPerson person = new JsonAdaptedPerson(BENSON);
