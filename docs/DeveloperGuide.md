@@ -109,10 +109,10 @@ The sequence diagram below illustrates the interactions within the `Logic` compo
 How the `Logic` component works:
 
 1. When `Logic` is called upon to execute a command, the command is passed to an `AddressBookParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.
-1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
-1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
+2. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
+3. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
    Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
-1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
+4. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
 
@@ -657,70 +657,83 @@ testers are expected to do more *exploratory* testing.
 
    1. Download the JAR file and copy it into an empty folder.
 
-   1. Double-click the JAR file.<br>
+   2. Double-click the JAR file.<br>
       Expected: The GUI opens with a set of sample contacts. The window size may not be optimal.
 
-1. Saving window preferences
+2. Saving window preferences
 
    1. Resize the window to an optimal size. Move the window to a different location. Close the window.
 
-   1. Relaunch the app by double-clicking the JAR file.<br>
+   2. Relaunch the app by double-clicking the JAR file.<br>
        Expected: The most recent window size and location are retained.
 
-1. _{ more test cases … }_
+3. _{ more test cases … }_
 
 ### Deleting a client/prospect
 
-Use a separate test folder containing the JAR so the following destructive tests do not affect real client data.
-Start with `clear`, then run:
+Use a separate test folder with fictional records. Run these commands to prepare the test data:
 
-* `add r/Client n/John Doe e/john@example.com p/91234567`
-* `add r/Prospect n/Jane Tan e/jane@example.com p/98765432`
-* `info 2 /fn Retirement planning /pr Protect family income /ai Life insurance`
-* `note 2 d/2026-10-06 n/Discussed next steps.`
+```text
+clear
+add r/Client n/John Doe e/john@example.com p/91234567
+add r/Prospect n/Jane Tan e/jane@example.com p/98765432
+info 2 /fn Retirement planning /pr Protect family income /ai Life insurance
+note 2 d/2026-10-06 n/Discussed next steps.
+```
 
-1. Delete from the full list and verify reindexing and persistence.
+1. Deleting a client/prospect while the full list is shown
 
-   1. Run `list`, then `delete 1`.<br>
-      Expected: `Client John Doe has been deleted successfully.` Jane remains at index 1 with all financial
-      information and her interaction note unchanged.
+    1. Prerequisites: Prepare the records above and run `list`.
 
-   1. Run `exit` and relaunch the same JAR from the same folder.<br>
-      Expected: John is still absent; Jane and her recorded details remain.
+    2. Test case: `delete 1`<br>
+       Expected: `Client John Doe has been deleted successfully.` John is removed. Jane moves to index 1,
+       with her financial information and interaction note unchanged.
 
-   1. Run `delete 1`.<br>
-      Expected: `Prospect Jane Tan has been deleted successfully.` The list becomes empty.
+    3. Test case: `exit`, then reopen the app from the same folder.<br>
+       Expected: John remains absent. Jane and her recorded details are retained.
 
-   1. Exit and relaunch again.<br>
-      Expected: The list stays empty; sample records do not replace the saved empty list.
+    4. Test case: `delete 1`<br>
+       Expected: `Prospect Jane Tan has been deleted successfully.` The list becomes empty.
 
-1. Delete from a filtered list. Recreate the test records above before each variant.
+    5. Test case: `exit`, then reopen the app again.<br>
+       Expected: The list stays empty; sample records do not replace the saved empty list.
 
-   1. Run `find Jane`, then `delete 1`.<br>
-      Expected: Jane is deleted, although she was second in the full list. The filtered list becomes empty.
-      Run `list` to confirm that John remains. Repeat with `find r/prospect` instead of `find Jane`.
+2. Deleting from a filtered list
 
-1. Reject invalid deletion without changing data. Recreate the test records above.
+    1. Prerequisites: Recreate the test records above, then run `find Jane`.
 
-   1. Run each invalid command below.<br>
-      Expected: Both records, their details and the displayed filter remain unchanged.
+    2. Test case: `delete 1`<br>
+       Expected: Jane is deleted, although she was second in the full list. The search results become empty.
 
-      Command | Expected message
-      --------|-----------------
-      `delete` | `Client index is required.`
-      `delete 1 2` or `delete 1 abc` | `Delete command only accepts a client index.`
-      `delete 0`, `delete -1`, `delete abc`, `delete 1.5`, or `delete 2147483648` | `Client index must be a positive integer.`
-      `delete 3` | `No client exists at index 3.`
+    3. Test case: `list`<br>
+       Expected: John is still present. Repeat this test using `find r/prospect` to check relationship-filtered deletion.
 
-   1. Run `find Jane`, then `delete 2`.<br>
-      Expected: `No client exists at index 2.` Jane remains visible; John is still present in the full list.
+3. Rejecting invalid deletion
 
-   1. Run `find Nobody`, then `delete 1`.<br>
-      Expected: `No client exists at index 1.` The empty search stays active. Run `list` to confirm both records remain,
-      then exit and relaunch to confirm the same saved records and details.
+    1. Prerequisites: Recreate the test records above and run `list`. None of the following commands should change
+       either record, their details or the current search results.
 
-Automated equivalents are in `DeleteIntegrationTest`, exercising command parsing, `LogicManager`, the model and
-real JSON storage. `DeleteCommandParserTest` also covers whitespace, extra arguments and integer boundaries.
+    2. Test case: `delete`<br>
+       Expected: `Client index is required.`
+
+    3. Test case: `delete 1 2` or `delete 1 abc`<br>
+       Expected: `Delete command only accepts a client index.`
+
+    4. Test case: `delete 0`, `delete -1`, `delete abc`, `delete 1.5`, or `delete 2147483648`<br>
+       Expected: `Client index must be a positive integer.`
+
+    5. Test case: `delete 3`<br>
+       Expected: `No client exists at index 3.`
+
+    6. Test case: `find Jane`, then `delete 2`<br>
+       Expected: `No client exists at index 2.` Jane remains visible, and John is still present in the full list.
+
+    7. Test case: `find Nobody`, then `delete 1`<br>
+       Expected: `No client exists at index 1.` The empty search stays active. Use `list` and restart the app
+       to confirm that both records and their details are retained.
+
+These cases are covered in `DeleteIntegrationTest`. Parser whitespace and integer boundaries are covered in
+`DeleteCommandParserTest`.
 
 ### Finding persons by relationship
 
@@ -728,24 +741,24 @@ real JSON storage. `DeleteCommandParserTest` also covers whitespace, extra argum
 
    1. Prerequisites: Add multiple clients and prospects, then display all persons using the `list` command.
 
-   1. Test case: `find r/client`<br>
+   2. Test case: `find r/client`<br>
       Expected: Only clients are displayed, in the same relative order as in the full list.
 
-   1. Test case: `find r/PROSPECT`<br>
+   3. Test case: `find r/PROSPECT`<br>
       Expected: Only prospects are displayed, in the same relative order as in the full list.
 
-   1. Test case: `find r/Client`<br>
+   4. Test case: `find r/Client`<br>
       Expected: The same persons are displayed as for `find r/client`.
 
-1. Invalid relationship filters
+2. Invalid relationship filters
 
    1. Test case: `find r/customer`<br>
       Expected: No filtering occurs. The status message explains that the relationship must be `Client` or `Prospect`.
 
-   1. Other incorrect commands to try: `find r/`, `find r/client r/prospect`.<br>
+   2. Other incorrect commands to try: `find r/`, `find r/client r/prospect`.<br>
       Expected: No filtering occurs. The status message shows the relevant error details.
 
-1. Combined name and relationship filtering
+3. Combined name and relationship filtering
 
    1. Test case: `find Alex r/client`.<br>
       Expected: Only clients whose names contain the full word `Alex` are displayed. Matching is case-insensitive.
@@ -756,5 +769,5 @@ real JSON storage. `DeleteCommandParserTest` also covers whitespace, extra argum
 
    1. _{Explain how to simulate missing or corrupted data files and state the expected behavior.}_
 
-1. _{ more test cases … }_
+2. _{ more test cases … }_
 
