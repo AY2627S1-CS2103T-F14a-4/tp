@@ -165,7 +165,7 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
-### Find by relationship
+### Find by name and relationship
 
 The `find` command supports name keywords, one relationship filter, or both together. `FindCommandParser` tokenizes the
 `r/` prefix and delegates validation to `ParserUtil#parseRelationship(String)`. The parser accepts only `Client` or
