@@ -15,6 +15,10 @@
 
 * _{List the sources of reused or adapted ideas, code, documentation, and third-party libraries here, with links to the originals.}_
 
+* Junhan Liu (`ZachL1113`) used OpenAI ChatGPT/Codex to draft the v1.3 delete integration tests, additional parser
+  boundary tests, and the accompanying delete documentation. This assistance covers `DeleteIntegrationTest`,
+  the new cases in `DeleteCommandParserTest`, the UG delete section additions, and the DG deletion test instructions.
+
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Setting up, getting started**
@@ -663,22 +667,58 @@ testers are expected to do more *exploratory* testing.
 
 1. _{ more test cases … }_
 
-### Deleting a person
+### Deleting a client/prospect
 
-1. Deleting a person while all persons are being shown
+Use a separate test folder containing the JAR so the following destructive tests do not affect real client data.
+Start with `clear`, then run:
 
-   1. Prerequisites: List all persons using the `list` command, with multiple persons in the list.
+* `add r/Client n/John Doe e/john@example.com p/91234567`
+* `add r/Prospect n/Jane Tan e/jane@example.com p/98765432`
+* `info 2 /fn Retirement planning /pr Protect family income /ai Life insurance`
+* `note 2 d/2026-10-06 n/Discussed next steps.`
 
-   1. Test case: `delete 1`<br>
-      Expected: The first contact is deleted from the list. The status message shows the deleted contact's details.
+1. Delete from the full list and verify reindexing and persistence.
 
-   1. Test case: `delete 0`<br>
-      Expected: No person is deleted. The status message shows error details.
+   1. Run `list`, then `delete 1`.<br>
+      Expected: `Client John Doe has been deleted successfully.` Jane remains at index 1 with all financial
+      information and her interaction note unchanged.
 
-   1. Other incorrect delete commands to try: `delete`, `delete x`, `...` (where x is larger than the list size)<br>
-      Expected: Similar to previous.
+   1. Run `exit` and relaunch the same JAR from the same folder.<br>
+      Expected: John is still absent; Jane and her recorded details remain.
 
-1. _{ more test cases … }_
+   1. Run `delete 1`.<br>
+      Expected: `Prospect Jane Tan has been deleted successfully.` The list becomes empty.
+
+   1. Exit and relaunch again.<br>
+      Expected: The list stays empty; sample records do not replace the saved empty list.
+
+1. Delete from a filtered list. Recreate the test records above before each variant.
+
+   1. Run `find Jane`, then `delete 1`.<br>
+      Expected: Jane is deleted, although she was second in the full list. The filtered list becomes empty.
+      Run `list` to confirm that John remains. Repeat with `find r/prospect` instead of `find Jane`.
+
+1. Reject invalid deletion without changing data. Recreate the test records above.
+
+   1. Run each invalid command below.<br>
+      Expected: Both records, their details and the displayed filter remain unchanged.
+
+      Command | Expected message
+      --------|-----------------
+      `delete` | `Client index is required.`
+      `delete 1 2` or `delete 1 abc` | `Delete command only accepts a client index.`
+      `delete 0`, `delete -1`, `delete abc`, `delete 1.5`, or `delete 2147483648` | `Client index must be a positive integer.`
+      `delete 3` | `No client exists at index 3.`
+
+   1. Run `find Jane`, then `delete 2`.<br>
+      Expected: `No client exists at index 2.` Jane remains visible; John is still present in the full list.
+
+   1. Run `find Nobody`, then `delete 1`.<br>
+      Expected: `No client exists at index 1.` The empty search stays active. Run `list` to confirm both records remain,
+      then exit and relaunch to confirm the same saved records and details.
+
+Automated equivalents are in `DeleteIntegrationTest`, exercising command parsing, `LogicManager`, the model and
+real JSON storage. `DeleteCommandParserTest` also covers whitespace, extra arguments and integer boundaries.
 
 ### Finding persons by relationship
 
@@ -710,3 +750,4 @@ testers are expected to do more *exploratory* testing.
    1. _{Explain how to simulate missing or corrupted data files and state the expected behavior.}_
 
 1. _{ more test cases … }_
+

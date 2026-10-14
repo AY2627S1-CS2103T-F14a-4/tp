@@ -220,6 +220,25 @@ Examples:
 
 Expected output: `Client John Doe has been deleted successfully.` (or `Prospect Jane Tan has been deleted successfully.`)
 
+Deletion removes the entire selected record, including its financial information, tags and interaction notes.
+Other clients/prospects and their details are preserved. The current search filter stays active; use `list` to
+show all remaining records. Deletions are saved automatically and remain in effect after restarting the app.
+There is no undo command; check the displayed name and index before deleting a record.
+
+Invalid input leaves the records and the current search results unchanged:
+
+Input | Error message
+------|--------------
+`delete` | `Client index is required.`
+`delete 1 2` or `delete 1 abc` | `Delete command only accepts a client index.`
+`delete 0`, `delete -1`, `delete abc`, or `delete 1.5` | `Client index must be a positive integer.`
+`delete 3` when fewer than three records are displayed | `No client exists at index 3.`
+
+An index must fit within Java's positive integer range (1 to 2147483647) and refer to a displayed record.
+For example, after `find Jane`, `delete 1` removes the first result, even if it was the second record in the full list.
+If the search shows no results, no index can be deleted. After deleting a result, use the updated displayed indices
+for any subsequent command.
+
 ### Clearing all entries: `clear`
 
 Clears all entries from the address book.
@@ -280,3 +299,4 @@ Action     | Format, Examples
 **Note**   | `note INDEX d/DATE n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
 **List**   | `list`
 **Help**   | `help`
+
