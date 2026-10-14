@@ -15,6 +15,12 @@
 
 * _{List the sources of reused or adapted ideas, code, documentation, and third-party libraries here, with links to the originals.}_
 
+* Junhan Liu (`ZachL1113`) used OpenAI ChatGPT/Codex to draft the v1.3 delete integration tests, additional parser
+  boundary tests, and the accompanying delete documentation. This assistance covers `DeleteIntegrationTest`,
+  the new cases in `DeleteCommandParserTest`, the UG delete section additions, and the DG deletion test instructions.
+  Codex also helped correct the UG product/download references and synchronise UG/DG find instructions with the
+  combined name-and-relationship search already merged in PR #67.
+
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Setting up, getting started**
@@ -103,10 +109,10 @@ The sequence diagram below illustrates the interactions within the `Logic` compo
 How the `Logic` component works:
 
 1. When `Logic` is called upon to execute a command, the command is passed to an `AddressBookParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.
-1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
-1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
+2. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
+3. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
    Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
-1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
+4. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
 
@@ -159,9 +165,9 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
-### Find by relationship
+### Find by name and relationship
 
-The `find` command supports either name keywords or one relationship filter. `FindCommandParser` tokenizes the
+The `find` command supports name keywords, one relationship filter, or both together. `FindCommandParser` tokenizes the
 `r/` prefix and delegates validation to `ParserUtil#parseRelationship(String)`. The parser accepts only `Client` or
 `Prospect`, with case-insensitive matching provided by `Relationship#fromString(String)`.
 
@@ -651,34 +657,83 @@ testers are expected to do more *exploratory* testing.
 
    1. Download the JAR file and copy it into an empty folder.
 
-   1. Double-click the JAR file.<br>
+   2. Double-click the JAR file.<br>
       Expected: The GUI opens with a set of sample contacts. The window size may not be optimal.
 
-1. Saving window preferences
+2. Saving window preferences
 
    1. Resize the window to an optimal size. Move the window to a different location. Close the window.
 
-   1. Relaunch the app by double-clicking the JAR file.<br>
+   2. Relaunch the app by double-clicking the JAR file.<br>
        Expected: The most recent window size and location are retained.
 
-1. _{ more test cases … }_
+3. _{ more test cases … }_
 
-### Deleting a person
+### Deleting a client/prospect
 
-1. Deleting a person while all persons are being shown
+Use a separate test folder with fictional records. Run these commands to prepare the test data:
 
-   1. Prerequisites: List all persons using the `list` command, with multiple persons in the list.
+```text
+clear
+add r/Client n/John Doe e/john@example.com p/91234567
+add r/Prospect n/Jane Tan e/jane@example.com p/98765432
+info 2 /fn Retirement planning /pr Protect family income /ai Life insurance
+note 2 d/2026-10-06 n/Discussed next steps.
+```
 
-   1. Test case: `delete 1`<br>
-      Expected: The first contact is deleted from the list. The status message shows the deleted contact's details.
+1. Deleting a client/prospect while the full list is shown
 
-   1. Test case: `delete 0`<br>
-      Expected: No person is deleted. The status message shows error details.
+    1. Prerequisites: Prepare the records above and run `list`.
 
-   1. Other incorrect delete commands to try: `delete`, `delete x`, `...` (where x is larger than the list size)<br>
-      Expected: Similar to previous.
+    2. Test case: `delete 1`<br>
+       Expected: `Client John Doe has been deleted successfully.` John is removed. Jane moves to index 1,
+       with her financial information and interaction note unchanged.
 
-1. _{ more test cases … }_
+    3. Test case: `exit`, then reopen the app from the same folder.<br>
+       Expected: John remains absent. Jane and her recorded details are retained.
+
+    4. Test case: `delete 1`<br>
+       Expected: `Prospect Jane Tan has been deleted successfully.` The list becomes empty.
+
+    5. Test case: `exit`, then reopen the app again.<br>
+       Expected: The list stays empty; sample records do not replace the saved empty list.
+
+2. Deleting from a filtered list
+
+    1. Prerequisites: Recreate the test records above, then run `find Jane`.
+
+    2. Test case: `delete 1`<br>
+       Expected: Jane is deleted, although she was second in the full list. The search results become empty.
+
+    3. Test case: `list`<br>
+       Expected: John is still present. Repeat this test using `find r/prospect` to check relationship-filtered deletion.
+
+3. Rejecting invalid deletion
+
+    1. Prerequisites: Recreate the test records above and run `list`. None of the following commands should change
+       either record, their details or the current search results.
+
+    2. Test case: `delete`<br>
+       Expected: `Client index is required.`
+
+    3. Test case: `delete 1 2` or `delete 1 abc`<br>
+       Expected: `Delete command only accepts a client index.`
+
+    4. Test case: `delete 0`, `delete -1`, `delete abc`, `delete 1.5`, or `delete 2147483648`<br>
+       Expected: `Client index must be a positive integer.`
+
+    5. Test case: `delete 3`<br>
+       Expected: `No client exists at index 3.`
+
+    6. Test case: `find Jane`, then `delete 2`<br>
+       Expected: `No client exists at index 2.` Jane remains visible, and John is still present in the full list.
+
+    7. Test case: `find Nobody`, then `delete 1`<br>
+       Expected: `No client exists at index 1.` The empty search stays active. Use `list` and restart the app
+       to confirm that both records and their details are retained.
+
+These cases are covered in `DeleteIntegrationTest`. Parser whitespace and integer boundaries are covered in
+`DeleteCommandParserTest`.
 
 ### Finding persons by relationship
 
@@ -686,22 +741,32 @@ testers are expected to do more *exploratory* testing.
 
    1. Prerequisites: Add multiple clients and prospects, then display all persons using the `list` command.
 
-   1. Test case: `find r/client`<br>
+   2. Test case: `find r/client`<br>
       Expected: Only clients are displayed, in the same relative order as in the full list.
 
-   1. Test case: `find r/PROSPECT`<br>
+   3. Test case: `find r/PROSPECT`<br>
       Expected: Only prospects are displayed, in the same relative order as in the full list.
 
-   1. Test case: `find r/Client`<br>
+   4. Test case: `find r/Client`<br>
       Expected: The same persons are displayed as for `find r/client`.
 
-1. Invalid relationship filters
+2. Invalid relationship filters
 
-   1. Test case: `find r/customer`<br>
-      Expected: No filtering occurs. The status message explains that the relationship must be `Client` or `Prospect`.
+    <ol type="i">
+      <li>
+        <p>Test case: <code>find r/customer</code><br>
+        Expected: No filtering occurs. The status message explains that the relationship must be <code>Client</code> or <code>Prospect</code>.</p>
+      </li>
+      <li>
+        <p>Other incorrect commands to try: <code>find r/</code>, <code>find r/client r/prospect</code>.<br>
+        Expected: No filtering occurs. The status message shows the relevant error details.</p>
+      </li>
+    </ol>
 
-   1. Other incorrect commands to try: `find r/`, `find r/client r/prospect`, `find Alex r/client`.<br>
-      Expected: No filtering occurs. The status message shows the relevant error details.
+3. Combined name and relationship filtering
+
+   1. Test case: `find Alex r/client`.<br>
+      Expected: Only clients whose names contain the full word `Alex` are displayed. Matching is case-insensitive.
 
 ### Saving data
 
@@ -709,4 +774,5 @@ testers are expected to do more *exploratory* testing.
 
    1. _{Explain how to simulate missing or corrupted data files and state the expected behavior.}_
 
-1. _{ more test cases … }_
+2. _{ more test cases … }_
+
