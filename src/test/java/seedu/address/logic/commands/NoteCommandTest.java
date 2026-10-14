@@ -19,6 +19,7 @@ import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.InteractionNote;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.Relationship;
 import seedu.address.testutil.PersonBuilder;
 
 public class NoteCommandTest {
@@ -27,7 +28,10 @@ public class NoteCommandTest {
 
     @Test
     public void execute_firstAndRepeatedNotes_appendAndPreserveOtherFields() throws Exception {
-        Person original = model.getFilteredPersonList().get(0);
+        Person original = new PersonBuilder(model.getFilteredPersonList().get(0))
+                .withRelationship(Relationship.CLIENT).withFinancialNeed("Retirement")
+                .withPriority("High").withAreaOfInterest("Insurance").build();
+        model.setPerson(model.getFilteredPersonList().get(0), original);
         InteractionNote note = new InteractionNote(LocalDate.of(2000, 1, 1), "Discussed retirement");
         Command command = parser.parseCommand("note 1 d/2000-01-01 n/Discussed retirement");
         assertEquals("Added interaction note for " + original.getName().fullName + ".",
@@ -36,6 +40,21 @@ public class NoteCommandTest {
                 model.getFilteredPersonList().get(0));
         command.execute(model);
         assertEquals(List.of(note, note), model.getFilteredPersonList().get(0).getInteractionNotes());
+    }
+
+    @Test
+    public void execute_existingHistory_appendsBackdatedNoteAndPreservesOtherFields() throws Exception {
+        InteractionNote existing = new InteractionNote(LocalDate.of(2026, 10, 6), "Initial meeting");
+        InteractionNote backdated = new InteractionNote(LocalDate.of(2000, 1, 1), "Earlier interaction");
+        Person original = new PersonBuilder(model.getFilteredPersonList().get(0))
+                .withRelationship(Relationship.CLIENT).withFinancialNeed("Retirement")
+                .withPriority("High").withAreaOfInterest("Insurance").withInteractionNotes(existing).build();
+        model.setPerson(model.getFilteredPersonList().get(0), original);
+
+        new NoteCommand(INDEX_FIRST_PERSON, backdated).execute(model);
+
+        assertEquals(new PersonBuilder(original).withInteractionNotes(existing, backdated).build(),
+                model.getFilteredPersonList().get(0));
     }
 
     @Test
