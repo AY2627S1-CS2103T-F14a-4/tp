@@ -25,6 +25,7 @@ import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.Relationship;
 import seedu.address.testutil.EditPersonDescriptorBuilder;
 import seedu.address.testutil.PersonBuilder;
 
@@ -44,12 +45,14 @@ public class EditCommandTest {
             new EditPersonDescriptorBuilder().withName("Updated Name").build(),
             new EditPersonDescriptorBuilder().withPhone("81234567").build(),
             new EditPersonDescriptorBuilder().withEmail("updated@example.com").build(),
+            new EditPersonDescriptorBuilder().withRelationship(Relationship.CLIENT).build(),
             new EditPersonDescriptorBuilder().withTags("updated").build()
         };
         Person[] expectedPersons = {
             new PersonBuilder(original).withName("Updated Name").build(),
             new PersonBuilder(original).withPhone("81234567").build(),
             new PersonBuilder(original).withEmail("updated@example.com").build(),
+            new PersonBuilder(original).withRelationship(Relationship.CLIENT).build(),
             new PersonBuilder(original).withTags("updated").build()
         };
         for (int i = 0; i < descriptors.length; i++) {
