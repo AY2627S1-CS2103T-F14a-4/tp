@@ -412,6 +412,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | * | As a long-time user | move inactive records out of my active view and restore them later | reduce clutter without permanently losing relationship history. |
 | * * | As a financial consultant moving or safeguarding my local data | create a backup copy of my records | protect the relationship information I have accumulated. |
 | * * | As a financial consultant recovering from data loss or changing computers | restore my records from a backup | resume work without rebuilding my relationship history. |
+| * * * | As a long-term user | have my data saved between sessions | continue managing my information without having to re-enter it each time. |
 
 
 ### Use cases
