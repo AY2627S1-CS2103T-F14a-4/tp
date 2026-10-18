@@ -33,7 +33,7 @@ public class AddCommandParser implements Parser<AddCommand> {
         }
 
         validateRequiredPrefixes(argMultimap);
-        validateNoDuplicatePrefixes(argMultimap);
+        argMultimap.verifyNoDuplicatePrefixesFor(PREFIX_RELATIONSHIP, PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL);
         Relationship relationship = ParserUtil.parseRelationship(argMultimap.getValue(PREFIX_RELATIONSHIP).get());
         Name name = ParserUtil.parseName(argMultimap.getValue(PREFIX_NAME).get());
         Phone phone = ParserUtil.parsePhone(argMultimap.getValue(PREFIX_PHONE).get());
@@ -65,21 +65,6 @@ public class AddCommandParser implements Parser<AddCommand> {
         }
         if (!hasPhone) {
             throw new ParseException(AddCommand.MESSAGE_PHONE_REQUIRED);
-        }
-    }
-
-    private static void validateNoDuplicatePrefixes(ArgumentMultimap argumentMultimap) throws ParseException {
-        if (argumentMultimap.getAllValues(PREFIX_RELATIONSHIP).size() > 1) {
-            throw new ParseException(AddCommand.MESSAGE_RELATIONSHIP_DUPLICATED);
-        }
-        if (argumentMultimap.getAllValues(PREFIX_NAME).size() > 1) {
-            throw new ParseException(AddCommand.MESSAGE_NAME_DUPLICATED);
-        }
-        if (argumentMultimap.getAllValues(PREFIX_EMAIL).size() > 1) {
-            throw new ParseException(AddCommand.MESSAGE_EMAIL_DUPLICATED);
-        }
-        if (argumentMultimap.getAllValues(PREFIX_PHONE).size() > 1) {
-            throw new ParseException(AddCommand.MESSAGE_PHONE_DUPLICATED);
         }
     }
 

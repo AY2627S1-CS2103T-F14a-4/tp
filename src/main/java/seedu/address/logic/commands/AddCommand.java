@@ -41,11 +41,6 @@ public class AddCommand extends Command {
     public static final String MESSAGE_PHONE_REQUIRED = "Phone number is required.";
     public static final String MESSAGE_ALL_PARAMETERS_REQUIRED =
             "Relationship, name, email and phone number are required.";
-    public static final String MESSAGE_RELATIONSHIP_DUPLICATED = "Relationship can only be specified once.";
-    public static final String MESSAGE_NAME_DUPLICATED = "Name can only be specified once.";
-    public static final String MESSAGE_EMAIL_DUPLICATED = "Email can only be specified once.";
-    public static final String MESSAGE_PHONE_DUPLICATED = "Phone number can only be specified once.";
-
     private final Person toAdd;
 
     /**

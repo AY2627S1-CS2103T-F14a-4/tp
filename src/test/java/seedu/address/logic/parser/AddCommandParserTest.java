@@ -5,6 +5,7 @@ import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSucces
 
 import org.junit.jupiter.api.Test;
 
+import seedu.address.logic.Messages;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.Name;
@@ -42,15 +43,17 @@ public class AddCommandParserTest {
     @Test
     public void parse_repeatedPrefix_failure() {
         assertParseFailure(parser, " r/Client n/John Doe e/john.doe@example.com p/91234567 r/Prospect",
-                AddCommand.MESSAGE_RELATIONSHIP_DUPLICATED);
+                Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_RELATIONSHIP));
         assertParseFailure(parser, " r/Client n/John Doe n/Jane Doe e/john.doe@example.com p/91234567",
-                AddCommand.MESSAGE_NAME_DUPLICATED);
+                Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_NAME));
         assertParseFailure(parser,
                 " r/Client n/John Doe e/john.doe@example.com e/jane.doe@example.com p/91234567",
-                AddCommand.MESSAGE_EMAIL_DUPLICATED);
+                Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_EMAIL));
         assertParseFailure(parser,
                 " r/Client n/John Doe e/john.doe@example.com p/91234567 p/98765432",
-                AddCommand.MESSAGE_PHONE_DUPLICATED);
+                Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_PHONE));
+        assertParseFailure(parser, " r/Client r/Prospect n/John Doe n/Jane Doe e/john.doe@example.com p/91234567",
+                Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_RELATIONSHIP, CliSyntax.PREFIX_NAME));
     }
 
     @Test
