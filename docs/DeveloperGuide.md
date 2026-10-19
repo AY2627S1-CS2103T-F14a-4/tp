@@ -356,8 +356,6 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 | Priority | As a … | I want to … | So that I can … |
 | --- | --- | --- | --- |
-| * | As a potential user exploring the app | view realistic sample client records | understand how the product supports relationship management before entering real data. |
-| * | As a user ready to start using the app | remove all sample or experimental records | begin with a clean set of client data. |
 | * * * | As a financial consultant | add a client or prospect with their basic contact details | keep a record of every professional relationship I manage. |
 | * * * | As a financial consultant | view all active clients and prospects | see the relationships currently under my care. |
 | * * | As a financial consultant preparing to contact someone | view one person's complete profile | recall the relevant relationship context before the conversation. |
@@ -412,6 +410,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | * | As a long-time user | move inactive records out of my active view and restore them later | reduce clutter without permanently losing relationship history. |
 | * * | As a financial consultant moving or safeguarding my local data | create a backup copy of my records | protect the relationship information I have accumulated. |
 | * * | As a financial consultant recovering from data loss or changing computers | restore my records from a backup | resume work without rebuilding my relationship history. |
+| * * * | As a long-term user | have my data saved between sessions | continue managing my information without having to re-enter it each time. |
 
 
 ### Use cases

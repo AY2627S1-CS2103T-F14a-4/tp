@@ -25,7 +25,7 @@ and stores records locally.
 3. Copy the file to the folder you want to use as the _home folder_ for your AddressBook.
 
 4. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar addressbook.jar`.<br>
-   A GUI similar to the one below should appear in a few seconds. Note how the app contains some sample data.<br>
+   A GUI similar to the one below should appear in a few seconds. Your address book starts empty.<br>
    ![Ui](images/Ui.png)
 
 5. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
