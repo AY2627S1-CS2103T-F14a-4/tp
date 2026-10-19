@@ -3,6 +3,7 @@ package seedu.address.model.person;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -15,6 +16,18 @@ import seedu.address.testutil.PersonBuilder;
 
 public class NextActionTest {
     private static final LocalDate DATE = LocalDate.of(2026, 10, 19);
+
+    @Test
+    public void markCompleted_returnsCompletedCopyAndPreservesOriginal() {
+        NextAction original = new NextAction("Call", DATE, false);
+        NextAction completed = original.markCompleted();
+        assertEquals(new NextAction("Call", DATE, true), completed);
+        assertNotSame(original, completed);
+        assertFalse(original.isCompleted());
+        NextAction anotherCopy = completed.markCompleted();
+        assertEquals(completed, anotherCopy);
+        assertNotSame(completed, anotherCopy);
+    }
 
     @Test
     public void constructor_stripsWhitespaceAndAcceptsMaximumLength() {

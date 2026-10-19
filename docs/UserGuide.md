@@ -274,6 +274,32 @@ Repeated `a/` or `d/` prefixes produce the standard duplicate-prefix error. Spac
 are reserved delimiters and cannot appear literally within the description. URLs such as `https://example.com`
 and other text are accepted. Rejected commands leave the person's data unchanged.
 
+### Completing a follow-up: `done`
+
+Marks the next action of a client or prospect in the currently displayed list as completed.
+
+Format: `done INDEX`
+
+Use the positive index shown beside the person. After `find`, use the index in the search results.
+For example, `done 1` completes the first displayed person's next action. The action description and
+its date are kept, and the card shows `Completed`. Contact details, financial information, tags and
+interaction notes are preserved. The current search filter remains active.
+
+The success message is `Next action for NAME has been marked as completed.`
+If the action is already completed, repeating `done` returns the normal message
+`Next action for NAME is already completed.` without changing the record or current filter.
+Running `next` for that person later replaces the action and resets its status to pending.
+
+The command checks these conditions in the order shown; a rejected command leaves all data unchanged:
+
+Condition | Error message
+----------|--------------
+The index is outside the currently displayed list | `The person index provided is invalid.`
+The person has no next action | `NAME has no next action to complete.`
+
+`done` without an index reports `Person index is required.`. Zero, negative numbers, non-integers,
+and extra arguments such as `done 1 2` report `Index must be a positive integer.`.
+
 ### Clearing all entries: `clear`
 
 Clears all entries from the address book.
@@ -333,6 +359,7 @@ Action     | Format, Examples
 **Info**   | `info INDEX [/fn FINANCIAL_NEED] [/pr PRIORITY] [/ai AREA_OF_INTEREST]`<br> e.g., `info 1 /fn retirement planning`
 **Note**   | `note INDEX d/DATE n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
 **Next**   | `next INDEX a/ACTION d/yyyy-MM-dd`<br> e.g., `next 1 a/Call d/2026-10-20`
+**Done**   | `done INDEX`<br> e.g., `done 1`
 **List**   | `list`
 **Help**   | `help`
 
