@@ -29,9 +29,45 @@ import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.InteractionNote;
+import seedu.address.model.person.NextAction;
 import seedu.address.testutil.PersonBuilder;
 
 public class PersonCardTest {
+    @Test
+    public void nextAction_hiddenWhenAbsent_showsStatusDateAndWrappedDescription() throws Exception {
+        CompletableFuture<Void> checked = new CompletableFuture<>();
+        Platform.runLater(() -> {
+            try {
+                Label absent = (Label) new PersonCard(ALICE, 1).getRoot().lookup("#nextAction");
+                assertFalse(absent.isVisible());
+                assertFalse(absent.isManaged());
+                LocalDate today = LocalDate.now();
+                LocalDate[] dates = {today.minusDays(1), today, today.plusDays(1), today.minusDays(1)};
+                String[] statuses = {"Overdue", "Pending", "Pending", "Completed"};
+                for (int i = 0; i < dates.length; i++) {
+                    NextAction action = new NextAction("A".repeat(200), dates[i], i == 3);
+                    Region card = new PersonCard(ALICE.withNextAction(action), 1).getRoot();
+                    Label label = (Label) card.lookup("#nextAction");
+                    assertTrue(label.isVisible());
+                    assertTrue(label.isManaged());
+                    assertTrue(label.isWrapText());
+                    assertEquals(statuses[i] + " | Due " + dates[i] + ": " + action.getAction(), label.getText());
+                    StackPane root = new StackPane(card);
+                    Scene scene = new Scene(root, 400, 600);
+                    scene.getStylesheets().add(getClass().getResource("/view/DarkTheme.css").toExternalForm());
+                    root.applyCss();
+                    root.layout();
+                    assertTrue(label.getHeight() > 30, "Maximum-length action must wrap in a narrow card");
+                    assertTrue(label.getBoundsInParent().getMaxX() <= card.getWidth());
+                }
+                checked.complete(null);
+            } catch (Throwable error) {
+                checked.completeExceptionally(error);
+            }
+        });
+        checked.get(10, TimeUnit.SECONDS);
+    }
+
     /** Starts the real toolkit; headless Linux runs need a virtual display such as Xvfb. */
     @BeforeAll
     public static void startToolkit() throws Exception {

@@ -235,6 +235,44 @@ Input | Error message
 `delete 0`, `delete -1`, `delete abc`, or `delete 1.5` | `Client index must be a positive integer.`
 `delete 3` when fewer than three records are displayed | `No client exists at index 3.`
 
+### Recording the next action: `next`
+
+Records one follow-up for a client or prospect in the currently displayed list.
+
+Format: `next INDEX a/ACTION d/yyyy-MM-dd`
+
+* Use the positive index shown beside the person. After `find`, use the index in those results.
+* Both prefixes are required, may appear in either order, and must each appear exactly once.
+  Separate the index and prefixes with spaces.
+* The action must contain 1–200 characters after surrounding whitespace is removed.
+* The due date must be a real date with exactly four year digits and two month/day digits.
+  Past dates are accepted. For example, `2026-02-30` and `2026-2-03` are rejected.
+* Each person has at most one next action. Running `next` again replaces the previous action and date,
+  and resets its status to pending, even if the previous action was completed.
+* The person's contact details, financial information, tags and interaction notes are preserved.
+
+Example: `next 1 a/Send retirement proposal d/2026-10-20`
+
+The success message is `Next action for NAME has been updated successfully.`
+The card shows the description, due date and a text status: `Pending`, `Overdue`, or `Completed`.
+An incomplete action becomes overdue when its date is earlier than the computer's current local date.
+An action due today is pending. Cards without a next action do not show this area.
+Status is calculated when a card is rendered. If the app stays open overnight, restart it to refresh all card labels.
+
+Input | Error message
+------|--------------
+`next` | `Person index is required.`
+`next 1 d/2026-10-20` | `Next action is required: use a/ACTION.`
+`next 1 a/Call` or `next 1 a/Call d/` | `Due date is required: use d/yyyy-MM-dd.`
+`next 0 a/Call d/2026-10-20` or a negative/non-integer index | `Index must be a positive integer.`
+`next 99 a/Call d/2026-10-20` when fewer than 99 people are displayed | `The person index provided is invalid.`
+`next 1 a/ d/2026-10-20` or an action over 200 characters | `Next action must contain 1 to 200 characters.`
+`next 1 a/Call d/2026-02-30` | `Due date must be a valid date in yyyy-MM-dd format.`
+
+Repeated `a/` or `d/` prefixes produce the standard duplicate-prefix error. Space-prefixed `a/` and `d/`
+are reserved delimiters and cannot appear literally within the description. URLs such as `https://example.com`
+and other text are accepted. Rejected commands leave the person's data unchanged.
+
 ### Clearing all entries: `clear`
 
 Clears all entries from the address book.
@@ -293,6 +331,7 @@ Action     | Format, Examples
 **Find**   | `find KEYWORD [MORE_KEYWORDS] [r/RELATIONSHIP]` or `find r/RELATIONSHIP`<br> e.g., `find James Jake`, `find r/client`, `find James r/prospect`
 **Info**   | `info INDEX [/fn FINANCIAL_NEED] [/pr PRIORITY] [/ai AREA_OF_INTEREST]`<br> e.g., `info 1 /fn retirement planning`
 **Note**   | `note INDEX d/DATE n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
+**Next**   | `next INDEX a/ACTION d/yyyy-MM-dd`<br> e.g., `next 1 a/Call d/2026-10-20`
 **List**   | `list`
 **Help**   | `help`
 

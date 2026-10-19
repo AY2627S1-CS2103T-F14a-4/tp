@@ -350,3 +350,15 @@
     -fx-background-radius: 2;
     -fx-font-size: 11;
 }
+
+.cell_small_label.followup-pending {
+    -fx-text-fill: #9fc5f8;
+}
+
+.cell_small_label.followup-overdue {
+    -fx-text-fill: #ffadad;
+}
+
+.cell_small_label.followup-completed {
+    -fx-text-fill: #a9d6a5;
+}

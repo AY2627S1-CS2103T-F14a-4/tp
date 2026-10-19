@@ -29,6 +29,7 @@ public class Person {
     private final Priority priority;
     private final AreaOfInterest areaOfInterest;
     private final List<InteractionNote> interactionNotes;
+    private final NextAction nextAction;
     private final Set<Tag> tags = new HashSet<>();
 
     /**
@@ -58,6 +59,13 @@ public class Person {
     public Person(Name name, Phone phone, Email email, Set<Tag> tags, Relationship relationship,
             FinancialNeed financialNeed, Priority priority, AreaOfInterest areaOfInterest,
             List<InteractionNote> interactionNotes) {
+        this(name, phone, email, tags, relationship, financialNeed, priority, areaOfInterest, interactionNotes, null);
+    }
+
+    /** Creates a person with optional follow-up information; null means no follow-up. */
+    public Person(Name name, Phone phone, Email email, Set<Tag> tags, Relationship relationship,
+            FinancialNeed financialNeed, Priority priority, AreaOfInterest areaOfInterest,
+            List<InteractionNote> interactionNotes, NextAction nextAction) {
         requireAllNonNull(name, phone, email, tags, relationship);
         this.name = name;
         this.phone = phone;
@@ -68,6 +76,7 @@ public class Person {
         this.priority = priority;
         this.areaOfInterest = areaOfInterest;
         this.interactionNotes = List.copyOf(interactionNotes);
+        this.nextAction = nextAction;
     }
 
     /**
@@ -80,6 +89,16 @@ public class Person {
     /** Returns notes in insertion order, including repeated entries. */
     public List<InteractionNote> getInteractionNotes() {
         return interactionNotes;
+    }
+
+    public Optional<NextAction> getNextAction() {
+        return Optional.ofNullable(nextAction);
+    }
+
+    /** Returns a copy with the supplied follow-up and all other fields preserved. */
+    public Person withNextAction(NextAction nextAction) {
+        return new Person(name, phone, email, tags, relationship, financialNeed, priority, areaOfInterest,
+                interactionNotes, nextAction);
     }
 
     public Name getName() {
@@ -155,14 +174,15 @@ public class Person {
                 && Objects.equals(financialNeed, otherPerson.financialNeed)
                 && Objects.equals(priority, otherPerson.priority)
                 && Objects.equals(areaOfInterest, otherPerson.areaOfInterest)
-                && interactionNotes.equals(otherPerson.interactionNotes);
+                && interactionNotes.equals(otherPerson.interactionNotes)
+                && Objects.equals(nextAction, otherPerson.nextAction);
     }
 
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
         return Objects.hash(name, phone, email, tags, relationship, financialNeed, priority, areaOfInterest,
-                interactionNotes);
+                interactionNotes, nextAction);
     }
 
     @Override
@@ -177,6 +197,7 @@ public class Person {
                 .add("priority", priority)
                 .add("areaOfInterest", areaOfInterest)
                 .add("interactionNotes", interactionNotes)
+                .add("nextAction", nextAction)
                 .toString();
     }
 

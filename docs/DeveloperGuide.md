@@ -226,6 +226,61 @@ structured interaction outcomes, follow-ups and note search remain separate user
 
 Automated and manual regression checks are described in the [Testing guide](Testing.md#us14-interaction-note-regression-checks).
 
+### Follow-ups (US18)
+
+Each `Person` has zero or one immutable `NextAction`: an action description, a `LocalDate` due date,
+and a boolean completion status. Absence is exposed through `Person#getNextAction()` as an empty `Optional`.
+The value participates in full person equality and hashing, but does not affect duplicate identity detection.
+`Person#withNextAction` creates a replacement person while preserving all unrelated information.
+`EditCommand`, `InfoCommand` and `NoteCommand` must carry this field into their replacement persons.
+
+#### Recording or replacing an action (US18)
+
+`AddressBookParser` routes `next` to `NextCommandParser`, which uses `ArgumentTokenizer` for `a/` and `d/`.
+The parser validates the index through `ParserUtil#parseIndex`, rejects duplicate prefixes, and distinguishes
+missing action/date fields. `NextAction` strips surrounding description whitespace and checks a length of
+1–200 Java string characters. Its date parser enforces the four-digit-year/two-digit-month/two-digit-day shape
+and strict calendar validation. Backdated follow-ups are valid.
+
+`NextCommand` resolves the index against `Model#getFilteredPersonList`, rejects out-of-range indices,
+then passes the replacement person to `Model#setPerson`. Both new and replacement actions have
+`completed = false`. The observable list updates the card. `LogicManager` then saves through the existing
+storage pipeline; the command itself does not write files.
+
+![Next command sequence diagram](images/NextSequenceDiagram.png)
+
+Diagram source: [NextSequenceDiagram.puml](diagrams/NextSequenceDiagram.puml).
+The diagram shows the successful path. Parser failures and invalid displayed indices stop before mutation;
+save failures follow the existing `LogicManager` error handling.
+
+#### Persistence and card display
+
+`JsonAdaptedPerson` stores an optional `nextAction` object through `JsonAdaptedNextAction`:
+
+```json
+"nextAction": {
+  "action": "Send retirement proposal",
+  "dueDate": "2026-10-20",
+  "completed": false
+}
+```
+
+Missing or null `nextAction` fields load as absence, preserving compatibility with old files. An object
+with invalid or missing action/date/completion fields is rejected through `IllegalValueException`.
+Both pending and completed states survive a JSON round trip.
+
+`PersonCard` hides and unmanages the follow-up label when absent. Otherwise it displays text and color:
+completed takes precedence; incomplete dates earlier than today are overdue; remaining actions are pending.
+The label wraps long descriptions using the available card width. Status is evaluated when a card is constructed;
+there is no background midnight timer. Restarting the app refreshes all card labels after a date change.
+
+#### Validation and regression tests
+
+US18 tests cover missing/duplicate prefixes, zero/negative/non-integer/overflow indices, displayed-list bounds,
+empty and whitespace-only actions, 200/201-character descriptions, trimming, invalid dates (`2026-02-30`),
+leap days, past dates, replacement reset, filtered indices, preservation of unrelated fields, old JSON,
+invalid stored values, completion round trips and card display/wrapping.
+
 ### \[Proposed\] Undo/redo feature
 
 #### Proposed Implementation
