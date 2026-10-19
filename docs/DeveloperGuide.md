@@ -226,7 +226,7 @@ structured interaction outcomes, follow-ups and note search remain separate user
 
 Automated and manual regression checks are described in the [Testing guide](Testing.md#us14-interaction-note-regression-checks).
 
-### Follow-ups (US18)
+### Follow-ups (US18 and US20)
 
 Each `Person` has zero or one immutable `NextAction`: an action description, a `LocalDate` due date,
 and a boolean completion status. Absence is exposed through `Person#getNextAction()` as an empty `Optional`.
@@ -252,6 +252,27 @@ storage pipeline; the command itself does not write files.
 Diagram source: [NextSequenceDiagram.puml](diagrams/NextSequenceDiagram.puml).
 The diagram shows the successful path. Parser failures and invalid displayed indices stop before mutation;
 save failures follow the existing `LogicManager` error handling.
+
+#### Completing an action (US20)
+
+`AddressBookParser` routes `done INDEX` to `DoneCommandParser`. Empty arguments report
+`Person index is required.`; otherwise `ParserUtil#parseIndex` validates the entire argument string,
+rejecting zero, negative, non-integer and multiple indices.
+
+`DoneCommand` first checks the index against `Model#getFilteredPersonList`, then checks that the selected
+person has a next action, then checks that the action is incomplete. These checks occur before any model
+mutation. Their errors are, respectively, `Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX`,
+`NAME has no next action to complete.`, and `Next action for NAME is already completed.`.
+
+`NextAction#markCompleted()` returns a new object with the original description and date and
+`completed = true`. `DoneCommand` passes it to `Person#withNextAction` and calls `Model#setPerson`,
+preserving every unrelated person field and the current filter. The card displays `Completed` through the
+existing observable-list update. `LogicManager` saves through the existing JSON storage pipeline and returns
+`Next action for NAME has been marked as completed.`.
+
+Tests cover the immutable completed copy, preserved description/date and person fields, filtered display
+indices, out-of-range indices, absent actions, repeated completion, unchanged data on errors, command equality,
+string representation, parser validation and routing through `AddressBookParser`.
 
 #### Persistence and card display
 

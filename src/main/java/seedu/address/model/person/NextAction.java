@@ -53,6 +53,11 @@ public class NextAction {
         return completed;
     }
 
+    /** Returns a completed copy with the same description and due date. */
+    public NextAction markCompleted() {
+        return new NextAction(action, dueDate, true);
+    }
+
     @Override
     public boolean equals(Object other) {
         return other == this || other instanceof NextAction nextAction
