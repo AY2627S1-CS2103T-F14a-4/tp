@@ -1,6 +1,8 @@
 package seedu.address.ui;
 
+import java.time.LocalDate;
 import java.util.Comparator;
+import java.util.Locale;
 import java.util.Optional;
 
 import javafx.fxml.FXML;
@@ -50,6 +52,8 @@ public class PersonCard extends UiPart<Region> {
     private Label areaOfInterest;
     @FXML
     private VBox interactionNotes;
+    @FXML
+    private Label nextAction;
 
     /**
      * Creates a {@code PersonCard} with the given {@code Person} and index to display.
@@ -66,6 +70,12 @@ public class PersonCard extends UiPart<Region> {
         setOptionalInformation(priority, "Priority: ", person.getPriority().map(value -> value.value));
         setOptionalInformation(areaOfInterest, "Area of interest: ",
                 person.getAreaOfInterest().map(value -> value.value));
+        setOptionalInformation(nextAction, "", person.getNextAction().map(action -> {
+            String status = action.isCompleted() ? "Completed"
+                    : action.getDueDate().isBefore(LocalDate.now()) ? "Overdue" : "Pending";
+            nextAction.getStyleClass().add("followup-" + status.toLowerCase(Locale.ROOT));
+            return status + " | Due " + action.getDueDate() + ": " + action.getAction();
+        }));
         interactionNotes.setVisible(!person.getInteractionNotes().isEmpty());
         interactionNotes.setManaged(!person.getInteractionNotes().isEmpty());
         person.getInteractionNotes().forEach(note -> {

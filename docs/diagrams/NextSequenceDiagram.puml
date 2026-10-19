@@ -1,0 +1,55 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as Logic LOGIC_COLOR
+participant ":AddressBookParser" as Parser LOGIC_COLOR
+participant ":NextCommandParser" as NextParser LOGIC_COLOR
+participant "command:NextCommand" as Command LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "model:Model" as Model MODEL_COLOR
+participant "original:Person" as Person MODEL_COLOR
+end box
+
+box Storage STORAGE_COLOR_T1
+participant ":Storage" as Storage STORAGE_COLOR
+end box
+
+[-> Logic : execute("next 1 a/Call d/2026-10-20")
+activate Logic
+Logic -> Parser : parseCommand(commandText)
+activate Parser
+Parser -> NextParser : parse(arguments)
+activate NextParser
+note right of NextParser
+Validate displayed index syntax, required fields,
+duplicate prefixes, action length and calendar date.
+Create an incomplete NextAction.
+end note
+create Command
+NextParser -> Command : new NextCommand(index, nextAction)
+NextParser --> Parser : command
+deactivate NextParser
+Parser --> Logic : command
+deactivate Parser
+Logic -> Command : execute(model)
+activate Command
+Command -> Model : getFilteredPersonList()
+Model --> Command : displayedPersons
+note right of Command : Reject an out-of-range index before changing data.
+Command -> Person : withNextAction(nextAction)
+Person --> Command : updatedPerson
+Command -> Model : setPerson(original, updatedPerson)
+note right of Model : Observable list updates the PersonCard.
+Command --> Logic : CommandResult
+deactivate Command
+Logic -> Model : getAddressBook()
+Model --> Logic : addressBook
+Logic -> Storage : saveAddressBook(addressBook)
+Storage --> Logic
+[<-- Logic : CommandResult
+deactivate Logic
+@enduml

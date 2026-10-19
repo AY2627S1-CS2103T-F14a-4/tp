@@ -11,6 +11,7 @@ import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -18,12 +19,24 @@ import org.junit.jupiter.api.io.TempDir;
 import seedu.address.commons.exceptions.DataLoadingException;
 import seedu.address.model.AddressBook;
 import seedu.address.model.ReadOnlyAddressBook;
+import seedu.address.model.person.NextAction;
 
 public class JsonAddressBookStorageTest {
     private static final Path TEST_DATA_FOLDER = Paths.get("src", "test", "data", "JsonAddressBookStorageTest");
 
     @TempDir
     public Path testFolder;
+
+    @Test
+    public void saveAndReadFollowups_preservesPendingAndCompletedStates() throws Exception {
+        Path file = testFolder.resolve("followups.json");
+        AddressBook original = new AddressBook();
+        original.addPerson(ALICE.withNextAction(new NextAction("Call", LocalDate.of(2000, 1, 1), false)));
+        original.addPerson(HOON.withNextAction(new NextAction("Email", LocalDate.of(2026, 10, 20), true)));
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(file);
+        storage.saveAddressBook(original);
+        assertEquals(original, new AddressBook(storage.readAddressBook().orElseThrow()));
+    }
 
     @Test
     public void readAddressBook_nullFilePath_throwsNullPointerException() {

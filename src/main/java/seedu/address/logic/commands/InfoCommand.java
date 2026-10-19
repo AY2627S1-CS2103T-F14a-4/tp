@@ -45,7 +45,7 @@ public class InfoCommand extends Command {
                 descriptor.getFinancialNeed().orElse(original.getFinancialNeed().orElse(null)),
                 descriptor.getPriority().orElse(original.getPriority().orElse(null)),
                 descriptor.getAreaOfInterest().orElse(original.getAreaOfInterest().orElse(null)),
-                original.getInteractionNotes());
+                original.getInteractionNotes(), original.getNextAction().orElse(null));
         model.setPerson(original, updated);
         return new CommandResult(String.format(MESSAGE_SUCCESS, original.getName().fullName));
     }

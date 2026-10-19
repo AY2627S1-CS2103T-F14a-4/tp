@@ -35,6 +35,7 @@ class JsonAdaptedPerson {
     private final String financialNeed;
     private final String priority;
     private final String areaOfInterest;
+    private final JsonAdaptedNextAction nextAction;
     private final List<JsonAdaptedTag> tags = new ArrayList<>();
     private final List<JsonAdaptedInteractionNote> interactionNotes = new ArrayList<>();
 
@@ -58,14 +59,22 @@ class JsonAdaptedPerson {
         this(name, phone, email, tags, relationship, financialNeed, priority, areaOfInterest, null);
     }
 
-    /** Missing interaction history in older files is treated as empty. */
+    /** Retains the existing constructor for callers without follow-up information. */
+    public JsonAdaptedPerson(String name, String phone, String email, List<JsonAdaptedTag> tags,
+            String relationship, String financialNeed, String priority, String areaOfInterest,
+            List<JsonAdaptedInteractionNote> interactionNotes) {
+        this(name, phone, email, tags, relationship, financialNeed, priority, areaOfInterest, interactionNotes, null);
+    }
+
+    /** Missing history or follow-up information in older files is treated as absent. */
     @JsonCreator
     public JsonAdaptedPerson(@JsonProperty("name") String name, @JsonProperty("phone") String phone,
             @JsonProperty("email") String email, @JsonProperty("tags") List<JsonAdaptedTag> tags,
             @JsonProperty("relationship") String relationship,
             @JsonProperty("financialNeed") String financialNeed, @JsonProperty("priority") String priority,
             @JsonProperty("areaOfInterest") String areaOfInterest,
-            @JsonProperty("interactionNotes") List<JsonAdaptedInteractionNote> interactionNotes) {
+            @JsonProperty("interactionNotes") List<JsonAdaptedInteractionNote> interactionNotes,
+            @JsonProperty("nextAction") JsonAdaptedNextAction nextAction) {
         this.name = name;
         this.phone = phone;
         this.email = email;
@@ -73,6 +82,7 @@ class JsonAdaptedPerson {
         this.financialNeed = financialNeed;
         this.priority = priority;
         this.areaOfInterest = areaOfInterest;
+        this.nextAction = nextAction;
         if (tags != null) {
             this.tags.addAll(tags);
         }
@@ -85,6 +95,7 @@ class JsonAdaptedPerson {
      * Converts a given {@code Person} into this class for Jackson use.
      */
     public JsonAdaptedPerson(Person source) {
+        nextAction = source.getNextAction().map(JsonAdaptedNextAction::new).orElse(null);
         name = source.getName().fullName;
         phone = source.getPhone().value;
         email = source.getEmail().value;
@@ -174,7 +185,8 @@ class JsonAdaptedPerson {
             modelNotes.add(note.toModelType());
         }
         return new Person(modelName, modelPhone, modelEmail, modelTags, modelRelationship,
-                modelFinancialNeed, modelPriority, modelAreaOfInterest, modelNotes);
+                modelFinancialNeed, modelPriority, modelAreaOfInterest, modelNotes,
+                nextAction == null ? null : nextAction.toModelType());
     }
 
     private static Relationship parseRelationship(String relationship) throws IllegalValueException {
