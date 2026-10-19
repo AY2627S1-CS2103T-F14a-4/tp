@@ -40,8 +40,8 @@ public class NextActionTest {
                 assertEquals(date, new NextAction("Call", date, completed).getDueDate());
             }
             for (int year : List.of(-1, 0, 10000)) {
-                assertThrows(IllegalArgumentException.class,
-                        () -> new NextAction("Call", DATE.withYear(year), completed));
+                assertThrows(IllegalArgumentException.class, () -> new NextAction("Call",
+                        DATE.withYear(year), completed));
             }
         }
     }
