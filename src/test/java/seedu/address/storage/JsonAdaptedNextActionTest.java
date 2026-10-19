@@ -19,10 +19,13 @@ public class JsonAdaptedNextActionTest {
     @Test
     public void toModelType_roundTrip_preservesAllFieldsAndCompletion() throws Exception {
         for (boolean completed : new boolean[] {false, true}) {
-            NextAction action = new NextAction("Call", LocalDate.of(2000, 1, 1), completed);
-            Person source = new PersonBuilder().withNextAction(action).build();
-            String json = JsonUtil.toJsonString(new JsonAdaptedPerson(source));
-            assertEquals(source, JsonUtil.fromJsonString(json, JsonAdaptedPerson.class).toModelType());
+            for (LocalDate date : List.of(LocalDate.of(1, 1, 1), LocalDate.of(2000, 1, 1),
+                    LocalDate.of(9999, 12, 31))) {
+                NextAction action = new NextAction("Call", date, completed);
+                Person source = new PersonBuilder().withNextAction(action).build();
+                String json = JsonUtil.toJsonString(new JsonAdaptedPerson(source));
+                assertEquals(source, JsonUtil.fromJsonString(json, JsonAdaptedPerson.class).toModelType());
+            }
         }
     }
 
@@ -39,6 +42,8 @@ public class JsonAdaptedNextActionTest {
     public void toModelType_invalidOrMissingFields_rejectsData() {
         for (JsonAdaptedNextAction action : List.of(
                 new JsonAdaptedNextAction("Call", "2026-02-30", false),
+                new JsonAdaptedNextAction("Call", "0000-01-01", false),
+                new JsonAdaptedNextAction("Call", "0000-02-29", true),
                 new JsonAdaptedNextAction("Call", "2026-2-03", false),
                 new JsonAdaptedNextAction(" ", "2026-10-19", false),
                 new JsonAdaptedNextAction("a".repeat(201), "2026-10-19", false),

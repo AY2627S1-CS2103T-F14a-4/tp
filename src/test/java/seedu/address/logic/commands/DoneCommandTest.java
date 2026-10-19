@@ -2,6 +2,7 @@ package seedu.address.logic.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
@@ -84,13 +85,39 @@ public class DoneCommandTest {
     }
 
     @Test
-    public void execute_alreadyCompleted_rejectsWithoutChangingData() throws Exception {
+    public void execute_repeatedCompletion_reportsAlreadyCompletedWithoutChangingData() throws Exception {
         Person original = model.getFilteredPersonList().getFirst();
         model.setPerson(original, original.withNextAction(ACTION));
         DoneCommand command = new DoneCommand(INDEX_FIRST_PERSON);
         command.execute(model);
-        assertCommandFailure(command, model,
-                String.format(DoneCommand.MESSAGE_ALREADY_COMPLETED, original.getName().fullName));
+        Person completed = model.getFilteredPersonList().getFirst();
+        Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+
+        for (int attempt = 0; attempt < 2; attempt++) {
+            assertCommandSuccess(command, model,
+                    String.format(DoneCommand.MESSAGE_ALREADY_COMPLETED, original.getName().fullName), expectedModel);
+            assertSame(completed, model.getFilteredPersonList().getFirst());
+        }
+    }
+
+    @Test
+    public void execute_alreadyCompletedFilteredList_reportsWithoutReplacingPersonOrChangingFilter() {
+        Person original = model.getFilteredPersonList().get(1);
+        Person completed = original.withNextAction(ACTION.markCompleted());
+        model.setPerson(original, completed);
+        Model readOnlyModel = new ModelManager(model.getAddressBook(), new UserPrefs()) {
+            @Override
+            public void setPerson(Person target, Person editedPerson) {
+                throw new AssertionError("An already completed action must not replace the person.");
+            }
+        };
+        Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+        showPersonAtIndex(readOnlyModel, INDEX_SECOND_PERSON);
+        showPersonAtIndex(expectedModel, INDEX_SECOND_PERSON);
+
+        assertCommandSuccess(new DoneCommand(INDEX_FIRST_PERSON), readOnlyModel,
+                String.format(DoneCommand.MESSAGE_ALREADY_COMPLETED, completed.getName().fullName), expectedModel);
+        assertSame(completed, readOnlyModel.getFilteredPersonList().getFirst());
     }
 
     @Test

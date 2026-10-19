@@ -245,8 +245,9 @@ Format: `next INDEX a/ACTION d/yyyy-MM-dd`
 * Both prefixes are required, may appear in either order, and must each appear exactly once.
   Separate the index and prefixes with spaces.
 * The action must contain 1–200 characters after surrounding whitespace is removed.
-* The due date must be a real date with exactly four year digits and two month/day digits.
-  Past dates are accepted. For example, `2026-02-30` and `2026-2-03` are rejected.
+* The due date must be a real date in years `0001` to `9999`, with exactly four year digits
+  and two month/day digits. Past dates are accepted. For example, `0000-01-01`, `2026-02-30`
+  and `2026-2-03` are rejected.
 * Each person has at most one next action. Running `next` again replaces the previous action and date,
   and resets its status to pending, even if the previous action was completed.
 * The person's contact details, financial information, tags and interaction notes are preserved.
@@ -285,6 +286,8 @@ its date are kept, and the card shows `Completed`. Contact details, financial in
 interaction notes are preserved. The current search filter remains active.
 
 The success message is `Next action for NAME has been marked as completed.`
+If the action is already completed, repeating `done` returns the normal message
+`Next action for NAME is already completed.` without changing the record or current filter.
 Running `next` for that person later replaces the action and resets its status to pending.
 
 The command checks these conditions in the order shown; a rejected command leaves all data unchanged:
@@ -293,7 +296,6 @@ Condition | Error message
 ----------|--------------
 The index is outside the currently displayed list | `The person index provided is invalid.`
 The person has no next action | `NAME has no next action to complete.`
-The next action is already completed | `Next action for NAME is already completed.`
 
 `done` without an index reports `Person index is required.`. Zero, negative numbers, non-integers,
 and extra arguments such as `done 1 2` report `Index must be a positive integer.`.

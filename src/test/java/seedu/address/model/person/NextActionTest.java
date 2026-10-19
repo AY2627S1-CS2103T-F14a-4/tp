@@ -47,11 +47,27 @@ public class NextActionTest {
     }
 
     @Test
+    public void constructor_dateYearRange_acceptsBoundariesAndRejectsOutOfRange() {
+        for (boolean completed : new boolean[] {false, true}) {
+            for (LocalDate date : List.of(LocalDate.of(1, 1, 1), LocalDate.of(9999, 12, 31))) {
+                assertEquals(date, new NextAction("Call", date, completed).getDueDate());
+            }
+            for (int year : List.of(-1, 0, 10000)) {
+                assertThrows(IllegalArgumentException.class,
+                        () -> new NextAction("Call", DATE.withYear(year), completed));
+            }
+        }
+    }
+
+    @Test
     public void parseDate_strictCalendarValidation() {
         assertEquals(LocalDate.of(2024, 2, 29), NextAction.parseDate("2024-02-29"));
         assertEquals(LocalDate.of(2000, 1, 1), NextAction.parseDate("2000-01-01"));
+        assertEquals(LocalDate.of(1, 1, 1), NextAction.parseDate("0001-01-01"));
+        assertEquals(LocalDate.of(9999, 12, 31), NextAction.parseDate("9999-12-31"));
         for (String date : List.of("2026-02-30", "2026-02-29", "2026-2-03", "26-02-03",
-                "2026-13-01", "2026-00-01", "2026-01-00", "2026-04-31", "2026-01-01extra")) {
+                "2026-13-01", "2026-00-01", "2026-01-00", "2026-04-31", "2026-01-01extra",
+                "0000-01-01", "0000-02-29", "-0001-01-01", "10000-01-01")) {
             assertThrows(IllegalArgumentException.class, () -> NextAction.parseDate(date));
         }
         assertThrows(IllegalArgumentException.class, () -> NextAction.parseDate(null));

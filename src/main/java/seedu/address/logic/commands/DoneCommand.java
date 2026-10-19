@@ -39,7 +39,7 @@ public class DoneCommand extends Command {
         }
         NextAction nextAction = original.getNextAction().orElseThrow();
         if (nextAction.isCompleted()) {
-            throw new CommandException(String.format(MESSAGE_ALREADY_COMPLETED, name));
+            return new CommandResult(String.format(MESSAGE_ALREADY_COMPLETED, name));
         }
         model.setPerson(original, original.withNextAction(nextAction.markCompleted()));
         return new CommandResult(String.format(MESSAGE_SUCCESS, name));

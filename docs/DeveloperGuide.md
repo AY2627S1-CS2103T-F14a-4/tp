@@ -240,7 +240,8 @@ The value participates in full person equality and hashing, but does not affect 
 The parser validates the index through `ParserUtil#parseIndex`, rejects duplicate prefixes, and distinguishes
 missing action/date fields. `NextAction` strips surrounding description whitespace and checks a length of
 1–200 Java string characters. Its date parser enforces the four-digit-year/two-digit-month/two-digit-day shape
-and strict calendar validation. Backdated follow-ups are valid.
+and strict calendar validation. Both parsing and model construction restrict the year to 1–9999;
+year zero is rejected, including when loading JSON. Backdated follow-ups within this range are valid.
 
 `NextCommand` resolves the index against `Model#getFilteredPersonList`, rejects out-of-range indices,
 then passes the replacement person to `Model#setPerson`. Both new and replacement actions have
@@ -260,9 +261,10 @@ save failures follow the existing `LogicManager` error handling.
 rejecting zero, negative, non-integer and multiple indices.
 
 `DoneCommand` first checks the index against `Model#getFilteredPersonList`, then checks that the selected
-person has a next action, then checks that the action is incomplete. These checks occur before any model
-mutation. Their errors are, respectively, `Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX`,
-`NAME has no next action to complete.`, and `Next action for NAME is already completed.`.
+person has a next action. These checks occur before any model mutation and report, respectively,
+`Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX` and `NAME has no next action to complete.`.
+If the action is already completed, the command returns a normal `CommandResult` with
+`Next action for NAME is already completed.` without calling `Model#setPerson` or changing the filter.
 
 `NextAction#markCompleted()` returns a new object with the original description and date and
 `completed = true`. `DoneCommand` passes it to `Person#withNextAction` and calls `Model#setPerson`,
