@@ -28,6 +28,14 @@ public class NextCommandParserTest {
     }
 
     @Test
+    public void parse_boundaryDateYears_success() {
+        for (LocalDate date : List.of(LocalDate.of(1, 1, 1), LocalDate.of(9999, 12, 31))) {
+            assertParseSuccess(parser, " 1 a/Call d/" + date,
+                    new NextCommand(INDEX_FIRST_PERSON, new NextAction("Call", date, false)));
+        }
+    }
+
+    @Test
     public void parse_missingFields_failure() {
         assertParseFailure(parser, "", NextCommandParser.MESSAGE_INDEX_REQUIRED);
         assertParseFailure(parser, " a/Call d/2026-10-19", NextCommandParser.MESSAGE_INDEX_REQUIRED);
@@ -47,7 +55,8 @@ public class NextCommandParserTest {
 
     @Test
     public void parse_invalidDateOrLongAction_failure() {
-        for (String date : List.of("2026-02-30", "2026-02-29", "2026-2-03", "2026-13-01")) {
+        for (String date : List.of("2026-02-30", "2026-02-29", "2026-2-03", "2026-13-01",
+                "0000-01-01", "0000-02-29", "-0001-01-01", "10000-01-01")) {
             assertParseFailure(parser, " 1 a/Call d/" + date, NextAction.MESSAGE_INVALID_DATE);
         }
         assertParseFailure(parser, " 1 a/" + "a".repeat(201) + " d/2026-10-19",

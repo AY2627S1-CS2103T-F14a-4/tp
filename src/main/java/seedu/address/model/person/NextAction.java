@@ -23,19 +23,21 @@ public class NextAction {
         requireAllNonNull(action, dueDate);
         String trimmedAction = action.strip();
         checkArgument(!trimmedAction.isEmpty() && trimmedAction.length() <= 200, MESSAGE_ACTION_CONSTRAINTS);
-        checkArgument(dueDate.getYear() >= 0 && dueDate.getYear() <= 9999, MESSAGE_INVALID_DATE);
+        checkArgument(dueDate.getYear() >= 1 && dueDate.getYear() <= 9999, MESSAGE_INVALID_DATE);
         this.action = trimmedAction;
         this.dueDate = dueDate;
         this.completed = completed;
     }
 
-    /** Parses a real calendar date with exactly four year digits and two month/day digits. */
+    /** Parses a valid date in years 0001 to 9999 with exactly two month/day digits. */
     public static LocalDate parseDate(String value) {
         if (value == null || !value.matches("[0-9]{4}-[0-9]{2}-[0-9]{2}")) {
             throw new IllegalArgumentException(MESSAGE_INVALID_DATE);
         }
         try {
-            return LocalDate.parse(value);
+            LocalDate date = LocalDate.parse(value);
+            checkArgument(date.getYear() >= 1, MESSAGE_INVALID_DATE);
+            return date;
         } catch (DateTimeParseException e) {
             throw new IllegalArgumentException(MESSAGE_INVALID_DATE, e);
         }

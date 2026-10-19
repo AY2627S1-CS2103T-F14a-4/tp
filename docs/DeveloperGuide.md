@@ -240,7 +240,8 @@ The value participates in full person equality and hashing, but does not affect 
 The parser validates the index through `ParserUtil#parseIndex`, rejects duplicate prefixes, and distinguishes
 missing action/date fields. `NextAction` strips surrounding description whitespace and checks a length of
 1–200 Java string characters. Its date parser enforces the four-digit-year/two-digit-month/two-digit-day shape
-and strict calendar validation. Backdated follow-ups are valid.
+and strict calendar validation. Both parsing and model construction restrict the year to 1–9999;
+year zero is rejected, including when loading JSON. Backdated follow-ups within this range are valid.
 
 `NextCommand` resolves the index against `Model#getFilteredPersonList`, rejects out-of-range indices,
 then passes the replacement person to `Model#setPerson`. Both new and replacement actions have

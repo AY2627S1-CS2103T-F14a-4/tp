@@ -245,8 +245,9 @@ Format: `next INDEX a/ACTION d/yyyy-MM-dd`
 * Both prefixes are required, may appear in either order, and must each appear exactly once.
   Separate the index and prefixes with spaces.
 * The action must contain 1–200 characters after surrounding whitespace is removed.
-* The due date must be a real date with exactly four year digits and two month/day digits.
-  Past dates are accepted. For example, `2026-02-30` and `2026-2-03` are rejected.
+* The due date must be a real date in years `0001` to `9999`, with exactly four year digits
+  and two month/day digits. Past dates are accepted. For example, `0000-01-01`, `2026-02-30`
+  and `2026-2-03` are rejected.
 * Each person has at most one next action. Running `next` again replaces the previous action and date,
   and resets its status to pending, even if the previous action was completed.
 * The person's contact details, financial information, tags and interaction notes are preserved.
