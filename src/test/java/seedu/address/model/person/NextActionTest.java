@@ -74,6 +74,17 @@ public class NextActionTest {
     }
 
     @Test
+    public void yearZero_rejectedByParserAndConstructor() {
+        IllegalArgumentException parseError =
+                assertThrows(IllegalArgumentException.class, () -> NextAction.parseDate("0000-01-01"));
+        assertEquals(NextAction.MESSAGE_INVALID_DATE, parseError.getMessage());
+        LocalDate yearZero = LocalDate.of(0, 1, 1);
+        IllegalArgumentException constructorError =
+                assertThrows(IllegalArgumentException.class, () -> new NextAction("Call", yearZero, false));
+        assertEquals(NextAction.MESSAGE_INVALID_DATE, constructorError.getMessage());
+    }
+
+    @Test
     public void equality_includesAllFollowupFieldsButDoesNotChangePersonIdentity() {
         NextAction action = new NextAction("Call", DATE, false);
         assertEquals(action, new NextAction("Call", DATE, false));

@@ -245,7 +245,7 @@ structured interaction outcomes, follow-ups and note search remain separate user
 
 Automated and manual regression checks are described in the [Testing guide](Testing.md#us14-interaction-note-regression-checks).
 
-### Follow-ups (US18 and US20)
+### Follow-ups (US18, US19 and US20)
 
 Each `Person` has zero or one immutable `NextAction`: an action description, a `LocalDate` due date,
 and a boolean completion status. Absence is exposed through `Person#getNextAction()` as an empty `Optional`.
@@ -294,6 +294,23 @@ existing observable-list update. `LogicManager` saves through the existing JSON 
 Tests cover the immutable completed copy, preserved description/date and person fields, filtered display
 indices, out-of-range indices, absent actions, repeated completion, unchanged data on errors, command equality,
 string representation, parser validation and routing through `AddressBookParser`.
+
+#### Viewing due actions (US19)
+
+`AddressBookParser` routes argument-free `due` to `DueCommand`; any arguments are rejected with
+`The due command takes no arguments.`. On each execution, `DueCommand` obtains today's date using
+`LocalDate.now(clock)` and calls `Model#updateFilteredPersonList` with a new `NextActionDuePredicate`.
+The predicate includes only people with an incomplete next action whose date is today or earlier.
+This replaces any previous search filter without changing stored people. Completing an action through
+`done` replaces the person, so the observable filtered list automatically excludes that person.
+
+The default constructor uses `Clock.systemDefaultZone()`. Tests inject a `Clock.fixed` with an explicit
+zone to make the date boundary deterministic. The predicate captures the execution date; rerunning `due`
+refreshes it after midnight. Empty results report `No follow-ups are due.`; otherwise the command reports
+the number of matching follow-ups.
+
+In v1.4 this feature only filters and preserves the existing list order. Sorting is a separate user story;
+keeping it outside US19 avoids changes to the shared model and existing `find`/`list` behaviour.
 
 #### Persistence and card display
 
