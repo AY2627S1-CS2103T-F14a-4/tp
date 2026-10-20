@@ -145,6 +145,35 @@ Examples:
 * `info 2 /pr protect family income /ai life insurance`
 * `info 1 /ai investment products /fn wealth accumulation /pr preserve capital`
 
+### Recording preferred contact channel and timing: `contact`
+
+Records how and when a client or prospect prefers to be contacted.
+
+Format: `contact INDEX [ch/CHANNEL] [tm/TIMING]`
+
+* `INDEX` is a positive integer referring to the currently displayed list, including after a search.
+* Supply at least one of `ch/` or `tm/`, each at most once, in either order. Separate prefixes with spaces.
+* Each supplied value replaces the previous value; omitted preferences and all other person details remain unchanged.
+* Values must contain 1–200 characters after surrounding whitespace is trimmed. Internal spaces and case are preserved.
+  Free text, Unicode and punctuation are accepted, for example `WhatsApp` and `Weekdays 6:30–8 pm`.
+* Empty or whitespace-only values are rejected. Preferences cannot be cleared with this command.
+* The person's card displays each recorded preference, wrapping long values. Unset preferences are hidden.
+* Preferences are saved automatically. Older data files without these fields load with no preferences.
+
+Examples:
+
+* `contact 1 ch/WhatsApp tm/Weekdays after 6 pm`
+* `contact 2 tm/Lunch break ch/Phone call`
+* `contact 1 tm/Weekends 10 am to noon` (keeps the existing channel)
+
+Success message: `Updated contact preferences for PERSON_NAME.`
+
+Missing or invalid indices produce `Index must be a positive integer.` An index outside the displayed list
+produces `The person index provided is invalid.` Missing fields produce `At least one of ch/ or tm/ is required.`
+Duplicate `ch/` or `tm/` prefixes are rejected. These recognized prefixes, when preceded by a space,
+are delimiters and cannot be included literally in values. Other slash-containing text, such as `AM/PM`
+or `Phone/WhatsApp`, is preserved as part of the value.
+
 ### Adding a dated interaction note: `note`
 
 Appends a dated note to a client or prospect. Notes appear on the person's card in the order they were added.
@@ -356,6 +385,7 @@ Action     | Format, Examples
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit**   | `edit INDEX [r/RELATIONSHIP] [n/NAME] [p/PHONE_NUMBER] [e/EMAIL]`<br> e.g.,`edit 2 r/Client n/James Lee e/jameslee@example.com`
 **Find**   | `find KEYWORD [MORE_KEYWORDS] [r/RELATIONSHIP]` or `find r/RELATIONSHIP`<br> e.g., `find James Jake`, `find r/client`, `find James r/prospect`
+**Contact** | `contact INDEX [ch/CHANNEL] [tm/TIMING]`<br> e.g., `contact 1 ch/WhatsApp tm/After 6 pm`
 **Info**   | `info INDEX [/fn FINANCIAL_NEED] [/pr PRIORITY] [/ai AREA_OF_INTEREST]`<br> e.g., `info 1 /fn retirement planning`
 **Note**   | `note INDEX d/DATE n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
 **Next**   | `next INDEX a/ACTION d/yyyy-MM-dd`<br> e.g., `next 1 a/Call d/2026-10-20`

@@ -186,6 +186,21 @@ predicate applies `OR` between the name keywords, then applies `AND` between the
 filter. For example, `find Alex David r/client` returns clients whose names contain either `Alex` or `David`.
 
 
+### Contact preferences (US12)
+
+`ContactCommandParser` reuses `ArgumentTokenizer`, duplicate-prefix checks and `ParserUtil.parseIndex`.
+Immutable `PreferredContactChannel` and `PreferredContactTiming` validate and strip supplied values before execution.
+Their free-text character policy follows `NextAction`, allowing time punctuation without a new restrictive whitelist.
+`ContactCommand` checks the displayed index, then uses `Person#withContactPreferences` to replace only supplied
+preferences. All other fields and the active filter are preserved. `edit`, `info`, `note`, `withNextAction` and
+`PersonBuilder` also copy both preferences. `PersonCard` hides absent values and wraps recorded values.
+`JsonAdaptedPerson` persists optional `preferredContactChannel` and `preferredContactTiming` strings; missing or
+null properties mean absence, while invalid non-null values produce `IllegalValueException`.
+
+The following sequence shows a successful update; parser validation and index checks precede model mutation.
+
+<puml src="diagrams/ContactSequenceDiagram.puml" alt="Contact preference update sequence" />
+
 ### Dated interaction notes (US14)
 
 `note INDEX d/yyyy-MM-dd n/NOTE` appends an interaction note to the person at the index in the currently displayed
