@@ -16,6 +16,59 @@ public class InfoCommandParserTest {
     private final InfoCommandParser parser = new InfoCommandParser();
 
     @Test
+    public void parse_clearIndividualFieldsWithSpaces_success() {
+        InfoDescriptor need = new InfoDescriptor();
+        need.setFinancialNeed(null);
+        InfoDescriptor priority = new InfoDescriptor();
+        priority.setPriority(null);
+        InfoDescriptor interest = new InfoDescriptor();
+        interest.setAreaOfInterest(null);
+        for (String marker : new String[] {"-", "   -    "}) {
+            assertParseSuccess(parser, "1 /fn " + marker, new InfoCommand(INDEX_FIRST_PERSON, need));
+            assertParseSuccess(parser, "1 /pr " + marker, new InfoCommand(INDEX_FIRST_PERSON, priority));
+            assertParseSuccess(parser, "1 /ai " + marker, new InfoCommand(INDEX_FIRST_PERSON, interest));
+        }
+    }
+
+    @Test
+    public void parse_clearAndSetFieldsAnyOrder_success() {
+        InfoDescriptor descriptor = new InfoDescriptor();
+        descriptor.setFinancialNeed(null);
+        descriptor.setPriority(new Priority("High"));
+        descriptor.setAreaOfInterest(null);
+        for (String fields : new String[] {"/fn - /pr High /ai -", "/ai - /pr High /fn -",
+            "/pr High /ai - /fn -", "/fn - /ai - /pr High", "/pr High /fn - /ai -", "/ai - /fn - /pr High"}) {
+            assertParseSuccess(parser, "1 " + fields, new InfoCommand(INDEX_FIRST_PERSON, descriptor));
+        }
+    }
+
+    @Test
+    public void parse_hyphenWithinNormalValueAndBoundaries_setsValue() {
+        for (String value : new String[] {"Long-term", "-High", "High-", "--", "- -", "A", "A".repeat(200)}) {
+            InfoDescriptor descriptor = new InfoDescriptor();
+            descriptor.setFinancialNeed(new FinancialNeed(value));
+            descriptor.setPriority(new Priority(value));
+            descriptor.setAreaOfInterest(new AreaOfInterest(value));
+            assertParseSuccess(parser, "1 /fn " + value + " /pr " + value + " /ai " + value,
+                    new InfoCommand(INDEX_FIRST_PERSON, descriptor));
+        }
+    }
+
+    @Test
+    public void parse_barePrefixesAndControlCharacters_doNotClear() {
+        assertParseFailure(parser, "1 /fn", FinancialNeed.MESSAGE_BLANK);
+        assertParseFailure(parser, "1 /pr", Priority.MESSAGE_BLANK);
+        assertParseFailure(parser, "1 /ai", AreaOfInterest.MESSAGE_BLANK);
+        assertParseFailure(parser, "1 /fn - /pr", Priority.MESSAGE_BLANK);
+        assertParseFailure(parser, "1 /pr - /ai", AreaOfInterest.MESSAGE_BLANK);
+        for (String marker : new String[] {"\t-", "-\n", "-\r"}) {
+            assertParseFailure(parser, "1 /fn " + marker, FinancialNeed.MESSAGE_INVALID_CHARACTERS);
+            assertParseFailure(parser, "1 /pr " + marker, Priority.MESSAGE_INVALID_CHARACTERS);
+            assertParseFailure(parser, "1 /ai " + marker, AreaOfInterest.MESSAGE_INVALID_CHARACTERS);
+        }
+    }
+
+    @Test
     public void parse_individualFields_success() {
         InfoDescriptor need = new InfoDescriptor();
         need.setFinancialNeed(new FinancialNeed("Retirement"));
@@ -50,6 +103,7 @@ public class InfoCommandParserTest {
         }
         for (String index : new String[] {"0", "-1", "abc", "1.5", "2147483648", "1 2"}) {
             assertParseFailure(parser, index + " /fn Retirement", "Client index must be a positive integer.");
+            assertParseFailure(parser, index + " /pr -", "Client index must be a positive integer.");
         }
         assertParseFailure(parser, "1", "At least one of /fn, /pr or /ai is required.");
     }
@@ -57,8 +111,10 @@ public class InfoCommandParserTest {
     @Test
     public void parse_duplicateParameters_failure() {
         for (String prefix : new String[] {"/fn", "/pr", "/ai"}) {
-            assertParseFailure(parser, "1 " + prefix + " A " + prefix + " B",
-                    prefix + " can only be specified once.");
+            for (String values : new String[] {" - " + prefix + " High", " High " + prefix + " -",
+                " - " + prefix + " -", " A " + prefix + " B"}) {
+                assertParseFailure(parser, "1 " + prefix + values, prefix + " can only be specified once.");
+            }
         }
     }
 

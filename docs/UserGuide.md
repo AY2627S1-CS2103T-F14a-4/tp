@@ -124,17 +124,19 @@ Examples:
 
 ### Updating client financial information: `info`
 
-Adds or updates a person's financial need, priority, and area of interest. Present fields appear on the person's card as
+Adds, updates, or clears a person's financial need, priority, and area of interest. Present fields appear on the person's card as
 `Financial need: VALUE`, `Priority: VALUE`, and `Area of interest: VALUE`. Absent fields are hidden.
 
-Format: `info INDEX [/fn FINANCIAL_NEED] [/pr PRIORITY] [/ai AREA_OF_INTEREST]`
+Format: `info INDEX [/fn VALUE|-] [/pr VALUE|-] [/ai VALUE|-]`
 
 * `INDEX` refers to the index in the currently displayed list, including filtered search results. It must be a positive
   integer (1, 2, 3, ...) corresponding to an existing person in that list.
 * At least one of `/fn`, `/pr`, or `/ai` is required. Each parameter may be supplied at most once, in any order.
-* Supplied values replace existing values. Unspecified fields remain unchanged.
+* Normal supplied values replace existing values. Omitted fields remain unchanged.
+* An exact `-` value clears only that field. Surrounding ordinary spaces are ignored, so `/pr   -   ` also clears
+  priority. Clearing an already absent field is safe. A hyphen in a larger value, such as `Long-term`, remains text.
 * Each value must contain 1-200 characters after leading and trailing ordinary spaces are ignored. Internal spaces are
-  preserved. Empty values are rejected and cannot be used to clear a field.
+  preserved. Empty values and bare prefixes (for example, `info 1 /pr`) remain invalid; clearing requires explicit `-`.
 * Allowed characters are letters, digits, spaces, periods (`.`), commas (`,`), apostrophes (`'`), hyphens (`-`),
   parentheses (`(` and `)`), and ampersands (`&`). Tabs and line breaks are not allowed.
 * Forward slash (`/`) is not allowed in a value because it is reserved for parameter prefixes.
@@ -144,6 +146,9 @@ Examples:
 * `info 1 /fn retirement planning`
 * `info 2 /pr protect family income /ai life insurance`
 * `info 1 /ai investment products /fn wealth accumulation /pr preserve capital`
+* `info 1 /pr -` clears only priority.
+* `info 1 /fn - /ai -` clears financial need and area of interest, leaving priority unchanged.
+* `info 1 /pr High /ai -` sets priority to `High` and clears area of interest, leaving financial need unchanged.
 
 ### Recording preferred contact channel and timing: `contact`
 
@@ -386,7 +391,7 @@ Action     | Format, Examples
 **Edit**   | `edit INDEX [r/RELATIONSHIP] [n/NAME] [p/PHONE_NUMBER] [e/EMAIL]`<br> e.g.,`edit 2 r/Client n/James Lee e/jameslee@example.com`
 **Find**   | `find KEYWORD [MORE_KEYWORDS] [r/RELATIONSHIP]` or `find r/RELATIONSHIP`<br> e.g., `find James Jake`, `find r/client`, `find James r/prospect`
 **Contact** | `contact INDEX [ch/CHANNEL] [tm/TIMING]`<br> e.g., `contact 1 ch/WhatsApp tm/After 6 pm`
-**Info**   | `info INDEX [/fn FINANCIAL_NEED] [/pr PRIORITY] [/ai AREA_OF_INTEREST]`<br> e.g., `info 1 /fn retirement planning`
+**Info**   | `info INDEX [/fn VALUE\|-] [/pr VALUE\|-] [/ai VALUE\|-]`<br> e.g., `info 1 /fn retirement planning`
 **Note**   | `note INDEX d/DATE n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
 **Next**   | `next INDEX a/ACTION d/yyyy-MM-dd`<br> e.g., `next 1 a/Call d/2026-10-20`
 **Done**   | `done INDEX`<br> e.g., `done 1`
