@@ -300,6 +300,26 @@ The person has no next action | `NAME has no next action to complete.`
 `done` without an index reports `Person index is required.`. Zero, negative numbers, non-integers,
 and extra arguments such as `done 1 2` report `Index must be a positive integer.`.
 
+### Viewing due follow-ups: `due`
+
+Shows every client or prospect whose incomplete next action is due today or earlier.
+
+Format: `due`
+
+* Includes actions due today and overdue actions, using your computer's local date.
+* Excludes completed actions, future actions and people without a next action.
+* Replaces any previous `find` filter. Results keep their existing order and are not sorted by due date.
+* Use the displayed index for subsequent commands. After `done 1`, the completed person disappears
+  from the due list and the remaining displayed indices update.
+* Use `list` to see everyone again. Run `due` again to refresh the date after midnight.
+
+For example, if today is `2026-10-20`, `due` includes incomplete actions dated `2026-10-19`
+and `2026-10-20`, but excludes an action dated `2026-10-21`.
+The result message is `2 follow-up(s) due today or earlier.` when two people match,
+or `No follow-ups are due.` when nobody matches.
+
+Arguments are not accepted: `due 1` reports `The due command takes no arguments.`.
+
 ### Clearing all entries: `clear`
 
 Clears all entries from the address book.
@@ -360,6 +380,7 @@ Action     | Format, Examples
 **Note**   | `note INDEX d/DATE n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
 **Next**   | `next INDEX a/ACTION d/yyyy-MM-dd`<br> e.g., `next 1 a/Call d/2026-10-20`
 **Done**   | `done INDEX`<br> e.g., `done 1`
+**Due**    | `due`
 **List**   | `list`
 **Help**   | `help`
 
