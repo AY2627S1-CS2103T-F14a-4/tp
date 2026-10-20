@@ -53,6 +53,7 @@
         "implementation": "Implementation",
         "find-by-name-and-relationship": "Find by name and relationship",
         "contact-preferences-us12": "Contact preferences (US12)",
+        "financial-information-us13": "Financial information (US13)",
         "dated-interaction-notes-us14": "Dated interaction notes (US14)",
         "follow-ups-us18-us19-and-us20": "Follow-ups (US18, US19 and US20)",
         "proposed-undo-redo-feature": "[Proposed] Undo/redo feature",
