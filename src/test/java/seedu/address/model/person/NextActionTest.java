@@ -78,8 +78,9 @@ public class NextActionTest {
         IllegalArgumentException parseError =
                 assertThrows(IllegalArgumentException.class, () -> NextAction.parseDate("0000-01-01"));
         assertEquals(NextAction.MESSAGE_INVALID_DATE, parseError.getMessage());
+        LocalDate yearZero = LocalDate.of(0, 1, 1);
         IllegalArgumentException constructorError =
-                assertThrows(IllegalArgumentException.class, () -> new NextAction("Call", LocalDate.of(0, 1, 1), false));
+                assertThrows(IllegalArgumentException.class, () -> new NextAction("Call", yearZero, false));
         assertEquals(NextAction.MESSAGE_INVALID_DATE, constructorError.getMessage());
     }
 
