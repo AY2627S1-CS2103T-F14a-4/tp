@@ -33,6 +33,7 @@ import seedu.address.model.person.Relationship;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
+import seedu.address.testutil.PersonBuilder;
 
 public class LogicManagerTest {
     private static final IOException DUMMY_IO_EXCEPTION = new IOException("dummy IO exception");
@@ -51,6 +52,26 @@ public class LogicManagerTest {
         JsonUserPrefsStorage userPrefsStorage = new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"));
         StorageManager storage = new StorageManager(addressBookStorage, userPrefsStorage);
         logic = new LogicManager(model, storage);
+    }
+
+    @Test
+    public void execute_contactThenUpdates_preferencesSurviveReopening() throws Exception {
+        model.addPerson(new PersonBuilder(AMY).withTags("friend")
+                .withFinancialNeed("Retirement").withPriority("High").withAreaOfInterest("Insurance").build());
+        logic.execute("contact 1 ch/WhatsApp tm/Weekdays after 6 pm");
+        logic.execute("edit 1 p/81234567");
+        logic.execute("info 1 /pr Protection");
+        logic.execute("note 1 d/2000-01-01 n/Discussed plans");
+        logic.execute("next 1 a/Call d/2000-01-02");
+        logic.execute("done 1");
+        Person beforeInvalidInput = model.getFilteredPersonList().getFirst();
+        assertThrows(ParseException.class, () -> logic.execute("contact 1 ch/Phone tm/"));
+        assertEquals(beforeInvalidInput, model.getFilteredPersonList().getFirst());
+        JsonAddressBookStorage reopened = new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json"));
+        assertEquals(model.getAddressBook(), reopened.readAddressBook().orElseThrow());
+        Person restored = reopened.readAddressBook().orElseThrow().getPersonList().getFirst();
+        assertEquals("WhatsApp", restored.getPreferredContactChannel().orElseThrow().value);
+        assertEquals("Weekdays after 6 pm", restored.getPreferredContactTiming().orElseThrow().value);
     }
 
     @Test
