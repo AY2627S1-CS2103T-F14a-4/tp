@@ -34,6 +34,46 @@ import seedu.address.testutil.PersonBuilder;
 
 public class PersonCardTest {
     @Test
+    public void contactPreferences_hiddenWhenAbsentAndLongValuesWrap() throws Exception {
+        CompletableFuture<Void> checked = new CompletableFuture<>();
+        Platform.runLater(() -> {
+            try {
+                for (boolean present : new boolean[] {false, true}) {
+                    PersonBuilder builder = new PersonBuilder(ALICE);
+                    if (present) {
+                        builder.withPreferredContactChannel("a".repeat(200))
+                                .withPreferredContactTiming("b".repeat(200));
+                    }
+                    Region card = new PersonCard(builder.build(), 1).getRoot();
+                    StackPane root = new StackPane(card);
+                    Scene scene = new Scene(root, 400, 600);
+                    scene.getStylesheets().add(getClass().getResource("/view/DarkTheme.css").toExternalForm());
+                    root.applyCss();
+                    root.layout();
+                    String[] fields = {"preferredContactChannel", "preferredContactTiming"};
+                    String[] texts = {"Preferred contact channel: " + "a".repeat(200),
+                        "Preferred contact timing: " + "b".repeat(200)};
+                    for (int i = 0; i < fields.length; i++) {
+                        Label label = (Label) card.lookup("#" + fields[i]);
+                        assertEquals(present, label.isVisible());
+                        assertEquals(present, label.isManaged());
+                        assertEquals(present ? texts[i] : "", label.getText());
+                        if (present) {
+                            assertTrue(label.isWrapText());
+                            assertTrue(label.getHeight() > 30);
+                            assertTrue(label.getBoundsInParent().getMaxX() <= card.getWidth());
+                        }
+                    }
+                }
+                checked.complete(null);
+            } catch (Throwable error) {
+                checked.completeExceptionally(error);
+            }
+        });
+        checked.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
     public void nextAction_hiddenWhenAbsent_showsStatusDateAndWrappedDescription() throws Exception {
         CompletableFuture<Void> checked = new CompletableFuture<>();
         Platform.runLater(() -> {

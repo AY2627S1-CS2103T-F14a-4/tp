@@ -40,7 +40,8 @@ public class NoteCommand extends Command {
         Person updated = new Person(original.getName(), original.getPhone(), original.getEmail(), original.getTags(),
                 original.getRelationship(), original.getFinancialNeed().orElse(null),
                 original.getPriority().orElse(null), original.getAreaOfInterest().orElse(null), notes,
-                original.getNextAction().orElse(null));
+                original.getNextAction().orElse(null),
+                original.getPreferredContactChannel().orElse(null), original.getPreferredContactTiming().orElse(null));
         model.setPerson(original, updated);
         return new CommandResult(String.format(MESSAGE_SUCCESS, original.getName().fullName));
     }

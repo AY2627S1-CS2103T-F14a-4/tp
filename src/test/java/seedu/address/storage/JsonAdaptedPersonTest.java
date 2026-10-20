@@ -22,6 +22,8 @@ import seedu.address.model.person.InteractionNote;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
+import seedu.address.model.person.PreferredContactChannel;
+import seedu.address.model.person.PreferredContactTiming;
 import seedu.address.model.person.Priority;
 import seedu.address.testutil.PersonBuilder;
 
@@ -37,6 +39,52 @@ public class JsonAdaptedPersonTest {
     private static final List<JsonAdaptedTag> VALID_TAGS = BENSON.getTags().stream()
             .map(JsonAdaptedTag::new)
             .collect(Collectors.toList());
+
+    @Test
+    public void contactPreferences_roundTrip_allPresenceCombinations() throws Exception {
+        for (boolean channel : new boolean[] {false, true}) {
+            for (boolean timing : new boolean[] {false, true}) {
+                PersonBuilder builder = new PersonBuilder(BENSON).withFinancialNeed("Retirement")
+                        .withPriority("High").withAreaOfInterest("Insurance")
+                        .withInteractionNotes(new InteractionNote(LocalDate.of(2000, 1, 1), "Discussed plans"));
+                if (channel) {
+                    builder.withPreferredContactChannel("a".repeat(200));
+                }
+                if (timing) {
+                    builder.withPreferredContactTiming("b".repeat(200));
+                }
+                Person person = builder.build();
+                String json = JsonUtil.toJsonString(new JsonAdaptedPerson(person));
+                assertEquals(person, JsonUtil.fromJsonString(json, JsonAdaptedPerson.class).toModelType());
+            }
+        }
+    }
+
+    @Test
+    public void contactPreferences_missingOrNullJson_loadsAbsent() throws Exception {
+        String base = "{\"name\":\"Benson Meier\",\"phone\":\"98765432\",\"email\":\"benson@example.com\"";
+        for (String json : List.of(base + "}",
+                base + ",\"preferredContactChannel\":null,\"preferredContactTiming\":null}")) {
+            Person person = JsonUtil.fromJsonString(json, JsonAdaptedPerson.class).toModelType();
+            assertTrue(person.getPreferredContactChannel().isEmpty());
+            assertTrue(person.getPreferredContactTiming().isEmpty());
+        }
+    }
+
+    @Test
+    public void contactPreferences_invalidStoredValues_rejected() throws Exception {
+        String base = "{\"name\":\"Benson Meier\",\"phone\":\"98765432\",\"email\":\"benson@example.com\",";
+        String[] fields = {"preferredContactChannel", "preferredContactTiming"};
+        String[] errors = {PreferredContactChannel.MESSAGE_CONSTRAINTS,
+            PreferredContactTiming.MESSAGE_CONSTRAINTS};
+        for (int i = 0; i < fields.length; i++) {
+            for (String value : List.of("", "   ", "a".repeat(201))) {
+                String json = base + "\"" + fields[i] + "\":\"" + value + "\"}";
+                JsonAdaptedPerson adapted = JsonUtil.fromJsonString(json, JsonAdaptedPerson.class);
+                assertThrows(IllegalValueException.class, errors[i], adapted::toModelType);
+            }
+        }
+    }
 
     @Test
     public void interactionNotes_jsonRoundTrip_preservesOrderAndDuplicates() throws Exception {
