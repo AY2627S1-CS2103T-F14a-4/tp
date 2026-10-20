@@ -72,15 +72,22 @@ public class InfoCommandParser implements Parser<InfoCommand> {
         }
         InfoDescriptor descriptor = new InfoDescriptor();
         if (values.containsKey(PREFIX_FINANCIAL_NEED.getPrefix())) {
-            descriptor.setFinancialNeed(ParserUtil.parseFinancialNeed(values.get(PREFIX_FINANCIAL_NEED.getPrefix())));
+            String value = values.get(PREFIX_FINANCIAL_NEED.getPrefix());
+            descriptor.setFinancialNeed(isClearMarker(value) ? null : ParserUtil.parseFinancialNeed(value));
         }
         if (values.containsKey(PREFIX_PRIORITY.getPrefix())) {
-            descriptor.setPriority(ParserUtil.parsePriority(values.get(PREFIX_PRIORITY.getPrefix())));
+            String value = values.get(PREFIX_PRIORITY.getPrefix());
+            descriptor.setPriority(isClearMarker(value) ? null : ParserUtil.parsePriority(value));
         }
         if (values.containsKey(PREFIX_AREA_OF_INTEREST.getPrefix())) {
-            descriptor.setAreaOfInterest(
-                    ParserUtil.parseAreaOfInterest(values.get(PREFIX_AREA_OF_INTEREST.getPrefix())));
+            String value = values.get(PREFIX_AREA_OF_INTEREST.getPrefix());
+            descriptor.setAreaOfInterest(isClearMarker(value) ? null : ParserUtil.parseAreaOfInterest(value));
         }
         return new InfoCommand(index, descriptor);
+    }
+
+    /** Recognizes only the complete marker, ignoring the same ordinary spaces as financial value objects. */
+    private static boolean isClearMarker(String value) {
+        return value.matches(" *- *");
     }
 }

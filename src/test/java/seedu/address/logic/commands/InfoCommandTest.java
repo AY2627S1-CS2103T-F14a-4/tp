@@ -2,12 +2,16 @@ package seedu.address.logic.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.showPersonAtIndex;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
+
+import java.time.LocalDate;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -19,6 +23,8 @@ import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.AreaOfInterest;
 import seedu.address.model.person.FinancialNeed;
+import seedu.address.model.person.InteractionNote;
+import seedu.address.model.person.NextAction;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Priority;
 import seedu.address.model.person.Relationship;
@@ -27,6 +33,105 @@ import seedu.address.testutil.PersonBuilder;
 public class InfoCommandTest {
     private final Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
     private final InfoCommandParser parser = new InfoCommandParser();
+
+    private Person populatedPerson() {
+        return new PersonBuilder(model.getFilteredPersonList().getFirst()).withRelationship(Relationship.CLIENT)
+                .withTags("friend").withFinancialNeed("Education").withPriority("Low").withAreaOfInterest("Savings")
+                .withInteractionNotes(new InteractionNote(LocalDate.of(2000, 1, 1), "Discussed plans"))
+                .withNextAction(new NextAction("Call", LocalDate.of(2000, 1, 2), true)).build();
+    }
+
+    @Test
+    public void execute_clearEachCombination_preservesOmittedAndUnrelatedFields() throws Exception {
+        Person original = populatedPerson();
+        for (int mask = 1; mask < 8; mask++) {
+            model.setPerson(model.getFilteredPersonList().getFirst(), original);
+            boolean clearNeed = (mask & 1) != 0;
+            boolean clearPriority = (mask & 2) != 0;
+            boolean clearInterest = (mask & 4) != 0;
+            String args = "1" + (clearNeed ? " /fn -" : "") + (clearPriority ? " /pr -" : "")
+                    + (clearInterest ? " /ai -" : "");
+            Person expected = new Person(original.getName(), original.getPhone(), original.getEmail(),
+                    original.getTags(), original.getRelationship(),
+                    clearNeed ? null : original.getFinancialNeed().orElseThrow(),
+                    clearPriority ? null : original.getPriority().orElseThrow(),
+                    clearInterest ? null : original.getAreaOfInterest().orElseThrow(),
+                    original.getInteractionNotes(), original.getNextAction().orElseThrow());
+            CommandResult result = parser.parse(args).execute(model);
+            assertEquals(expected, model.getFilteredPersonList().getFirst());
+            assertEquals(String.format(InfoCommand.MESSAGE_SUCCESS, original.getName().fullName),
+                    result.getFeedbackToUser());
+            // Repeating the same clears must also be safe when those fields are already absent.
+            parser.parse(args).execute(model);
+            assertEquals(expected, model.getFilteredPersonList().getFirst());
+        }
+    }
+
+    @Test
+    public void execute_mixedSetAndClear_preservesOmittedAndUnrelatedFields() throws Exception {
+        Person original = populatedPerson();
+        model.setPerson(model.getFilteredPersonList().getFirst(), original);
+        parser.parse("1 /pr High /ai -").execute(model);
+        Person expected = new Person(original.getName(), original.getPhone(), original.getEmail(), original.getTags(),
+                original.getRelationship(), original.getFinancialNeed().orElseThrow(), new Priority("High"), null,
+                original.getInteractionNotes(), original.getNextAction().orElseThrow());
+        assertEquals(expected, model.getFilteredPersonList().getFirst());
+        assertEquals("Savings", original.getAreaOfInterest().orElseThrow().value);
+    }
+
+    @Test
+    public void execute_clearInFilteredList_preservesFilterAndOtherPeople() throws Exception {
+        Person first = model.getFilteredPersonList().getFirst();
+        Person second = model.getFilteredPersonList().get(1);
+        Person target = new PersonBuilder(second).withPriority("High").build();
+        model.setPerson(second, target);
+        showPersonAtIndex(model, INDEX_SECOND_PERSON);
+        parser.parse("1 /pr -").execute(model);
+        assertEquals(List.of(second), model.getFilteredPersonList());
+        assertEquals(first, model.getAddressBook().getPersonList().getFirst());
+        assertCommandFailure(parser.parse("2 /pr -"), model, "No client exists at index 2.");
+    }
+
+    @Test
+    public void execute_clearOutOfRange_noMutation() throws Exception {
+        int invalid = model.getFilteredPersonList().size() + 1;
+        assertCommandFailure(parser.parse(invalid + " /fn -"), model,
+                String.format(InfoCommand.MESSAGE_INVALID_INDEX, invalid));
+        model.updateFilteredPersonList(person -> false);
+        assertCommandFailure(parser.parse("1 /fn -"), model,
+                String.format(InfoCommand.MESSAGE_INVALID_INDEX, 1));
+    }
+
+    @Test
+    public void descriptor_statesAndCopies_distinguishUnchangedSetAndClear() throws Exception {
+        InfoDescriptor unspecified = new InfoDescriptor();
+        InfoDescriptor clear = new InfoDescriptor();
+        clear.setFinancialNeed(null);
+        clear.setPriority(null);
+        clear.setAreaOfInterest(null);
+        assertFalse(unspecified.isFinancialNeedSpecified());
+        assertFalse(unspecified.isPrioritySpecified());
+        assertFalse(unspecified.isAreaOfInterestSpecified());
+        assertTrue(clear.isFinancialNeedSpecified());
+        assertTrue(clear.isPrioritySpecified());
+        assertTrue(clear.isAreaOfInterestSpecified());
+        assertTrue(clear.getFinancialNeed().isEmpty());
+        assertTrue(clear.getPriority().isEmpty());
+        assertTrue(clear.getAreaOfInterest().isEmpty());
+        assertNotEquals(unspecified, clear);
+        assertEquals(clear, new InfoDescriptor(clear));
+        assertEquals(clear.hashCode(), new InfoDescriptor(clear).hashCode());
+        InfoCommand command = new InfoCommand(INDEX_FIRST_PERSON, clear);
+        clear.setFinancialNeed(new FinancialNeed("Retirement"));
+        clear.setPriority(new Priority("High"));
+        clear.setAreaOfInterest(new AreaOfInterest("Insurance"));
+        assertEquals(command, parser.parse("1 /fn - /pr - /ai -"));
+        assertNotEquals(clear, new InfoDescriptor());
+        assertNotEquals(command, new InfoCommand(INDEX_FIRST_PERSON, clear));
+        assertNotEquals(parser.parse("1 /fn -"), new InfoCommand(INDEX_FIRST_PERSON, unspecified));
+        assertNotEquals(parser.parse("1 /pr -"), new InfoCommand(INDEX_FIRST_PERSON, unspecified));
+        assertNotEquals(parser.parse("1 /ai -"), new InfoCommand(INDEX_FIRST_PERSON, unspecified));
+    }
 
     @Test
     public void execute_suppliedFieldsReplaceOthersPreserved() throws Exception {
