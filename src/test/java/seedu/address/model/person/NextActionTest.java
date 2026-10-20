@@ -75,11 +75,11 @@ public class NextActionTest {
 
     @Test
     public void yearZero_rejectedByParserAndConstructor() {
-        IllegalArgumentException parseError = assertThrows(IllegalArgumentException.class,
-                () -> NextAction.parseDate("0000-01-01"));
+        IllegalArgumentException parseError =
+                assertThrows(IllegalArgumentException.class, () -> NextAction.parseDate("0000-01-01"));
         assertEquals(NextAction.MESSAGE_INVALID_DATE, parseError.getMessage());
-        IllegalArgumentException constructorError = assertThrows(IllegalArgumentException.class,
-                () -> new NextAction("Call", LocalDate.of(0, 1, 1), false));
+        IllegalArgumentException constructorError =
+                assertThrows(IllegalArgumentException.class, () -> new NextAction("Call", LocalDate.of(0, 1, 1), false));
         assertEquals(NextAction.MESSAGE_INVALID_DATE, constructorError.getMessage());
     }
 

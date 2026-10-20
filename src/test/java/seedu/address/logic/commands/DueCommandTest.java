@@ -28,14 +28,19 @@ public class DueCommandTest {
             ZoneId.of("Asia/Singapore"));
     private static final LocalDate TODAY = LocalDate.of(2026, 10, 20);
     private static final Person DUE_TODAY = new PersonBuilder().withName("Today")
+            .withPhone("90000001").withEmail("today@example.com")
             .withNextAction(new NextAction("Call", TODAY, false)).build();
     private static final Person DUE_YESTERDAY = new PersonBuilder().withName("Yesterday")
+            .withPhone("90000002").withEmail("yesterday@example.com")
             .withNextAction(new NextAction("Email", TODAY.minusDays(1), false)).build();
     private static final Person DUE_TOMORROW = new PersonBuilder().withName("Tomorrow")
+            .withPhone("90000003").withEmail("tomorrow@example.com")
             .withNextAction(new NextAction("Meet", TODAY.plusDays(1), false)).build();
     private static final Person COMPLETED = new PersonBuilder().withName("Completed")
+            .withPhone("90000004").withEmail("completed@example.com")
             .withNextAction(new NextAction("Call", TODAY.minusDays(1), true)).build();
-    private static final Person NO_ACTION = new PersonBuilder().withName("No Action").build();
+    private static final Person NO_ACTION = new PersonBuilder().withName("No Action")
+            .withPhone("90000005").withEmail("noaction@example.com").build();
 
     private final DueCommand command = new DueCommand(CLOCK);
     private final Model model = new ModelManager(new AddressBookBuilder()
