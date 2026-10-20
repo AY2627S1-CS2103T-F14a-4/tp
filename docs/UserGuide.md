@@ -210,7 +210,32 @@ Missing indices, dates or note prefixes produce an error. Dates such as `2026-02
 `The person index provided is invalid.` These input errors leave the stored records unchanged.
 
 Notes are displayed in insertion order, including backdated entries; they are not sorted by date.
-Editing, deleting and searching interaction notes are not currently supported.
+Editing and searching interaction notes are not currently supported.
+
+### Deleting a dated interaction note: `notedelete`
+
+Deletes one interaction note belonging to a client or prospect.
+
+Format: `notedelete CONTACT_INDEX NOTE_INDEX`
+
+* Both indices must be positive integers. `CONTACT_INDEX` refers to the currently displayed contact list,
+  including search results. The current filter remains active after deletion.
+* `NOTE_INDEX` is the note's position on that contact's card, counting from 1 at the top under
+  **Interaction notes:**. Notes are in insertion order, rather than date order.
+* Only the specified note is removed, even if identical notes exist. Remaining notes retain their order,
+  dates and text; subsequent note positions shift down by one.
+* All other contact information is preserved, including financial information, tags, contact preferences
+  and next actions. Deleting the last note leaves the contact with an empty history.
+* Changes are saved automatically and remain after restarting the application.
+
+Example: `notedelete 1 2`
+
+This deletes the second note of the first displayed contact. Success message:
+`Deleted interaction note 2 for PERSON_NAME.`
+
+Missing or extra arguments and invalid indices produce an error without changing records.
+An out-of-range contact index produces `The person index provided is invalid.` An out-of-range note index,
+including when the contact has no notes, produces `The interaction note index provided is invalid.`
 
 ### Locating persons by name or relationship: `find`
 
@@ -413,6 +438,7 @@ Action     | Format, Examples
 **Contact** | `contact INDEX [ch/CHANNEL] [tm/TIMING]`<br> e.g., `contact 1 ch/WhatsApp tm/After 6 pm`
 **Info**   | `info INDEX [/fn VALUE\|-] [/pr VALUE\|-] [/ai VALUE\|-]`<br> e.g., `info 1 /fn retirement planning`
 **Note**   | `note INDEX d/DATE n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
+**Note delete** | `notedelete CONTACT_INDEX NOTE_INDEX`<br> e.g., `notedelete 1 2`
 **Next**   | `next INDEX a/ACTION d/yyyy-MM-dd`<br> e.g., `next 1 a/Call d/2026-10-20`
 **Done**   | `done INDEX`<br> e.g., `done 1`
 **Due**    | `due`

@@ -240,8 +240,25 @@ measurement. No fixed card height or forced list refresh is needed.
 The parser distinguishes missing index, date and note prefix; malformed calendar dates and blank text have specific
 errors. Execution rejects indices outside the currently displayed list before changing the model.
 
-This feature provides adding and displaying dated notes only. Chronological sorting, note correction/removal,
+This feature provides adding, displaying and deleting dated notes. Chronological sorting, note correction,
 structured interaction outcomes, follow-ups and note search remain separate user stories.
+
+#### Deleting a note
+
+`notedelete CONTACT_INDEX NOTE_INDEX` is routed to `NoteDeleteCommandParser`, which requires exactly two
+positive integer indices using `ParserUtil.parseIndex`.
+
+`NoteDeleteCommand` resolves the contact against the currently filtered list and the note against that
+contact's insertion-ordered history. Both indices are one-based. Out-of-range indices, including an empty
+history, are rejected before changing the model. The command copies the history and removes the selected
+entry by position, preserving duplicates and the order of remaining entries. Subsequent note positions shift
+down by one. It calls `Model#setPerson` with a replacement person preserving all other fields, including
+contact preferences and the next action, and retains the current filter.
+
+`LogicManager` saves the replacement through the existing JSON pipeline. No storage schema or model API
+changes are required. `NoteDeleteCommandTest` and `NoteDeleteCommandParserTest` cover validation, filtered
+lists, duplicate notes, contact-field preservation, command routing, and saving/reloading deletions,
+including an empty history.
 
 Automated and manual regression checks are described in the [Testing guide](Testing.md#us14-interaction-note-regression-checks).
 
