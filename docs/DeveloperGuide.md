@@ -201,6 +201,36 @@ The following sequence shows a successful update; parser validation and index ch
 
 <puml src="diagrams/ContactSequenceDiagram.puml" alt="Contact preference update sequence" />
 
+### Financial information (US13)
+
+`FinancialNeed`, `Priority` and `AreaOfInterest` are immutable value objects, independently optional on `Person`.
+Normal values contain 1-200 characters after trimming ordinary spaces; internal spaces are preserved. Validation
+accepts Unicode letters and decimal digits, spaces and the punctuation `. , ' ( ) & -`; blanks, tabs, line breaks
+and other characters are rejected. `Priority` stores validated text rather than a fixed enumeration.
+
+`AddressBookParser` routes `info INDEX [/fn VALUE|-] [/pr VALUE|-] [/ai VALUE|-]` to `InfoCommandParser`.
+The parser requires a positive index and at least one financial prefix, accepts any prefix order, and rejects
+duplicate or unknown parameters. It recognizes an exact `-` surrounded only by ordinary spaces before calling
+`ParserUtil` to validate normal values. Bare prefixes remain invalid. `InfoDescriptor` stores a specified flag
+and nullable value per field: omitted means unchanged, specified non-null means replace, and specified null
+means explicitly clear. `InfoCommand` defensively copies this descriptor, including its flags.
+
+`InfoCommand#execute` resolves the index against `Model#getFilteredPersonList` and checks its range before mutation.
+It constructs a replacement `Person` using the resolved financial fields and calls `Model#setPerson`.
+Name, phone, email, relationship, tags, interaction notes, next action, preferred contact channel and preferred
+contact timing are copied unchanged; the active filter is preserved. Clearing an absent field is idempotent.
+
+`LogicManager` saves through the existing storage pipeline after execution. `JsonAdaptedPerson` persists optional
+`financialNeed`, `priority` and `areaOfInterest` strings; missing or null properties load as absent, supporting
+older files. Non-null values are validated on loading. `PersonCard` shows present values in wrapped labels prefixed
+with `Financial need:`, `Priority:` and `Area of interest:`; absent labels are invisible and unmanaged.
+Automated tests cover parser validation and boundaries, set/clear combinations, descriptor copying, filtered indices,
+unrelated-field preservation, JSON compatibility, save/reload after clearing, and UI hiding/wrapping.
+
+The following sequence shows `info 1 /pr High /ai -`; validation and index resolution precede model mutation.
+
+<puml src="diagrams/InfoSequenceDiagram.puml" alt="Financial information update sequence" />
+
 ### Dated interaction notes (US14)
 
 `note INDEX d/yyyy-MM-dd n/NOTE` appends an interaction note to the person at the index in the currently displayed
@@ -790,7 +820,7 @@ Use a separate test folder with fictional records. Run these commands to prepare
 clear
 add r/Client n/John Doe e/john@example.com p/91234567
 add r/Prospect n/Jane Tan e/jane@example.com p/98765432
-info 2 /fn Retirement planning /pr Protect family income /ai Life insurance
+info 2 /fn Retirement planning /pr High /ai Life insurance
 note 2 d/2026-10-06 n/Discussed next steps.
 ```
 
