@@ -185,6 +185,16 @@ person's name. When both criteria are supplied, the parser creates a `NameAndRel
 predicate applies `OR` between the name keywords, then applies `AND` between the name result and the relationship
 filter. For example, `find Alex David r/client` returns clients whose names contain either `Alex` or `David`.
 
+### Tagging a person
+
+`TagCommandParser` reads the first whitespace-separated argument as the displayed-list index and validates each
+remaining argument with `ParserUtil#parseTags(Collection<String>)`. Tag names use the existing alphanumeric-only
+`Tag` validation. `TagCommand` resolves the person against `Model#getFilteredPersonList()`, unions the supplied tags
+with the person's existing tag set, and replaces the immutable `Person` through `Model#setPerson`. The replacement
+preserves every non-tag field and the active list filter. Because tags are stored in a `Set<Tag>`, repeated existing
+or supplied tags remain idempotent. The existing JSON adapter persists the updated set.
+
+
 
 ### Contact preferences (US12)
 

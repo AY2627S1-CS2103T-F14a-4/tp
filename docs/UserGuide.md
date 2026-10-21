@@ -106,6 +106,21 @@ Shows a list of all persons in the address book.
 
 Format: `list`
 
+### Adding tags to a person: `tag`
+
+Adds one or more tags to a person in the currently displayed list.
+
+Format: `tag INDEX TAG [MORE_TAGS...]`
+
+* `INDEX` must be a positive integer that refers to a person in the currently displayed list, including filtered
+  search results.
+* Each `TAG` must contain only letters and numbers, with no spaces.
+* Existing tags are preserved. Repeating a tag does not create a duplicate.
+
+Examples:
+* `tag 1 priority`
+* `tag 2 referral insurance`
+
 ### Editing a person: `edit`
 
 Edits an existing person in the address book.
@@ -413,6 +428,7 @@ Action     | Format, Examples
 **Contact** | `contact INDEX [ch/CHANNEL] [tm/TIMING]`<br> e.g., `contact 1 ch/WhatsApp tm/After 6 pm`
 **Info**   | `info INDEX [/fn VALUE\|-] [/pr VALUE\|-] [/ai VALUE\|-]`<br> e.g., `info 1 /fn retirement planning`
 **Note**   | `note INDEX d/DATE n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
+**Tag**    | `tag INDEX TAG [MORE_TAGS...]`<br> e.g., `tag 1 priority referral`
 **Next**   | `next INDEX a/ACTION d/yyyy-MM-dd`<br> e.g., `next 1 a/Call d/2026-10-20`
 **Done**   | `done INDEX`<br> e.g., `done 1`
 **Due**    | `due`

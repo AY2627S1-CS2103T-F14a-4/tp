@@ -165,6 +165,12 @@ public class Person {
         return Collections.unmodifiableSet(tags);
     }
 
+    /** Returns a copy with the supplied tags and all other fields preserved. */
+    public Person withTags(Set<Tag> tags) {
+        return new Person(name, phone, email, tags, relationship, financialNeed, priority, areaOfInterest,
+                interactionNotes, nextAction, preferredContactChannel, preferredContactTiming);
+    }
+
     /**
      * Returns true if both persons have the same email address or phone number.
      * This defines a weaker notion of equality between two persons.
