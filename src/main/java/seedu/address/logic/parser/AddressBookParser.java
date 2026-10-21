@@ -24,6 +24,7 @@ import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.NextCommand;
 import seedu.address.logic.commands.NoteCommand;
 import seedu.address.logic.commands.NoteDeleteCommand;
+import seedu.address.logic.commands.NoteEditCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 
 /**
@@ -83,6 +84,7 @@ public class AddressBookParser {
             case NextCommand.COMMAND_WORD -> new NextCommandParser().parse(arguments);
             case NoteCommand.COMMAND_WORD -> new NoteCommandParser().parse(arguments);
             case NoteDeleteCommand.COMMAND_WORD -> new NoteDeleteCommandParser().parse(arguments);
+            case NoteEditCommand.COMMAND_WORD -> new NoteEditCommandParser().parse(arguments);
             case ExitCommand.COMMAND_WORD -> new ExitCommand();
             case HelpCommand.COMMAND_WORD -> new HelpCommand();
             default -> {
