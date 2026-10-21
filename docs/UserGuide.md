@@ -82,7 +82,7 @@ Format: `help`
 
 Adds a person to the address book.
 
-Format: `add r/RELATIONSHIP n/NAME e/EMAIL p/PHONE_NUMBER`
+Format: `add r/RELATIONSHIP n/NAME e/EMAIL p/PHONE_NUMBER [t/TAG]...`
 
 <box type="tip" seamless>
 
@@ -93,12 +93,14 @@ Format: `add r/RELATIONSHIP n/NAME e/EMAIL p/PHONE_NUMBER`
   domain. Its local part may use common characters such as `.`, `_`, `+`, and `-`; each domain label may use
   letters, digits, and hyphens.
 * Parameters may be entered in any order.
+* Each optional `TAG` must contain only letters and numbers, with no spaces. Use `t/` before every tag.
 </box>
 
 Examples:
 * `add r/Client n/John Doe e/john.doe@example.com p/91234567`
 * `add n/Ravi s/o Kumar p/98765432 r/Prospect e/ravi.kumar@example.com`
 * `add r/Client n/Jane Tan e/jane+client@firm.co.uk p/98765432`
+* `add r/Client n/Amir Khan e/amir@example.com p/87654321 t/referral t/priority`
 
 ### Listing all persons: `list`
 
@@ -420,7 +422,7 @@ _Details coming soon ..._
 
 Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-**Add**    | `add r/RELATIONSHIP n/NAME e/EMAIL p/PHONE_NUMBER` <br> e.g., `add r/Client n/James Ho e/jamesho@example.com p/22224444`
+**Add**    | `add r/RELATIONSHIP n/NAME e/EMAIL p/PHONE_NUMBER [t/TAG]...` <br> e.g., `add r/Client n/James Ho e/jamesho@example.com p/22224444 t/referral`
 **Clear**  | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit**   | `edit INDEX [r/RELATIONSHIP] [n/NAME] [p/PHONE_NUMBER] [e/EMAIL]`<br> e.g.,`edit 2 r/Client n/James Lee e/jameslee@example.com`

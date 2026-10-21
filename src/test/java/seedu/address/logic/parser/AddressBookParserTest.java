@@ -46,7 +46,7 @@ public class AddressBookParserTest {
         Person person = new PersonBuilder().build();
         AddCommand command = (AddCommand) parser.parseCommand(PersonUtil.getAddCommand(person));
         Person expectedPerson = new Person(person.getName(), person.getPhone(), person.getEmail(),
-                Relationship.PROSPECT);
+                person.getTags(), Relationship.PROSPECT);
         assertEquals(new AddCommand(expectedPerson), command);
     }
 

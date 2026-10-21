@@ -194,6 +194,11 @@ with the person's existing tag set, and replaces the immutable `Person` through 
 preserves every non-tag field and the active list filter. Because tags are stored in a `Set<Tag>`, repeated existing
 or supplied tags remain idempotent. The existing JSON adapter persists the updated set.
 
+`AddCommandParser` uses the same validation and accepts zero or more `t/TAG` fields. Unlike the required name,
+relationship, email and phone prefixes, `t/` is deliberately repeatable so a new person can be created with several
+tags. The parser collects those values into a set before constructing the `Person`.
+
+
 
 
 ### Contact preferences (US12)
