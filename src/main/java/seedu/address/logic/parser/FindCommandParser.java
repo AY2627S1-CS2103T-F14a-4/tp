@@ -2,16 +2,17 @@ package seedu.address.logic.parser;
 
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_RELATIONSHIP;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
-import seedu.address.model.person.NameAndRelationshipMatchesPredicate;
-import seedu.address.model.person.NameContainsKeywordsPredicate;
+import seedu.address.model.person.PersonMatchesFiltersPredicate;
 import seedu.address.model.person.Relationship;
-import seedu.address.model.person.RelationshipMatchesPredicate;
+import seedu.address.model.tag.Tag;
 
 /**
  * Parses input arguments and creates a new FindCommand object
@@ -30,24 +31,24 @@ public class FindCommandParser implements Parser<FindCommand> {
                     String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE));
         }
 
-        ArgumentMultimap argumentMultimap = ArgumentTokenizer.tokenize(" " + trimmedArgs, PREFIX_RELATIONSHIP);
-        argumentMultimap.verifyNoDuplicatePrefixesFor(PREFIX_RELATIONSHIP);
+        ArgumentMultimap argumentMultimap = ArgumentTokenizer.tokenize(" " + trimmedArgs, PREFIX_RELATIONSHIP,
+                PREFIX_TAG);
+        argumentMultimap.verifyNoDuplicatePrefixesFor(PREFIX_RELATIONSHIP, PREFIX_TAG);
         Optional<String> relationshipValue = argumentMultimap.getValue(PREFIX_RELATIONSHIP);
-        if (relationshipValue.isPresent()) {
-            Relationship relationship = ParserUtil.parseRelationship(relationshipValue.get());
-            String nameKeywordsValue = argumentMultimap.getPreamble();
-            if (!nameKeywordsValue.isEmpty()) {
-                String[] nameKeywords = nameKeywordsValue.split("\\s+");
-                return new FindCommand(
-                        new NameAndRelationshipMatchesPredicate(List.of(nameKeywords), relationship));
-            }
-
-            return new FindCommand(new RelationshipMatchesPredicate(relationship));
-        }
-
-        String[] nameKeywords = trimmedArgs.split("\\s+");
-
-        return new FindCommand(new NameContainsKeywordsPredicate(List.of(nameKeywords)));
+        Optional<Relationship> relationship = relationshipValue.isEmpty()
+                ? Optional.empty() : Optional.of(ParserUtil.parseRelationship(relationshipValue.get()));
+        String nameKeywordsValue = argumentMultimap.getPreamble();
+        List<String> nameKeywords = nameKeywordsValue.isEmpty()
+                ? List.of() : List.of(nameKeywordsValue.split("\\s+"));
+        List<String> tagKeywords = parseTagKeywords(argumentMultimap.getValue(PREFIX_TAG));
+        return new FindCommand(new PersonMatchesFiltersPredicate(nameKeywords, relationship, tagKeywords));
     }
 
+    private static List<String> parseTagKeywords(Optional<String> tagValue) throws ParseException {
+        if (tagValue.isEmpty()) {
+            return List.of();
+        }
+        Set<Tag> tags = ParserUtil.parseTags(List.of(tagValue.get().split("\\s+")));
+        return tags.stream().map(tag -> tag.tagName).sorted().toList();
+    }
 }

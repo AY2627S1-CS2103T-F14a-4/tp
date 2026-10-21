@@ -3,6 +3,8 @@ package seedu.address.logic.parser;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
 
+import java.util.Set;
+
 import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.Messages;
@@ -12,6 +14,7 @@ import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
 import seedu.address.model.person.Relationship;
+import seedu.address.model.tag.Tag;
 
 public class AddCommandParserTest {
     private final AddCommandParser parser = new AddCommandParser();
@@ -25,6 +28,27 @@ public class AddCommandParserTest {
                 new AddCommand(expectedPerson));
         assertParseSuccess(parser, " n/John Doe p/91234567 r/Client e/john.doe@example.com",
                 new AddCommand(expectedPerson));
+    }
+
+    @Test
+    public void parse_optionalTagsPresent_success() {
+        Person expectedPerson = new Person(new Name("John Doe"), new Phone("91234567"),
+                new Email("john.doe@example.com"), Set.of(new Tag("priority"), new Tag("referral")),
+                Relationship.CLIENT);
+
+        assertParseSuccess(parser,
+                " r/Client n/John Doe e/john.doe@example.com p/91234567 t/priority t/referral t/PRIORITY",
+                new AddCommand(expectedPerson));
+    }
+
+    @Test
+    public void parse_invalidOrEmptyTag_failure() {
+        assertParseFailure(parser,
+                " r/Client n/John Doe e/john.doe@example.com p/91234567 t/close-friend",
+                Tag.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser,
+                " r/Client n/John Doe e/john.doe@example.com p/91234567 t/",
+                Tag.MESSAGE_CONSTRAINTS);
     }
 
     @Test

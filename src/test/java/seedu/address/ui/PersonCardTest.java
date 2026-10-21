@@ -8,6 +8,7 @@ import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -21,6 +22,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -34,6 +36,24 @@ import seedu.address.model.person.NextAction;
 import seedu.address.testutil.PersonBuilder;
 
 public class PersonCardTest {
+    @Test
+    public void tags_allDisplayedInSortedOrder() throws Exception {
+        CompletableFuture<Void> checked = new CompletableFuture<>();
+        Platform.runLater(() -> {
+            try {
+                Region card = new PersonCard(new PersonBuilder(ALICE)
+                        .withTags("priority", "Friends", "referral").build(), 1).getRoot();
+                FlowPane tags = (FlowPane) card.lookup("#tags");
+                assertEquals(List.of("Friends", "priority", "referral"), tags.getChildren().stream()
+                        .map(Label.class::cast).map(Label::getText).toList());
+                checked.complete(null);
+            } catch (Throwable error) {
+                checked.completeExceptionally(error);
+            }
+        });
+        checked.get(10, TimeUnit.SECONDS);
+    }
+
     @Test
     public void contactPreferences_hiddenWhenAbsentAndLongValuesWrap() throws Exception {
         CompletableFuture<Void> checked = new CompletableFuture<>();

@@ -8,6 +8,8 @@ import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
@@ -24,12 +26,12 @@ import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.InfoCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.TagCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
-import seedu.address.model.person.NameAndRelationshipMatchesPredicate;
-import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.PersonMatchesFiltersPredicate;
 import seedu.address.model.person.Relationship;
-import seedu.address.model.person.RelationshipMatchesPredicate;
+import seedu.address.model.tag.Tag;
 import seedu.address.testutil.EditPersonDescriptorBuilder;
 import seedu.address.testutil.PersonBuilder;
 import seedu.address.testutil.PersonUtil;
@@ -43,7 +45,7 @@ public class AddressBookParserTest {
         Person person = new PersonBuilder().build();
         AddCommand command = (AddCommand) parser.parseCommand(PersonUtil.getAddCommand(person));
         Person expectedPerson = new Person(person.getName(), person.getPhone(), person.getEmail(),
-                Relationship.PROSPECT);
+                person.getTags(), Relationship.PROSPECT);
         assertEquals(new AddCommand(expectedPerson), command);
     }
 
@@ -98,14 +100,16 @@ public class AddressBookParserTest {
         List<String> keywords = List.of("foo", "bar", "baz");
         FindCommand command = (FindCommand) parser.parseCommand(
                 FindCommand.COMMAND_WORD + " " + keywords.stream().collect(Collectors.joining(" ")));
-        assertEquals(new FindCommand(new NameContainsKeywordsPredicate(keywords)), command);
+        assertEquals(new FindCommand(new PersonMatchesFiltersPredicate(keywords, Optional.empty(), List.of())),
+                command);
     }
 
     @Test
     public void parseCommand_findByRelationship() throws Exception {
         FindCommand command = (FindCommand) parser.parseCommand(FindCommand.COMMAND_WORD + " r/client");
 
-        assertEquals(new FindCommand(new RelationshipMatchesPredicate(Relationship.CLIENT)), command);
+        assertEquals(new FindCommand(new PersonMatchesFiltersPredicate(List.of(), Optional.of(Relationship.CLIENT),
+                List.of())), command);
     }
 
     @Test
@@ -113,8 +117,8 @@ public class AddressBookParserTest {
         List<String> keywords = List.of("foo", "bar");
         FindCommand command = (FindCommand) parser.parseCommand(FindCommand.COMMAND_WORD + " foo bar r/client");
 
-        assertEquals(new FindCommand(
-                new NameAndRelationshipMatchesPredicate(keywords, Relationship.CLIENT)), command);
+        assertEquals(new FindCommand(new PersonMatchesFiltersPredicate(keywords, Optional.of(Relationship.CLIENT),
+                List.of())), command);
     }
 
     @Test
@@ -127,6 +131,12 @@ public class AddressBookParserTest {
     public void parseCommand_list() throws Exception {
         assertTrue(parser.parseCommand(ListCommand.COMMAND_WORD) instanceof ListCommand);
         assertTrue(parser.parseCommand(ListCommand.COMMAND_WORD + " 3") instanceof ListCommand);
+    }
+
+    @Test
+    public void parseCommand_tag() throws Exception {
+        assertEquals(new TagCommand(INDEX_FIRST_PERSON, Set.of(new Tag("priority"), new Tag("referral"))),
+                parser.parseCommand("tag 1 priority referral"));
     }
 
     @Test

@@ -82,7 +82,7 @@ Format: `help`
 
 Adds a person to the address book.
 
-Format: `add r/RELATIONSHIP n/NAME e/EMAIL p/PHONE_NUMBER`
+Format: `add r/RELATIONSHIP n/NAME e/EMAIL p/PHONE_NUMBER [t/TAG]...`
 
 <box type="tip" seamless>
 
@@ -93,18 +93,38 @@ Format: `add r/RELATIONSHIP n/NAME e/EMAIL p/PHONE_NUMBER`
   domain. Its local part may use common characters such as `.`, `_`, `+`, and `-`; each domain label may use
   letters, digits, and hyphens.
 * Parameters may be entered in any order.
+* Each optional `TAG` must contain only letters and numbers, with no spaces. Use `t/` before every tag.
 </box>
 
 Examples:
 * `add r/Client n/John Doe e/john.doe@example.com p/91234567`
 * `add n/Ravi s/o Kumar p/98765432 r/Prospect e/ravi.kumar@example.com`
 * `add r/Client n/Jane Tan e/jane+client@firm.co.uk p/98765432`
+* `add r/Client n/Amir Khan e/amir@example.com p/87654321 t/referral t/priority`
 
 ### Listing all persons: `list`
 
 Shows a list of all persons in the address book.
 
 Format: `list`
+
+Each person's tags are shown with their contact and relationship details.
+
+### Adding tags to a person: `tag`
+
+Adds one or more tags to a person in the currently displayed list.
+
+Format: `tag INDEX TAG [MORE_TAGS...]`
+
+* `INDEX` must be a positive integer that refers to a person in the currently displayed list, including filtered
+  search results.
+* Each `TAG` must contain only letters and numbers, with no spaces.
+* Existing tags are preserved. Tags are compared case-insensitively, so adding `PRIORITY` when `priority` exists does
+  not create a duplicate; the existing spelling is retained.
+
+Examples:
+* `tag 1 priority`
+* `tag 2 referral insurance`
 
 ### Editing a person: `edit`
 
@@ -266,26 +286,25 @@ Missing or extra arguments and invalid indices produce an error without changing
 An out-of-range contact index produces `The person index provided is invalid.` An out-of-range note index,
 including when the contact has no notes, produces `The interaction note index provided is invalid.`
 
-### Locating persons by name or relationship: `find`
+### Locating persons by name, relationship or tags: `find`
 
-Finds persons whose names contain any of the given keywords, or filters persons by their relationship.
+Finds persons using any combination of name keywords, relationship and tags.
 
-Formats:
+Format: `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...]]`
 
-* `find KEYWORD [MORE_KEYWORDS]`
-* `find r/RELATIONSHIP`
-* `find KEYWORD [MORE_KEYWORDS] r/RELATIONSHIP`
-
-* Name keywords and relationship values are case-insensitive; for example, `hans` matches `Hans`, and `client`
+* Every filter is optional, but at least one name keyword, relationship or tag must be provided.
+* Name keywords, relationship values and tags are case-insensitive; for example, `hans` matches `Hans`, and `client`
   matches `Client`.
 * Keyword order does not matter; for example, `Hans Bo` matches `Bo Hans`.
 * Keyword searches consider only names.
 * Only full words match; for example, `Han` does not match `Hans`.
 * Persons matching at least one keyword are returned (an `OR` search); for example, `Hans Bo` returns `Hans Gruber` and `Bo Yang`.
 * `RELATIONSHIP` must be either `client` or `prospect` and is case-insensitive.
-* Name keywords can be combined with a relationship filter. A result must match at least one name keyword
-  **and** the relationship. Put name keywords before `r/`.
-* Persons filtered by relationship retain the same order as in the `list` command.
+* Each `TAG` must be alphanumeric. A person with at least one of the supplied tags matches the tag filter.
+* When filter types are combined, a result must match every supplied filter type. For example, a search with names,
+  a relationship and tags must match at least one name keyword **and** the relationship **and** at least one tag.
+* Put name keywords before `r/` and `t/`. Tags follow a single `t/` and are separated by spaces.
+* Filtered persons retain the same order as in the `list` command.
 
 Examples:
 * `find John` returns `john` and `John Doe`
@@ -294,6 +313,8 @@ Examples:
 * `find r/client` returns all clients.
 * `find r/Prospect` returns all prospects.
 * `find alex david r/prospect` returns prospects whose names contain the full word `alex` or `david`.
+* `find t/referral priority` returns persons tagged `referral` or `priority`.
+* `find alex r/client t/priority referral` returns clients named `alex` who have a `priority` or `referral` tag.
 
 ### Deleting a client/prospect: `delete`
 
@@ -459,16 +480,17 @@ _Details coming soon ..._
 
 Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-**Add**    | `add r/RELATIONSHIP n/NAME e/EMAIL p/PHONE_NUMBER` <br> e.g., `add r/Client n/James Ho e/jamesho@example.com p/22224444`
+**Add**    | `add r/RELATIONSHIP n/NAME e/EMAIL p/PHONE_NUMBER [t/TAG]...` <br> e.g., `add r/Client n/James Ho e/jamesho@example.com p/22224444 t/referral`
 **Clear**  | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit**   | `edit INDEX [r/RELATIONSHIP] [n/NAME] [p/PHONE_NUMBER] [e/EMAIL]`<br> e.g.,`edit 2 r/Client n/James Lee e/jameslee@example.com`
-**Find**   | `find KEYWORD [MORE_KEYWORDS] [r/RELATIONSHIP]` or `find r/RELATIONSHIP`<br> e.g., `find James Jake`, `find r/client`, `find James r/prospect`
+**Find**   | `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...]]`<br> e.g., `find James r/client t/priority referral`
 **Contact** | `contact INDEX [ch/CHANNEL] [tm/TIMING]`<br> e.g., `contact 1 ch/WhatsApp tm/After 6 pm`
 **Info**   | `info INDEX [/fn VALUE\|-] [/pr VALUE\|-] [/ai VALUE\|-]`<br> e.g., `info 1 /fn retirement planning`
 **Note**   | `note INDEX d/DATE n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
 **Note edit** | `noteedit CONTACT_INDEX NOTE_INDEX n/NEW_NOTE_CONTENT`<br> e.g., `noteedit 1 2 n/Discussed insurance renewal`
 **Note delete** | `notedelete CONTACT_INDEX NOTE_INDEX`<br> e.g., `notedelete 1 2`
+**Tag**    | `tag INDEX TAG [MORE_TAGS...]`<br> e.g., `tag 1 priority referral`
 **Next**   | `next INDEX a/ACTION d/yyyy-MM-dd`<br> e.g., `next 1 a/Call d/2026-10-20`
 **Done**   | `done INDEX`<br> e.g., `done 1`
 **Due**    | `due`
