@@ -39,8 +39,9 @@ public class NoteEditCommandTest {
     @Test
     public void execute_duplicateNotes_preservesDateOtherNotesAndAllContactFields() throws Exception {
         Person original = new PersonBuilder(model.getFilteredPersonList().get(0))
-                .withRelationship(Relationship.CLIENT).withFinancialNeed("Retirement")
+                .withRelationship(Relationship.CLIENT).withTags("client", "friend").withFinancialNeed("Retirement")
                 .withPriority("High").withAreaOfInterest("Insurance")
+                .withPreferredContactChannel("Email").withPreferredContactTiming("Evenings")
                 .withNextAction(new NextAction("Call", LocalDate.of(2026, 10, 20), true))
                 .withInteractionNotes(NOTE, NOTE, NOTE).build();
         model.setPerson(model.getFilteredPersonList().get(0), original);
@@ -92,8 +93,13 @@ public class NoteEditCommandTest {
 
     @Test
     public void execute_throughLogic_savedEditSurvivesReopening() throws Exception {
-        Person original = model.getFilteredPersonList().get(0);
-        model.setPerson(original, new PersonBuilder(original).withInteractionNotes(NOTE, NOTE).build());
+        Person original = new PersonBuilder(model.getFilteredPersonList().get(0))
+                .withRelationship(Relationship.CLIENT).withTags("client", "friend")
+                .withFinancialNeed("Retirement").withPriority("High").withAreaOfInterest("Insurance")
+                .withPreferredContactChannel("Email").withPreferredContactTiming("Evenings")
+                .withNextAction(new NextAction("Call", LocalDate.of(2026, 10, 20), false)).build();
+        model.setPerson(model.getFilteredPersonList().get(0),
+                new PersonBuilder(original).withInteractionNotes(NOTE, NOTE).build());
         JsonAddressBookStorage storage = new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json"));
         LogicManager logic = new LogicManager(model, new StorageManager(storage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json"))));

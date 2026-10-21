@@ -16,6 +16,7 @@ import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.DoneCommand;
+import seedu.address.logic.commands.DueCommand;
 import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
 import seedu.address.logic.commands.ExitCommand;
@@ -62,6 +63,19 @@ public class AddressBookParserTest {
     @Test
     public void parseCommand_done() throws Exception {
         assertEquals(new DoneCommand(INDEX_FIRST_PERSON), parser.parseCommand("done 1"));
+    }
+
+    @Test
+    public void parseCommand_due() throws Exception {
+        assertTrue(parser.parseCommand("due") instanceof DueCommand);
+        assertTrue(parser.parseCommand("  due \t ") instanceof DueCommand);
+    }
+
+    @Test
+    public void parseCommand_dueWithArguments_throwsParseException() {
+        for (String input : List.of("due 1", "due extra", "due \t1")) {
+            assertThrows(ParseException.class, "The due command takes no arguments.", () -> parser.parseCommand(input));
+        }
     }
 
     @Test

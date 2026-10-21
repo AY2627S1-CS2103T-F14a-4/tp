@@ -124,17 +124,19 @@ Examples:
 
 ### Updating client financial information: `info`
 
-Adds or updates a person's financial need, priority, and area of interest. Present fields appear on the person's card as
+Adds, updates, or clears a person's financial need, priority, and area of interest. Present fields appear on the person's card as
 `Financial need: VALUE`, `Priority: VALUE`, and `Area of interest: VALUE`. Absent fields are hidden.
 
-Format: `info INDEX [/fn FINANCIAL_NEED] [/pr PRIORITY] [/ai AREA_OF_INTEREST]`
+Format: `info INDEX [/fn VALUE|-] [/pr VALUE|-] [/ai VALUE|-]`
 
 * `INDEX` refers to the index in the currently displayed list, including filtered search results. It must be a positive
   integer (1, 2, 3, ...) corresponding to an existing person in that list.
 * At least one of `/fn`, `/pr`, or `/ai` is required. Each parameter may be supplied at most once, in any order.
-* Supplied values replace existing values. Unspecified fields remain unchanged.
+* Normal supplied values replace existing values. Omitted fields remain unchanged.
+* An exact `-` value clears only that field. Surrounding ordinary spaces are ignored, so `/pr   -   ` also clears
+  priority. Clearing an already absent field is safe. A hyphen in a larger value, such as `Long-term`, remains text.
 * Each value must contain 1-200 characters after leading and trailing ordinary spaces are ignored. Internal spaces are
-  preserved. Empty values are rejected and cannot be used to clear a field.
+  preserved. Empty values and bare prefixes (for example, `info 1 /pr`) remain invalid; clearing requires explicit `-`.
 * Allowed characters are letters, digits, spaces, periods (`.`), commas (`,`), apostrophes (`'`), hyphens (`-`),
   parentheses (`(` and `)`), and ampersands (`&`). Tabs and line breaks are not allowed.
 * Forward slash (`/`) is not allowed in a value because it is reserved for parameter prefixes.
@@ -144,6 +146,38 @@ Examples:
 * `info 1 /fn retirement planning`
 * `info 2 /pr protect family income /ai life insurance`
 * `info 1 /ai investment products /fn wealth accumulation /pr preserve capital`
+* `info 1 /pr -` clears only priority.
+* `info 1 /fn - /ai -` clears financial need and area of interest, leaving priority unchanged.
+* `info 1 /pr High /ai -` sets priority to `High` and clears area of interest, leaving financial need unchanged.
+
+### Recording preferred contact channel and timing: `contact`
+
+Records how and when a client or prospect prefers to be contacted.
+
+Format: `contact INDEX [ch/CHANNEL] [tm/TIMING]`
+
+* `INDEX` is a positive integer referring to the currently displayed list, including after a search.
+* Supply at least one of `ch/` or `tm/`, each at most once, in either order. Separate prefixes with spaces.
+* Each supplied value replaces the previous value; omitted preferences and all other person details remain unchanged.
+* Values must contain 1–200 characters after surrounding whitespace is trimmed. Internal spaces and case are preserved.
+  Free text, Unicode and punctuation are accepted, for example `WhatsApp` and `Weekdays 6:30–8 pm`.
+* Empty or whitespace-only values are rejected. Preferences cannot be cleared with this command.
+* The person's card displays each recorded preference, wrapping long values. Unset preferences are hidden.
+* Preferences are saved automatically. Older data files without these fields load with no preferences.
+
+Examples:
+
+* `contact 1 ch/WhatsApp tm/Weekdays after 6 pm`
+* `contact 2 tm/Lunch break ch/Phone call`
+* `contact 1 tm/Weekends 10 am to noon` (keeps the existing channel)
+
+Success message: `Updated contact preferences for PERSON_NAME.`
+
+Missing or invalid indices produce `Index must be a positive integer.` An index outside the displayed list
+produces `The person index provided is invalid.` Missing fields produce `At least one of ch/ or tm/ is required.`
+Duplicate `ch/` or `tm/` prefixes are rejected. These recognized prefixes, when preceded by a space,
+are delimiters and cannot be included literally in values. Other slash-containing text, such as `AM/PM`
+or `Phone/WhatsApp`, is preserved as part of the value.
 
 ### Adding a dated interaction note: `note`
 
@@ -325,6 +359,26 @@ The person has no next action | `NAME has no next action to complete.`
 `done` without an index reports `Person index is required.`. Zero, negative numbers, non-integers,
 and extra arguments such as `done 1 2` report `Index must be a positive integer.`.
 
+### Viewing due follow-ups: `due`
+
+Shows every client or prospect whose incomplete next action is due today or earlier.
+
+Format: `due`
+
+* Includes actions due today and overdue actions, using your computer's local date.
+* Excludes completed actions, future actions and people without a next action.
+* Replaces any previous `find` filter. Results keep their existing order and are not sorted by due date.
+* Use the displayed index for subsequent commands. After `done 1`, the completed person disappears
+  from the due list and the remaining displayed indices update.
+* Use `list` to see everyone again. Run `due` again to refresh the date after midnight.
+
+For example, if today is `2026-10-20`, `due` includes incomplete actions dated `2026-10-19`
+and `2026-10-20`, but excludes an action dated `2026-10-21`.
+The result message is `2 follow-up(s) due today or earlier.` when two people match,
+or `No follow-ups are due.` when nobody matches.
+
+Arguments are not accepted: `due 1` reports `The due command takes no arguments.`.
+
 ### Clearing all entries: `clear`
 
 Clears all entries from the address book.
@@ -381,11 +435,13 @@ Action     | Format, Examples
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit**   | `edit INDEX [r/RELATIONSHIP] [n/NAME] [p/PHONE_NUMBER] [e/EMAIL]`<br> e.g.,`edit 2 r/Client n/James Lee e/jameslee@example.com`
 **Find**   | `find KEYWORD [MORE_KEYWORDS] [r/RELATIONSHIP]` or `find r/RELATIONSHIP`<br> e.g., `find James Jake`, `find r/client`, `find James r/prospect`
-**Info**   | `info INDEX [/fn FINANCIAL_NEED] [/pr PRIORITY] [/ai AREA_OF_INTEREST]`<br> e.g., `info 1 /fn retirement planning`
+**Contact** | `contact INDEX [ch/CHANNEL] [tm/TIMING]`<br> e.g., `contact 1 ch/WhatsApp tm/After 6 pm`
+**Info**   | `info INDEX [/fn VALUE\|-] [/pr VALUE\|-] [/ai VALUE\|-]`<br> e.g., `info 1 /fn retirement planning`
 **Note**   | `note INDEX d/DATE n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
 **Note edit** | `noteedit CONTACT_INDEX NOTE_INDEX n/NEW_NOTE_CONTENT`<br> e.g., `noteedit 1 2 n/Discussed insurance renewal`
 **Next**   | `next INDEX a/ACTION d/yyyy-MM-dd`<br> e.g., `next 1 a/Call d/2026-10-20`
 **Done**   | `done INDEX`<br> e.g., `done 1`
+**Due**    | `due`
 **List**   | `list`
 **Help**   | `help`
 

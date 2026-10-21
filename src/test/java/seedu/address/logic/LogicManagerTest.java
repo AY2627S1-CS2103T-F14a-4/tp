@@ -1,6 +1,7 @@
 package seedu.address.logic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.address.logic.commands.CommandTestUtil.EMAIL_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.NAME_DESC_AMY;
@@ -12,6 +13,7 @@ import static seedu.address.testutil.TypicalPersons.BOB;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -28,11 +30,14 @@ import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.UserPrefs;
+import seedu.address.model.person.InteractionNote;
+import seedu.address.model.person.NextAction;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Relationship;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
+import seedu.address.testutil.PersonBuilder;
 
 public class LogicManagerTest {
     private static final IOException DUMMY_IO_EXCEPTION = new IOException("dummy IO exception");
@@ -54,6 +59,26 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_contactThenUpdates_preferencesSurviveReopening() throws Exception {
+        model.addPerson(new PersonBuilder(AMY).withTags("friend")
+                .withFinancialNeed("Retirement").withPriority("High").withAreaOfInterest("Insurance").build());
+        logic.execute("contact 1 ch/WhatsApp tm/Weekdays after 6 pm");
+        logic.execute("edit 1 p/81234567");
+        logic.execute("info 1 /pr Protection");
+        logic.execute("note 1 d/2000-01-01 n/Discussed plans");
+        logic.execute("next 1 a/Call d/2000-01-02");
+        logic.execute("done 1");
+        Person beforeInvalidInput = model.getFilteredPersonList().getFirst();
+        assertThrows(ParseException.class, () -> logic.execute("contact 1 ch/Phone tm/"));
+        assertEquals(beforeInvalidInput, model.getFilteredPersonList().getFirst());
+        JsonAddressBookStorage reopened = new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json"));
+        assertEquals(model.getAddressBook(), reopened.readAddressBook().orElseThrow());
+        Person restored = reopened.readAddressBook().orElseThrow().getPersonList().getFirst();
+        assertEquals("WhatsApp", restored.getPreferredContactChannel().orElseThrow().value);
+        assertEquals("Weekdays after 6 pm", restored.getPreferredContactTiming().orElseThrow().value);
+    }
+
+    @Test
     public void execute_invalidCommandFormat_throwsParseException() {
         String invalidCommand = "uicfhmowqewca";
         assertParseException(invalidCommand, MESSAGE_UNKNOWN_COMMAND);
@@ -69,6 +94,41 @@ public class LogicManagerTest {
     public void execute_validCommand_success() throws Exception {
         String listCommand = ListCommand.COMMAND_WORD;
         assertCommandSuccess(listCommand, "Listed all clients and prospects.", model);
+    }
+
+    @Test
+    public void execute_clearFinancialFields_savedAbsenceSurvivesReopening() throws Exception {
+        Person original = new PersonBuilder(AMY).withRelationship(Relationship.CLIENT).withTags("friend")
+                .withFinancialNeed("Retirement").withPriority("High").withAreaOfInterest("Insurance")
+                .withInteractionNotes(new InteractionNote(LocalDate.of(2000, 1, 1), "Discussed plans"))
+                .withNextAction(new NextAction("Call", LocalDate.of(2000, 1, 2), false)).build();
+        model.addPerson(original);
+        logic.execute("info 1 /pr -");
+        Person expected = new Person(original.getName(), original.getPhone(), original.getEmail(), original.getTags(),
+                original.getRelationship(), original.getFinancialNeed().orElseThrow(), null,
+                original.getAreaOfInterest().orElseThrow(), original.getInteractionNotes(),
+                original.getNextAction().orElseThrow());
+        JsonAddressBookStorage reopened = new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json"));
+        assertEquals(expected, reopened.readAddressBook().orElseThrow().getPersonList().getFirst());
+        assertEquals(expected, model.getFilteredPersonList().getFirst());
+
+        // A requested clear followed by an invalid field must change neither the model nor the saved file.
+        assertThrows(ParseException.class, () -> logic.execute("info 1 /fn - /ai"));
+        assertEquals(expected, model.getFilteredPersonList().getFirst());
+        assertEquals(expected, reopened.readAddressBook().orElseThrow().getPersonList().getFirst());
+        logic.execute("info 1 /ai - /fn - /pr High-priority");
+        Person restored = reopened.readAddressBook().orElseThrow().getPersonList().getFirst();
+        assertEquals(model.getFilteredPersonList().getFirst(), restored);
+        assertTrue(restored.getFinancialNeed().isEmpty());
+        assertTrue(restored.getAreaOfInterest().isEmpty());
+        assertEquals("High-priority", restored.getPriority().orElseThrow().value);
+        assertEquals(original.getName(), restored.getName());
+        assertEquals(original.getPhone(), restored.getPhone());
+        assertEquals(original.getEmail(), restored.getEmail());
+        assertEquals(original.getRelationship(), restored.getRelationship());
+        assertEquals(original.getTags(), restored.getTags());
+        assertEquals(original.getInteractionNotes(), restored.getInteractionNotes());
+        assertEquals(original.getNextAction(), restored.getNextAction());
     }
 
     @Test

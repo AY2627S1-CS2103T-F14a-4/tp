@@ -54,6 +54,10 @@ public class PersonCard extends UiPart<Region> {
     private VBox interactionNotes;
     @FXML
     private Label nextAction;
+    @FXML
+    private Label preferredContactChannel;
+    @FXML
+    private Label preferredContactTiming;
 
     /**
      * Creates a {@code PersonCard} with the given {@code Person} and index to display.
@@ -70,6 +74,10 @@ public class PersonCard extends UiPart<Region> {
         setOptionalInformation(priority, "Priority: ", person.getPriority().map(value -> value.value));
         setOptionalInformation(areaOfInterest, "Area of interest: ",
                 person.getAreaOfInterest().map(value -> value.value));
+        setOptionalInformation(preferredContactChannel, "Preferred contact channel: ",
+                person.getPreferredContactChannel().map(value -> value.value));
+        setOptionalInformation(preferredContactTiming, "Preferred contact timing: ",
+                person.getPreferredContactTiming().map(value -> value.value));
         setOptionalInformation(nextAction, "", person.getNextAction().map(action -> {
             String status = action.isCompleted() ? "Completed"
                     : action.getDueDate().isBefore(LocalDate.now()) ? "Overdue" : "Pending";

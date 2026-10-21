@@ -12,6 +12,8 @@ import seedu.address.model.person.Name;
 import seedu.address.model.person.NextAction;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
+import seedu.address.model.person.PreferredContactChannel;
+import seedu.address.model.person.PreferredContactTiming;
 import seedu.address.model.person.Priority;
 import seedu.address.model.person.Relationship;
 import seedu.address.model.tag.Tag;
@@ -27,6 +29,8 @@ public class PersonBuilder {
     public static final String DEFAULT_EMAIL = "amy@gmail.com";
 
     private NextAction nextAction;
+    private PreferredContactChannel preferredContactChannel;
+    private PreferredContactTiming preferredContactTiming;
     private Name name;
     private Phone phone;
     private Email email;
@@ -52,6 +56,8 @@ public class PersonBuilder {
      */
     public PersonBuilder(Person personToCopy) {
         nextAction = personToCopy.getNextAction().orElse(null);
+        preferredContactChannel = personToCopy.getPreferredContactChannel().orElse(null);
+        preferredContactTiming = personToCopy.getPreferredContactTiming().orElse(null);
         name = personToCopy.getName();
         phone = personToCopy.getPhone();
         email = personToCopy.getEmail();
@@ -127,10 +133,22 @@ public class PersonBuilder {
         return this;
     }
 
+    /** Sets the preferred contact channel. */
+    public PersonBuilder withPreferredContactChannel(String channel) {
+        preferredContactChannel = new PreferredContactChannel(channel);
+        return this;
+    }
+
+    /** Sets the preferred contact timing. */
+    public PersonBuilder withPreferredContactTiming(String timing) {
+        preferredContactTiming = new PreferredContactTiming(timing);
+        return this;
+    }
+
     /** Builds the person with all supplied information. */
     public Person build() {
         return new Person(name, phone, email, tags, relationship, financialNeed, priority, areaOfInterest,
-                interactionNotes, nextAction);
+                interactionNotes, nextAction, preferredContactChannel, preferredContactTiming);
     }
 
     /** Sets the optional follow-up. */

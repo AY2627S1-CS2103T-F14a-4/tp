@@ -186,6 +186,51 @@ predicate applies `OR` between the name keywords, then applies `AND` between the
 filter. For example, `find Alex David r/client` returns clients whose names contain either `Alex` or `David`.
 
 
+### Contact preferences (US12)
+
+`ContactCommandParser` reuses `ArgumentTokenizer`, duplicate-prefix checks and `ParserUtil.parseIndex`.
+Immutable `PreferredContactChannel` and `PreferredContactTiming` validate and strip supplied values before execution.
+Their free-text character policy follows `NextAction`, allowing time punctuation without a new restrictive whitelist.
+`ContactCommand` checks the displayed index, then uses `Person#withContactPreferences` to replace only supplied
+preferences. All other fields and the active filter are preserved. `edit`, `info`, `note`, `withNextAction` and
+`PersonBuilder` also copy both preferences. `PersonCard` hides absent values and wraps recorded values.
+`JsonAdaptedPerson` persists optional `preferredContactChannel` and `preferredContactTiming` strings; missing or
+null properties mean absence, while invalid non-null values produce `IllegalValueException`.
+
+The following sequence shows a successful update; parser validation and index checks precede model mutation.
+
+<puml src="diagrams/ContactSequenceDiagram.puml" alt="Contact preference update sequence" />
+
+### Financial information (US13)
+
+`FinancialNeed`, `Priority` and `AreaOfInterest` are immutable value objects, independently optional on `Person`.
+Normal values contain 1-200 characters after trimming ordinary spaces; internal spaces are preserved. Validation
+accepts Unicode letters and decimal digits, spaces and the punctuation `. , ' ( ) & -`; blanks, tabs, line breaks
+and other characters are rejected. `Priority` stores validated text rather than a fixed enumeration.
+
+`AddressBookParser` routes `info INDEX [/fn VALUE|-] [/pr VALUE|-] [/ai VALUE|-]` to `InfoCommandParser`.
+The parser requires a positive index and at least one financial prefix, accepts any prefix order, and rejects
+duplicate or unknown parameters. It recognizes an exact `-` surrounded only by ordinary spaces before calling
+`ParserUtil` to validate normal values. Bare prefixes remain invalid. `InfoDescriptor` stores a specified flag
+and nullable value per field: omitted means unchanged, specified non-null means replace, and specified null
+means explicitly clear. `InfoCommand` defensively copies this descriptor, including its flags.
+
+`InfoCommand#execute` resolves the index against `Model#getFilteredPersonList` and checks its range before mutation.
+It constructs a replacement `Person` using the resolved financial fields and calls `Model#setPerson`.
+Name, phone, email, relationship, tags, interaction notes, next action, preferred contact channel and preferred
+contact timing are copied unchanged; the active filter is preserved. Clearing an absent field is idempotent.
+
+`LogicManager` saves through the existing storage pipeline after execution. `JsonAdaptedPerson` persists optional
+`financialNeed`, `priority` and `areaOfInterest` strings; missing or null properties load as absent, supporting
+older files. Non-null values are validated on loading. `PersonCard` shows present values in wrapped labels prefixed
+with `Financial need:`, `Priority:` and `Area of interest:`; absent labels are invisible and unmanaged.
+Automated tests cover parser validation and boundaries, set/clear combinations, descriptor copying, filtered indices,
+unrelated-field preservation, JSON compatibility, save/reload after clearing, and UI hiding/wrapping.
+
+The following sequence shows `info 1 /pr High /ai -`; validation and index resolution precede model mutation.
+
+<puml src="diagrams/InfoSequenceDiagram.puml" alt="Financial information update sequence" />
+
 ### Dated interaction notes (US14)
 
 `note INDEX d/yyyy-MM-dd n/NOTE` appends an interaction note to the person at the index in the currently displayed
@@ -246,7 +291,7 @@ date and contact-field preservation, command routing, and saving/reloading an ed
 
 Automated and manual regression checks are described in the [Testing guide](Testing.md#us14-interaction-note-regression-checks).
 
-### Follow-ups (US18 and US20)
+### Follow-ups (US18, US19 and US20)
 
 Each `Person` has zero or one immutable `NextAction`: an action description, a `LocalDate` due date,
 and a boolean completion status. Absence is exposed through `Person#getNextAction()` as an empty `Optional`.
@@ -295,6 +340,23 @@ existing observable-list update. `LogicManager` saves through the existing JSON 
 Tests cover the immutable completed copy, preserved description/date and person fields, filtered display
 indices, out-of-range indices, absent actions, repeated completion, unchanged data on errors, command equality,
 string representation, parser validation and routing through `AddressBookParser`.
+
+#### Viewing due actions (US19)
+
+`AddressBookParser` routes argument-free `due` to `DueCommand`; any arguments are rejected with
+`The due command takes no arguments.`. On each execution, `DueCommand` obtains today's date using
+`LocalDate.now(clock)` and calls `Model#updateFilteredPersonList` with a new `NextActionDuePredicate`.
+The predicate includes only people with an incomplete next action whose date is today or earlier.
+This replaces any previous search filter without changing stored people. Completing an action through
+`done` replaces the person, so the observable filtered list automatically excludes that person.
+
+The default constructor uses `Clock.systemDefaultZone()`. Tests inject a `Clock.fixed` with an explicit
+zone to make the date boundary deterministic. The predicate captures the execution date; rerunning `due`
+refreshes it after midnight. Empty results report `No follow-ups are due.`; otherwise the command reports
+the number of matching follow-ups.
+
+In v1.4 this feature only filters and preserves the existing list order. Sorting is a separate user story;
+keeping it outside US19 avoids changes to the shared model and existing `find`/`list` behaviour.
 
 #### Persistence and card display
 
@@ -774,7 +836,7 @@ Use a separate test folder with fictional records. Run these commands to prepare
 clear
 add r/Client n/John Doe e/john@example.com p/91234567
 add r/Prospect n/Jane Tan e/jane@example.com p/98765432
-info 2 /fn Retirement planning /pr Protect family income /ai Life insurance
+info 2 /fn Retirement planning /pr High /ai Life insurance
 note 2 d/2026-10-06 n/Discussed next steps.
 ```
 
