@@ -8,6 +8,7 @@ import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -27,11 +28,9 @@ import seedu.address.logic.commands.InfoCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.TagCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
-import seedu.address.model.person.NameAndRelationshipMatchesPredicate;
-import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.PersonMatchesFiltersPredicate;
 import seedu.address.model.person.Relationship;
-import seedu.address.model.person.RelationshipMatchesPredicate;
 import seedu.address.model.tag.Tag;
 import seedu.address.testutil.EditPersonDescriptorBuilder;
 import seedu.address.testutil.PersonBuilder;
@@ -101,14 +100,16 @@ public class AddressBookParserTest {
         List<String> keywords = List.of("foo", "bar", "baz");
         FindCommand command = (FindCommand) parser.parseCommand(
                 FindCommand.COMMAND_WORD + " " + keywords.stream().collect(Collectors.joining(" ")));
-        assertEquals(new FindCommand(new NameContainsKeywordsPredicate(keywords)), command);
+        assertEquals(new FindCommand(new PersonMatchesFiltersPredicate(keywords, Optional.empty(), List.of())),
+                command);
     }
 
     @Test
     public void parseCommand_findByRelationship() throws Exception {
         FindCommand command = (FindCommand) parser.parseCommand(FindCommand.COMMAND_WORD + " r/client");
 
-        assertEquals(new FindCommand(new RelationshipMatchesPredicate(Relationship.CLIENT)), command);
+        assertEquals(new FindCommand(new PersonMatchesFiltersPredicate(List.of(), Optional.of(Relationship.CLIENT),
+                List.of())), command);
     }
 
     @Test
@@ -116,8 +117,8 @@ public class AddressBookParserTest {
         List<String> keywords = List.of("foo", "bar");
         FindCommand command = (FindCommand) parser.parseCommand(FindCommand.COMMAND_WORD + " foo bar r/client");
 
-        assertEquals(new FindCommand(
-                new NameAndRelationshipMatchesPredicate(keywords, Relationship.CLIENT)), command);
+        assertEquals(new FindCommand(new PersonMatchesFiltersPredicate(keywords, Optional.of(Relationship.CLIENT),
+                List.of())), command);
     }
 
     @Test

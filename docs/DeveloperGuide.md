@@ -169,21 +169,22 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
-### Find by name and relationship
+### Find by name, relationship and tags
 
-The `find` command supports name keywords, one relationship filter, or both together. `FindCommandParser` tokenizes the
-`r/` prefix and delegates validation to `ParserUtil#parseRelationship(String)`. The parser accepts only `Client` or
-`Prospect`, with case-insensitive matching provided by `Relationship#fromString(String)`.
+The `find` command supports three independently optional filters: name keywords, one relationship, and tag keywords.
+`FindCommandParser` tokenizes the `r/` and `t/` prefixes, rejects duplicate filter prefixes, and delegates value
+validation to `ParserUtil`. At least one filter must be present. Name keywords precede the prefixed filters; multiple
+tag keywords follow one `t/` prefix and are separated by whitespace.
 
-For a relationship search, the parser creates a `RelationshipMatchesPredicate`. `FindCommand` passes this predicate
-to `Model#updateFilteredPersonList(Predicate<Person>)`, which updates the `FilteredList<Person>` observed by the UI.
-Because filtering does not reorder the source list, matching persons appear in the same order as they do for the
-`list` command.
+The parser creates a `PersonMatchesFiltersPredicate`. Name keywords use the existing full-word, case-insensitive
+matching and are joined with `OR`. Tag keywords use exact, case-insensitive tag matching and are also joined with
+`OR`. The predicate joins the name, relationship and tag filter results with `AND`. For example,
+`find Alex David r/client t/priority referral` returns clients whose name contains `Alex` or `David` and whose tags
+contain `priority` or `referral`.
 
-Name searches use `NameContainsKeywordsPredicate`, which matches when at least one keyword occurs as a full word in a
-person's name. When both criteria are supplied, the parser creates a `NameAndRelationshipMatchesPredicate`. This
-predicate applies `OR` between the name keywords, then applies `AND` between the name result and the relationship
-filter. For example, `find Alex David r/client` returns clients whose names contain either `Alex` or `David`.
+`FindCommand` passes the predicate to `Model#updateFilteredPersonList(Predicate<Person>)`, which updates the
+`FilteredList<Person>` observed by the UI. Filtering does not reorder the source list, so matching persons retain the
+same order as in the `list` command.
 
 ### Tagging a person
 
