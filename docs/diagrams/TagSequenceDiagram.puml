@@ -1,0 +1,63 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as Logic LOGIC_COLOR
+participant ":AddressBookParser" as Parser LOGIC_COLOR
+participant ":TagCommandParser" as TagParser LOGIC_COLOR
+participant "command:TagCommand" as Command LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "model:Model" as Model MODEL_COLOR
+participant "original:Person" as Person MODEL_COLOR
+end box
+
+box Storage STORAGE_COLOR_T1
+participant ":Storage" as Storage STORAGE_COLOR
+end box
+
+[-> Logic : execute("tag 1 priority referral")
+activate Logic
+Logic -> Parser : parseCommand(commandText)
+activate Parser
+Parser -> TagParser : parse(arguments)
+activate TagParser
+note right of TagParser
+Parse the displayed-list index and validate one or more tags.
+The parsed set removes duplicate supplied tags.
+end note
+create Command
+TagParser -> Command : new TagCommand(index, tags)
+TagParser --> Parser : command
+deactivate TagParser
+Parser --> Logic : command
+deactivate Parser
+Logic -> Command : execute(model)
+activate Command
+Command -> Model : getFilteredPersonList()
+Model --> Command : displayedPersons
+note right of Command : Reject an out-of-range index before changing data.
+Command -> Person : getTags()
+Person --> Command : existingTags
+note right of Command
+Union existingTags with supplied tags.
+Case-insensitive Tag equality makes repeats idempotent.
+end note
+Command -> Person : withTags(updatedTags)
+Person --> Command : updatedPerson
+Command -> Model : setPerson(original, updatedPerson)
+note right of Model
+Replace the immutable Person while preserving all other fields.
+The observable list updates the PersonCard and retains its active filter.
+end note
+Command --> Logic : CommandResult
+deactivate Command
+Logic -> Model : getAddressBook()
+Model --> Logic : addressBook
+Logic -> Storage : saveAddressBook(addressBook)
+Storage --> Logic
+[<-- Logic : CommandResult
+deactivate Logic
+@enduml

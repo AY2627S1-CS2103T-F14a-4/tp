@@ -186,6 +186,11 @@ contain `priority` or `referral`.
 `FilteredList<Person>` observed by the UI. Filtering does not reorder the source list, so matching persons retain the
 same order as in the `list` command.
 
+The following sequence shows a combined search. The `FilteredList` applies the predicate to each source person;
+omitted filter types evaluate as matched, while the supplied filter types must all match.
+
+<puml src="diagrams/FindSequenceDiagram.puml" alt="Find by name, relationship and tags sequence" />
+
 ### Tagging a person
 
 `TagCommandParser` reads the first whitespace-separated argument as the displayed-list index and validates each
@@ -203,6 +208,11 @@ tags. The parser collects those values into a set before constructing the `Perso
 `PersonCard` renders the complete tag set in its existing `FlowPane`, sorting tags by name for deterministic display.
 The list view observes the model, so tags supplied by `add` or appended by `tag` appear with the person's contact and
 relationship details without a manual refresh. The `list` command restores all persons while retaining those tags.
+
+The following sequence shows tags being appended to a person in the currently displayed list. Parsing and index
+validation complete before the immutable `Person` is replaced and the updated address book is saved.
+
+<puml src="diagrams/TagSequenceDiagram.puml" alt="Tagging a person sequence" />
 
 
 ### Contact preferences (US12)
