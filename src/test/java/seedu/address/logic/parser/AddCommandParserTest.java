@@ -37,7 +37,7 @@ public class AddCommandParserTest {
                 Relationship.CLIENT);
 
         assertParseSuccess(parser,
-                " r/Client n/John Doe e/john.doe@example.com p/91234567 t/priority t/referral t/priority",
+                " r/Client n/John Doe e/john.doe@example.com p/91234567 t/priority t/referral t/PRIORITY",
                 new AddCommand(expectedPerson));
     }
 

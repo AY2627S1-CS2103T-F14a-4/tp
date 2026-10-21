@@ -31,7 +31,7 @@ public class TagCommandTest {
 
         Person expected = new PersonBuilder(original).withTags("friends", "friend", "priority").build();
         assertEquals(expected, model.getFilteredPersonList().get(0));
-        new TagCommand(INDEX_FIRST_PERSON, tagsToAdd).execute(model);
+        new TagCommand(INDEX_FIRST_PERSON, Set.of(new Tag("PRIORITY"))).execute(model);
         assertEquals(expected, model.getFilteredPersonList().get(0));
     }
 

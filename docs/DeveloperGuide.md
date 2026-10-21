@@ -192,8 +192,9 @@ same order as in the `list` command.
 remaining argument with `ParserUtil#parseTags(Collection<String>)`. Tag names use the existing alphanumeric-only
 `Tag` validation. `TagCommand` resolves the person against `Model#getFilteredPersonList()`, unions the supplied tags
 with the person's existing tag set, and replaces the immutable `Person` through `Model#setPerson`. The replacement
-preserves every non-tag field and the active list filter. Because tags are stored in a `Set<Tag>`, repeated existing
-or supplied tags remain idempotent. The existing JSON adapter persists the updated set.
+preserves every non-tag field and the active list filter. `Tag#equals` and `Tag#hashCode` compare normalized casing,
+so the `Set<Tag>` treats case variants as duplicates while preserving the spelling of the existing tag. Repeated
+existing or supplied tags therefore remain idempotent. The existing JSON adapter persists the updated set.
 
 `AddCommandParser` uses the same validation and accepts zero or more `t/TAG` fields. Unlike the required name,
 relationship, email and phone prefixes, `t/` is deliberately repeatable so a new person can be created with several
