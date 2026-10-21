@@ -310,6 +310,11 @@ date and contact-field preservation, command routing, and saving/reloading an ed
 
 #### Deleting a note
 
+The following sequence diagram shows the successful execution of `notedelete 1 2`, which deletes the
+second interaction note from the first contact in the currently filtered list.
+
+<puml src="diagrams/NoteDeleteSequenceDiagram.puml" alt="Interaction note deletion sequence" />
+
 `notedelete CONTACT_INDEX NOTE_INDEX` is routed to `NoteDeleteCommandParser`, which requires exactly two
 positive integer indices using `ParserUtil.parseIndex`.
 
