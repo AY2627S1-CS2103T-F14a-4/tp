@@ -270,8 +270,24 @@ measurement. No fixed card height or forced list refresh is needed.
 The parser distinguishes missing index, date and note prefix; malformed calendar dates and blank text have specific
 errors. Execution rejects indices outside the currently displayed list before changing the model.
 
-This feature provides adding and displaying dated notes only. Chronological sorting, note correction/removal,
+This feature provides adding, displaying and editing dated notes. Chronological sorting, note removal,
 structured interaction outcomes, follow-ups and note search remain separate user stories.
+
+#### Editing note text
+
+`noteedit CONTACT_INDEX NOTE_INDEX n/NEW_NOTE_CONTENT` is routed to `NoteEditCommandParser`.
+The parser requires two positive indices followed by `n/` and nonblank text. As with `note`, everything after
+the prefix is treated as note content, including further prefix-like strings.
+
+`NoteEditCommand` resolves the contact against the filtered list and the note against its insertion-ordered
+history, using one-based indices. It rejects out-of-range indices (including empty histories) before mutation.
+It copies the history and replaces just the selected entry with an `InteractionNote` containing the original
+date and updated text. It then calls `Model#setPerson` with a replacement person preserving all other fields,
+including the next action. The current filter remains active. `LogicManager` persists the change through the
+existing JSON pipeline; no schema changes or note IDs are needed.
+
+`NoteEditCommandTest` and `NoteEditCommandParserTest` cover validation, filtered lists, duplicate notes,
+date and contact-field preservation, command routing, and saving/reloading an edit through `LogicManager`.
 
 Automated and manual regression checks are described in the [Testing guide](Testing.md#us14-interaction-note-regression-checks).
 

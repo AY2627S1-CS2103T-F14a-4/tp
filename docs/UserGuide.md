@@ -210,7 +210,32 @@ Missing indices, dates or note prefixes produce an error. Dates such as `2026-02
 `The person index provided is invalid.` These input errors leave the stored records unchanged.
 
 Notes are displayed in insertion order, including backdated entries; they are not sorted by date.
-Editing, deleting and searching interaction notes are not currently supported.
+Deleting and searching interaction notes are not currently supported.
+
+### Editing a dated interaction note: `noteedit`
+
+Updates the text of one existing interaction note belonging to a client or prospect.
+
+Format: `noteedit CONTACT_INDEX NOTE_INDEX n/NEW_NOTE_CONTENT`
+
+* Both indices must be positive integers. `CONTACT_INDEX` refers to the currently displayed contact list,
+  including search results. The current search filter remains active after editing.
+* `NOTE_INDEX` is the note's position on that contact's card, counting from 1 at the top under
+  **Interaction notes:**. Notes remain in insertion order, rather than date order.
+* The original interaction date, other notes, and all other contact information are preserved.
+* New text cannot be blank. Surrounding whitespace is removed; case and internal text are preserved.
+  Everything after `n/` is note text, including URLs and prefix-like strings. Enter it on one command line.
+* Changes are saved automatically.
+
+Example: `noteedit 1 2 n/Discussed insurance renewal`
+
+This updates the second note of the first displayed contact. Success message:
+`Updated interaction note 2 for PERSON_NAME.`
+
+Missing arguments or the `n/` prefix, invalid indices, and blank text produce an error without changing records.
+An out-of-range contact index produces `The person index provided is invalid.` An out-of-range note index,
+including when the contact has no notes, produces `The interaction note index provided is invalid.`
+Blank text produces `Interaction note cannot be empty.`
 
 ### Locating persons by name or relationship: `find`
 
@@ -413,6 +438,7 @@ Action     | Format, Examples
 **Contact** | `contact INDEX [ch/CHANNEL] [tm/TIMING]`<br> e.g., `contact 1 ch/WhatsApp tm/After 6 pm`
 **Info**   | `info INDEX [/fn VALUE\|-] [/pr VALUE\|-] [/ai VALUE\|-]`<br> e.g., `info 1 /fn retirement planning`
 **Note**   | `note INDEX d/DATE n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
+**Note edit** | `noteedit CONTACT_INDEX NOTE_INDEX n/NEW_NOTE_CONTENT`<br> e.g., `noteedit 1 2 n/Discussed insurance renewal`
 **Next**   | `next INDEX a/ACTION d/yyyy-MM-dd`<br> e.g., `next 1 a/Call d/2026-10-20`
 **Done**   | `done INDEX`<br> e.g., `done 1`
 **Due**    | `due`
