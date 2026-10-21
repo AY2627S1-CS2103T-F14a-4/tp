@@ -27,6 +27,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import seedu.address.logic.commands.NoteCommand;
+import seedu.address.logic.commands.NoteDeleteCommand;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
@@ -189,9 +190,53 @@ public class PersonCardTest {
                 assertTrue(notes.isManaged());
                 assertEquals(3, notes.getChildren().size());
                 Label first = (Label) notes.getChildren().get(1);
-                assertEquals(note.toString(), first.getText());
+                assertEquals("1. " + note, first.getText());
                 assertTrue(first.isWrapText());
-                assertEquals(note.toString(), ((Label) notes.getChildren().get(2)).getText());
+                assertEquals("2. " + note, ((Label) notes.getChildren().get(2)).getText());
+                checked.complete(null);
+            } catch (Throwable error) {
+                checked.completeExceptionally(error);
+            }
+        });
+        checked.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void interactionNotes_deletionRenumbersDisplayedHistoryAndHidesEmptyHistory() throws Exception {
+        CompletableFuture<Void> checked = new CompletableFuture<>();
+        Platform.runLater(() -> {
+            try {
+                Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+                InteractionNote duplicate = new InteractionNote(LocalDate.of(2026, 10, 18), "客户 😀");
+                InteractionNote backdated = new InteractionNote(LocalDate.of(2000, 1, 1), "Earlier meeting");
+                model.setPerson(model.getFilteredPersonList().get(0),
+                        new PersonBuilder(model.getFilteredPersonList().get(0))
+                                .withInteractionNotes(duplicate, backdated, duplicate).build());
+                PersonListPanel panel = new PersonListPanel(model.getFilteredPersonList());
+                StackPane root = new StackPane(panel.getRoot());
+                new Scene(root, 600, 600);
+                root.applyCss();
+                root.layout();
+                ListView<?> list = (ListView<?>) root.lookup("#personListView");
+                VBox notes = (VBox) displayedCell(list, 0).getGraphic().lookup("#interactionNotes");
+                assertEquals("1. " + duplicate, ((Label) notes.getChildren().get(1)).getText());
+                assertEquals("2. " + backdated, ((Label) notes.getChildren().get(2)).getText());
+                assertEquals("3. " + duplicate, ((Label) notes.getChildren().get(3)).getText());
+
+                new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON).execute(model);
+                root.layout();
+                notes = (VBox) displayedCell(list, 0).getGraphic().lookup("#interactionNotes");
+                assertEquals(3, notes.getChildren().size());
+                assertEquals("1. " + backdated, ((Label) notes.getChildren().get(1)).getText());
+                assertEquals("2. " + duplicate, ((Label) notes.getChildren().get(2)).getText());
+
+                new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON).execute(model);
+                new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON).execute(model);
+                root.layout();
+                notes = (VBox) displayedCell(list, 0).getGraphic().lookup("#interactionNotes");
+                assertFalse(notes.isVisible());
+                assertFalse(notes.isManaged());
+                assertEquals(1, notes.getChildren().size());
                 checked.complete(null);
             } catch (Throwable error) {
                 checked.completeExceptionally(error);
