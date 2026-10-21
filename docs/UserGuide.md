@@ -108,6 +108,8 @@ Shows a list of all persons in the address book.
 
 Format: `list`
 
+Each person's tags are shown with their contact and relationship details.
+
 ### Adding tags to a person: `tag`
 
 Adds one or more tags to a person in the currently displayed list.

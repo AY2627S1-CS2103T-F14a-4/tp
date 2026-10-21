@@ -199,7 +199,9 @@ or supplied tags remain idempotent. The existing JSON adapter persists the updat
 relationship, email and phone prefixes, `t/` is deliberately repeatable so a new person can be created with several
 tags. The parser collects those values into a set before constructing the `Person`.
 
-
+`PersonCard` renders the complete tag set in its existing `FlowPane`, sorting tags by name for deterministic display.
+The list view observes the model, so tags supplied by `add` or appended by `tag` appear with the person's contact and
+relationship details without a manual refresh. The `list` command restores all persons while retaining those tags.
 
 
 ### Contact preferences (US12)
