@@ -86,8 +86,8 @@ public class PersonCard extends UiPart<Region> {
         }));
         interactionNotes.setVisible(!person.getInteractionNotes().isEmpty());
         interactionNotes.setManaged(!person.getInteractionNotes().isEmpty());
-        person.getInteractionNotes().forEach(note -> {
-            Label label = new Label(note.toString());
+        for (int i = 0; i < person.getInteractionNotes().size(); i++) {
+            Label label = new Label((i + 1) + ". " + person.getInteractionNotes().get(i));
             label.getStyleClass().add("cell_small_label");
             label.setWrapText(true);
             // Let the parent supply the width during measurement, before the card is laid out.
@@ -96,7 +96,7 @@ public class PersonCard extends UiPart<Region> {
             label.setPrefWidth(0);
             label.setMaxWidth(Double.MAX_VALUE);
             interactionNotes.getChildren().add(label);
-        });
+        }
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.tagName))
                 .forEach(tag -> tags.getChildren().add(new Label(tag.tagName)));
