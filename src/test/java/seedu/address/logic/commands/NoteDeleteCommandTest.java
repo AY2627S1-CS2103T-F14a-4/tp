@@ -54,9 +54,45 @@ public class NoteDeleteCommandTest {
 
         assertEquals(new PersonBuilder(original).withInteractionNotes(NOTE, OTHER_NOTE, OTHER_NOTE).build(),
                 model.getFilteredPersonList().get(0));
-        assertEquals("Deleted interaction note 3 for " + original.getName().fullName + ".",
+        assertEquals("Deleted interaction note 3 for " + original.getName().fullName + " (2000-02-29): Called",
                 result.getFeedbackToUser());
         assertEquals(List.of(NOTE, OTHER_NOTE, NOTE, OTHER_NOTE), original.getInteractionNotes());
+    }
+
+    @Test
+    public void execute_feedbackUsesDeletedNoteAndBoundsUnicodeExcerptWithoutChangingHistory() throws Exception {
+        for (int length : new int[] {79, 80, 81}) {
+            String text = "😀".repeat(length);
+            InteractionNote target = new InteractionNote(LocalDate.of(2026, 10, 18), text);
+            Person original = new PersonBuilder(model.getFilteredPersonList().get(0))
+                    .withInteractionNotes(NOTE, target, OTHER_NOTE).build();
+            model.setPerson(model.getFilteredPersonList().get(0), original);
+
+            String feedback = new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_SECOND_PERSON)
+                    .execute(model).getFeedbackToUser();
+
+            String expectedExcerpt = length > 80 ? "😀".repeat(80) + "…" : text;
+            assertEquals("Deleted interaction note 2 for " + original.getName().fullName
+                    + " (2026-10-18): " + expectedExcerpt, feedback);
+            assertEquals(text, target.getText());
+            assertEquals(List.of(NOTE, target, OTHER_NOTE), original.getInteractionNotes());
+            assertEquals(new PersonBuilder(original).withInteractionNotes(NOTE, OTHER_NOTE).build(),
+                    model.getFilteredPersonList().get(0));
+        }
+    }
+
+    @Test
+    public void execute_feedbackCollapsesWhitespaceWithoutChangingNoteContent() throws Exception {
+        InteractionNote target = new InteractionNote(NOTE.getDate(), "Discussed\ninsurance\t renewal\u2003plans");
+        Person original = new PersonBuilder(model.getFilteredPersonList().get(0))
+                .withInteractionNotes(target, target).build();
+        model.setPerson(model.getFilteredPersonList().get(0), original);
+
+        assertEquals("Deleted interaction note 1 for " + original.getName().fullName
+                + " (2000-02-29): Discussed insurance renewal plans",
+                new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON).execute(model).getFeedbackToUser());
+        assertEquals("Discussed\ninsurance\t renewal\u2003plans", target.getText());
+        assertEquals(List.of(target), model.getFilteredPersonList().get(0).getInteractionNotes());
     }
 
     @Test

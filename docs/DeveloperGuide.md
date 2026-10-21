@@ -255,6 +255,16 @@ entry by position, preserving duplicates and the order of remaining entries. Sub
 down by one. It calls `Model#setPerson` with a replacement person preserving all other fields, including
 contact preferences and the next action, and retains the current filter.
 
+`PersonCard` prefixes each note label with its one-based insertion-order position, matching command indices.
+Replacing the person rebuilds the card through the existing observable list, so remaining notes are renumbered
+and an empty history is hidden without forcing a refresh or changing stored notes.
+
+Deletion feedback uses the `InteractionNote` returned by positional removal, including its actual date and text.
+Only the feedback excerpt has whitespace collapsed. It is limited to 80 Unicode code points using
+`offsetByCodePoints`, followed by `…` when truncated, without splitting surrogate pairs or changing stored content.
+Command and UI tests cover excerpt boundaries, supplementary Unicode characters, duplicate notes, insertion
+order, automatic renumbering and hiding the last deleted note's history.
+
 `LogicManager` saves the replacement through the existing JSON pipeline. No storage schema or model API
 changes are required. `NoteDeleteCommandTest` and `NoteDeleteCommandParserTest` cover validation, filtered
 lists, duplicate notes, contact-field preservation, command routing, and saving/reloading deletions,

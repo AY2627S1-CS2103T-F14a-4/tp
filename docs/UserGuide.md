@@ -220,10 +220,10 @@ Format: `notedelete CONTACT_INDEX NOTE_INDEX`
 
 * Both indices must be positive integers. `CONTACT_INDEX` refers to the currently displayed contact list,
   including search results. The current filter remains active after deletion.
-* `NOTE_INDEX` is the note's position on that contact's card, counting from 1 at the top under
-  **Interaction notes:**. Notes are in insertion order, rather than date order.
+* `NOTE_INDEX` is the number displayed beside the note under **Interaction notes:** on that contact's card.
+  Numbering starts at 1 and follows insertion order, rather than date order (e.g., `1. 2026-10-15: Called`).
 * Only the specified note is removed, even if identical notes exist. Remaining notes retain their order,
-  dates and text; subsequent note positions shift down by one.
+  dates and text; subsequent displayed note numbers shift down by one automatically.
 * All other contact information is preserved, including financial information, tags, contact preferences
   and next actions. Deleting the last note leaves the contact with an empty history.
 * Changes are saved automatically and remain after restarting the application.
@@ -231,7 +231,11 @@ Format: `notedelete CONTACT_INDEX NOTE_INDEX`
 Example: `notedelete 1 2`
 
 This deletes the second note of the first displayed contact. Success message:
-`Deleted interaction note 2 for PERSON_NAME.`
+`Deleted interaction note 2 for PERSON_NAME (2026-10-18): Client interested in investment`
+
+The message includes the deleted note's original date and an excerpt of its content. Whitespace in the excerpt
+is collapsed to single spaces. At most 80 Unicode code points of content are shown, followed by `…` if truncated.
+This formatting does not change stored note content. Deletion cannot be undone.
 
 Missing or extra arguments and invalid indices produce an error without changing records.
 An out-of-range contact index produces `The person index provided is invalid.` An out-of-range note index,
