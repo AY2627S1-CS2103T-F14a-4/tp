@@ -4,7 +4,7 @@ skinparam ArrowFontStyle plain
 
 box Logic LOGIC_COLOR_T1
 participant ":LogicManager" as Logic LOGIC_COLOR
-participant ":AddressBookParser" as Parser LOGIC_COLOR
+participant ":ClientBookParser" as Parser LOGIC_COLOR
 participant ":TagCommandParser" as TagParser LOGIC_COLOR
 participant "command:TagCommand" as Command LOGIC_COLOR
 end box
@@ -54,9 +54,9 @@ The observable list updates the PersonCard and retains its active filter.
 end note
 Command --> Logic : CommandResult
 deactivate Command
-Logic -> Model : getAddressBook()
-Model --> Logic : addressBook
-Logic -> Storage : saveAddressBook(addressBook)
+Logic -> Model : getClientBook()
+Model --> Logic : clientBook
+Logic -> Storage : saveClientBook(clientBook)
 Storage --> Logic
 [<-- Logic : CommandResult
 deactivate Logic

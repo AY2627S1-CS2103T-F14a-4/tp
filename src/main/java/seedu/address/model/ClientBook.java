@@ -10,19 +10,19 @@ import seedu.address.model.person.Person;
 import seedu.address.model.person.UniquePersonList;
 
 /**
- * Wraps all data at the address-book level.
+ * Wraps all data at the client-book level.
  * Duplicates are not allowed (by .isSamePerson comparison).
  */
-public class AddressBook implements ReadOnlyAddressBook {
+public class ClientBook implements ReadOnlyClientBook {
 
     private final UniquePersonList persons = new UniquePersonList();
 
-    public AddressBook() {}
+    public ClientBook() {}
 
     /**
-     * Creates an AddressBook using the Persons in the {@code toBeCopied}
+     * Creates a ClientBook using the Persons in the {@code toBeCopied}
      */
-    public AddressBook(ReadOnlyAddressBook toBeCopied) {
+    public ClientBook(ReadOnlyClientBook toBeCopied) {
         this();
         resetData(toBeCopied);
     }
@@ -38,9 +38,9 @@ public class AddressBook implements ReadOnlyAddressBook {
     }
 
     /**
-     * Resets the existing data of this {@code AddressBook} with {@code newData}.
+     * Resets the existing data of this {@code ClientBook} with {@code newData}.
      */
-    public void resetData(ReadOnlyAddressBook newData) {
+    public void resetData(ReadOnlyClientBook newData) {
         requireNonNull(newData);
 
         setPersons(newData.getPersonList());
@@ -49,7 +49,7 @@ public class AddressBook implements ReadOnlyAddressBook {
     //// person-level operations
 
     /**
-     * Returns true if a person with the same identity as {@code person} exists in the address book.
+     * Returns true if a person with the same identity as {@code person} exists in the client book.
      */
     public boolean hasPerson(Person person) {
         requireNonNull(person);
@@ -57,8 +57,8 @@ public class AddressBook implements ReadOnlyAddressBook {
     }
 
     /**
-     * Adds a person to the address book.
-     * The person must not already exist in the address book.
+     * Adds a person to the client book.
+     * The person must not already exist in the client book.
      */
     public void addPerson(Person p) {
         persons.add(p);
@@ -66,8 +66,8 @@ public class AddressBook implements ReadOnlyAddressBook {
 
     /**
      * Replaces the given person {@code target} in the list with {@code editedPerson}.
-     * {@code target} must exist in the address book.
-     * The person identity of {@code editedPerson} must not be the same as another existing person in the address book.
+     * {@code target} must exist in the client book.
+     * The person identity of {@code editedPerson} must not be the same as another existing person in the client book.
      */
     public void setPerson(Person target, Person editedPerson) {
         requireNonNull(editedPerson);
@@ -76,8 +76,8 @@ public class AddressBook implements ReadOnlyAddressBook {
     }
 
     /**
-     * Removes {@code key} from this {@code AddressBook}.
-     * {@code key} must exist in the address book.
+     * Removes {@code key} from this {@code ClientBook}.
+     * {@code key} must exist in the client book.
      */
     public void removePerson(Person key) {
         persons.remove(key);
@@ -104,11 +104,11 @@ public class AddressBook implements ReadOnlyAddressBook {
         }
 
         // instanceof handles nulls
-        if (!(other instanceof AddressBook otherAddressBook)) {
+        if (!(other instanceof ClientBook otherClientBook)) {
             return false;
         }
 
-        return persons.equals(otherAddressBook.persons);
+        return persons.equals(otherClientBook.persons);
     }
 
     @Override

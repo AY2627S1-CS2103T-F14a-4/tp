@@ -19,7 +19,7 @@ import seedu.address.model.UserPrefs;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.NextAction;
 import seedu.address.model.person.Person;
-import seedu.address.testutil.AddressBookBuilder;
+import seedu.address.testutil.ClientBookBuilder;
 import seedu.address.testutil.PersonBuilder;
 
 public class DueCommandTest {
@@ -43,24 +43,24 @@ public class DueCommandTest {
             .withPhone("90000005").withEmail("noaction@example.com").build();
 
     private final DueCommand command = new DueCommand(CLOCK);
-    private final Model model = new ModelManager(new AddressBookBuilder()
+    private final Model model = new ModelManager(new ClientBookBuilder()
             .withPerson(DUE_TODAY).withPerson(DUE_TOMORROW).withPerson(COMPLETED)
             .withPerson(DUE_YESTERDAY).withPerson(NO_ACTION).build(), new UserPrefs());
 
     @Test
     public void execute_mixedActions_showsOnlyDuePeopleInOriginalOrder() {
-        List<Person> originalPeople = List.copyOf(model.getAddressBook().getPersonList());
+        List<Person> originalPeople = List.copyOf(model.getClientBook().getPersonList());
 
         CommandResult result = command.execute(model);
 
         assertEquals(List.of(DUE_TODAY, DUE_YESTERDAY), model.getFilteredPersonList());
         assertEquals("2 follow-up(s) due today or earlier.", result.getFeedbackToUser());
-        assertEquals(originalPeople, model.getAddressBook().getPersonList());
+        assertEquals(originalPeople, model.getClientBook().getPersonList());
     }
 
     @Test
     public void execute_noDueActions_returnsEmptyResultMessage() {
-        Model noDueModel = new ModelManager(new AddressBookBuilder().withPerson(DUE_TOMORROW)
+        Model noDueModel = new ModelManager(new ClientBookBuilder().withPerson(DUE_TOMORROW)
                 .withPerson(COMPLETED).withPerson(NO_ACTION).build(), new UserPrefs());
 
         assertEquals("No follow-ups are due.", command.execute(noDueModel).getFeedbackToUser());
@@ -70,7 +70,7 @@ public class DueCommandTest {
 
     @Test
     public void execute_singleDueAction_returnsCountMessage() {
-        Model singleDueModel = new ModelManager(new AddressBookBuilder().withPerson(DUE_TODAY).build(),
+        Model singleDueModel = new ModelManager(new ClientBookBuilder().withPerson(DUE_TODAY).build(),
                 new UserPrefs());
 
         assertEquals("1 follow-up(s) due today or earlier.", command.execute(singleDueModel).getFeedbackToUser());
@@ -93,10 +93,10 @@ public class DueCommandTest {
         new DoneCommand(INDEX_FIRST_PERSON).execute(model);
 
         assertEquals(List.of(DUE_YESTERDAY), model.getFilteredPersonList());
-        Person completedPerson = model.getAddressBook().getPersonList().getFirst();
+        Person completedPerson = model.getClientBook().getPersonList().getFirst();
         assertEquals(DUE_TODAY.withNextAction(DUE_TODAY.getNextAction().orElseThrow().markCompleted()),
                 completedPerson);
-        assertEquals(5, model.getAddressBook().getPersonList().size());
+        assertEquals(5, model.getClientBook().getPersonList().size());
     }
 
     @Test

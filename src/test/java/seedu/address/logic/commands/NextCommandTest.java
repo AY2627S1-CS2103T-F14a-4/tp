@@ -7,7 +7,7 @@ import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.showPersonAtIndex;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
-import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
+import static seedu.address.testutil.TypicalPersons.getTypicalClientBook;
 
 import java.time.LocalDate;
 
@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.logic.Messages;
-import seedu.address.logic.parser.AddressBookParser;
+import seedu.address.logic.parser.ClientBookParser;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
@@ -27,8 +27,8 @@ import seedu.address.testutil.PersonBuilder;
 
 public class NextCommandTest {
     private static final NextAction ACTION = new NextAction("Call", LocalDate.of(2000, 1, 1), false);
-    private final Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
-    private final AddressBookParser parser = new AddressBookParser();
+    private final Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
+    private final ClientBookParser parser = new ClientBookParser();
 
     @Test
     public void execute_newAction_preservesAllOtherFields() throws Exception {
@@ -60,7 +60,7 @@ public class NextCommandTest {
         Person second = model.getFilteredPersonList().get(1);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
         new NextCommand(INDEX_FIRST_PERSON, ACTION).execute(model);
-        assertEquals(first, model.getAddressBook().getPersonList().getFirst());
+        assertEquals(first, model.getClientBook().getPersonList().getFirst());
         assertEquals(second.withNextAction(ACTION), model.getFilteredPersonList().getFirst());
         assertEquals(1, model.getFilteredPersonList().size());
         assertCommandFailure(new NextCommand(INDEX_SECOND_PERSON, ACTION), model,

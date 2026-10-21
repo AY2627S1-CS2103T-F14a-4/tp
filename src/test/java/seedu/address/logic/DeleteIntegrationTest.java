@@ -20,7 +20,7 @@ import seedu.address.model.UserPrefs;
 import seedu.address.model.person.InteractionNote;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Relationship;
-import seedu.address.storage.JsonAddressBookStorage;
+import seedu.address.storage.JsonClientBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
 import seedu.address.testutil.PersonBuilder;
@@ -45,16 +45,16 @@ public class DeleteIntegrationTest {
 
     private Model model;
     private Logic logic;
-    private JsonAddressBookStorage addressBookStorage;
+    private JsonClientBookStorage clientBookStorage;
 
     @BeforeEach
     public void setUp() throws Exception {
         model = new ModelManager();
         model.addPerson(client);
         model.addPerson(prospect);
-        addressBookStorage = new JsonAddressBookStorage(temporaryFolder.resolve("addressbook.json"));
-        addressBookStorage.saveAddressBook(model.getAddressBook());
-        StorageManager storage = new StorageManager(addressBookStorage,
+        clientBookStorage = new JsonClientBookStorage(temporaryFolder.resolve("clientbook.json"));
+        clientBookStorage.saveClientBook(model.getClientBook());
+        StorageManager storage = new StorageManager(clientBookStorage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
         logic = new LogicManager(model, storage);
     }
@@ -137,22 +137,22 @@ public class DeleteIntegrationTest {
 
     /** Verifies both in-memory records and the result of reopening the saved JSON file. */
     private void assertSavedPersons(Person... expectedPersons) throws Exception {
-        assertEquals(List.of(expectedPersons), model.getAddressBook().getPersonList());
-        Model reopened = new ModelManager(addressBookStorage.readAddressBook().orElseThrow(), new UserPrefs());
-        assertEquals(List.of(expectedPersons), reopened.getAddressBook().getPersonList());
+        assertEquals(List.of(expectedPersons), model.getClientBook().getPersonList());
+        Model reopened = new ModelManager(clientBookStorage.readClientBook().orElseThrow(), new UserPrefs());
+        assertEquals(List.of(expectedPersons), reopened.getClientBook().getPersonList());
     }
 
     /** Rejected input must preserve records, the current filter and the exact saved bytes. */
     private void assertRejectedWithoutChanges(String command, Class<? extends Throwable> exceptionType,
             String expectedMessage) throws Exception {
-        List<Person> recordsBefore = List.copyOf(model.getAddressBook().getPersonList());
+        List<Person> recordsBefore = List.copyOf(model.getClientBook().getPersonList());
         List<Person> displayedBefore = List.copyOf(logic.getFilteredPersonList());
-        String savedBefore = Files.readString(addressBookStorage.getAddressBookFilePath());
+        String savedBefore = Files.readString(clientBookStorage.getClientBookFilePath());
 
         assertThrows(exceptionType, expectedMessage, () -> logic.execute(command));
 
-        assertEquals(recordsBefore, model.getAddressBook().getPersonList());
+        assertEquals(recordsBefore, model.getClientBook().getPersonList());
         assertEquals(displayedBefore, logic.getFilteredPersonList());
-        assertEquals(savedBefore, Files.readString(addressBookStorage.getAddressBookFilePath()));
+        assertEquals(savedBefore, Files.readString(clientBookStorage.getClientBookFilePath()));
     }
 }

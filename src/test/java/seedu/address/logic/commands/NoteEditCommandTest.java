@@ -7,7 +7,7 @@ import static seedu.address.logic.commands.CommandTestUtil.showPersonAtIndex;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
-import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
+import static seedu.address.testutil.TypicalPersons.getTypicalClientBook;
 
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -24,7 +24,7 @@ import seedu.address.model.person.InteractionNote;
 import seedu.address.model.person.NextAction;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Relationship;
-import seedu.address.storage.JsonAddressBookStorage;
+import seedu.address.storage.JsonClientBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
 import seedu.address.testutil.PersonBuilder;
@@ -34,7 +34,7 @@ public class NoteEditCommandTest {
     @TempDir
     public Path temporaryFolder;
 
-    private final Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+    private final Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
 
     @Test
     public void execute_duplicateNotes_preservesDateOtherNotesAndAllContactFields() throws Exception {
@@ -70,7 +70,7 @@ public class NoteEditCommandTest {
         assertEquals(1, model.getFilteredPersonList().size());
         assertEquals(new PersonBuilder(original).withInteractionNotes(
                 new InteractionNote(NOTE.getDate(), "Updated")).build(), model.getFilteredPersonList().get(0));
-        assertEquals(untouched, model.getAddressBook().getPersonList().get(0));
+        assertEquals(untouched, model.getClientBook().getPersonList().get(0));
         assertCommandFailure(new NoteEditCommand(INDEX_SECOND_PERSON, INDEX_FIRST_PERSON, "Updated"), model,
                 Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
     }
@@ -100,14 +100,14 @@ public class NoteEditCommandTest {
                 .withNextAction(new NextAction("Call", LocalDate.of(2026, 10, 20), false)).build();
         model.setPerson(model.getFilteredPersonList().get(0),
                 new PersonBuilder(original).withInteractionNotes(NOTE, NOTE).build());
-        JsonAddressBookStorage storage = new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json"));
+        JsonClientBookStorage storage = new JsonClientBookStorage(temporaryFolder.resolve("clientBook.json"));
         LogicManager logic = new LogicManager(model, new StorageManager(storage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json"))));
 
         logic.execute("noteedit 1 2 n/Updated");
 
-        Model reopened = new ModelManager(storage.readAddressBook().orElseThrow(), new UserPrefs());
-        assertEquals(model.getAddressBook(), reopened.getAddressBook());
+        Model reopened = new ModelManager(storage.readClientBook().orElseThrow(), new UserPrefs());
+        assertEquals(model.getClientBook(), reopened.getClientBook());
         assertEquals(new PersonBuilder(original).withInteractionNotes(NOTE,
                 new InteractionNote(NOTE.getDate(), "Updated")).build(), reopened.getFilteredPersonList().get(0));
     }

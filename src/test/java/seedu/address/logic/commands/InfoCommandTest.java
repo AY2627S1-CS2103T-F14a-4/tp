@@ -8,7 +8,7 @@ import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.showPersonAtIndex;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
-import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
+import static seedu.address.testutil.TypicalPersons.getTypicalClientBook;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -31,7 +31,7 @@ import seedu.address.model.person.Relationship;
 import seedu.address.testutil.PersonBuilder;
 
 public class InfoCommandTest {
-    private final Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+    private final Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
     private final InfoCommandParser parser = new InfoCommandParser();
 
     private Person populatedPerson() {
@@ -88,7 +88,7 @@ public class InfoCommandTest {
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
         parser.parse("1 /pr -").execute(model);
         assertEquals(List.of(second), model.getFilteredPersonList());
-        assertEquals(first, model.getAddressBook().getPersonList().getFirst());
+        assertEquals(first, model.getClientBook().getPersonList().getFirst());
         assertCommandFailure(parser.parse("2 /pr -"), model, "No client exists at index 2.");
     }
 
@@ -167,7 +167,7 @@ public class InfoCommandTest {
         parser.parse("1 /fn Retirement").execute(model);
         assertEquals(new PersonBuilder(target).withFinancialNeed("Retirement").build(),
                 model.getFilteredPersonList().get(0));
-        assertEquals(first, model.getAddressBook().getPersonList().get(0));
+        assertEquals(first, model.getClientBook().getPersonList().get(0));
         assertTrue(model.getFilteredPersonList().get(0).getPriority().isEmpty());
         assertTrue(model.getFilteredPersonList().get(0).getAreaOfInterest().isEmpty());
     }

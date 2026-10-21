@@ -13,7 +13,7 @@ import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.model.tag.Tag;
 
 /**
- * Represents a Person in the address book.
+ * Represents a Person in the client book.
  * Guarantees: required details are not null, field values are validated, immutable.
  */
 public class Person {

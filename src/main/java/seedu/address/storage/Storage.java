@@ -5,7 +5,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 import seedu.address.commons.exceptions.DataLoadingException;
-import seedu.address.model.ReadOnlyAddressBook;
+import seedu.address.model.ReadOnlyClientBook;
 import seedu.address.model.ReadOnlyUserPrefs;
 import seedu.address.model.UserPrefs;
 
@@ -35,23 +35,23 @@ public interface Storage {
     void saveUserPrefs(ReadOnlyUserPrefs userPrefs) throws IOException;
 
     /**
-     * Returns the file path of the AddressBook data file.
+     * Returns the file path of the ClientBook data file.
      */
-    Path getAddressBookFilePath();
+    Path getClientBookFilePath();
 
     /**
-     * Returns AddressBook data as a {@link ReadOnlyAddressBook}.
+     * Returns ClientBook data as a {@link ReadOnlyClientBook}.
      * Returns {@code Optional.empty()} if storage file is not found.
      *
      * @throws DataLoadingException if loading the data from storage failed.
      */
-    Optional<ReadOnlyAddressBook> readAddressBook() throws DataLoadingException;
+    Optional<ReadOnlyClientBook> readClientBook() throws DataLoadingException;
 
     /**
-     * Saves the given {@link ReadOnlyAddressBook} to the storage.
-     * @param addressBook cannot be null.
+     * Saves the given {@link ReadOnlyClientBook} to the storage.
+     * @param clientBook cannot be null.
      * @throws IOException if there was any problem writing to the file.
      */
-    void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException;
+    void saveClientBook(ReadOnlyClientBook clientBook) throws IOException;
 
 }

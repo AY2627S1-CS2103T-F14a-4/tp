@@ -7,7 +7,7 @@ import static seedu.address.logic.commands.CommandTestUtil.showPersonAtIndex;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
-import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
+import static seedu.address.testutil.TypicalPersons.getTypicalClientBook;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.logic.Messages;
-import seedu.address.logic.parser.AddressBookParser;
+import seedu.address.logic.parser.ClientBookParser;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
@@ -29,8 +29,8 @@ import seedu.address.model.person.Relationship;
 import seedu.address.testutil.PersonBuilder;
 
 public class ContactCommandTest {
-    private final Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
-    private final AddressBookParser parser = new AddressBookParser();
+    private final Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
+    private final ClientBookParser parser = new ClientBookParser();
 
     private Person populatedPerson() {
         return new PersonBuilder(model.getFilteredPersonList().getFirst()).withRelationship(Relationship.CLIENT)

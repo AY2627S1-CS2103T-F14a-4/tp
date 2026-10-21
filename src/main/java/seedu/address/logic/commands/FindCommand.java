@@ -12,7 +12,7 @@ import seedu.address.model.Model;
 import seedu.address.model.person.Person;
 
 /**
- * Finds and lists all persons in the address book who match the specified search criterion.
+ * Finds and lists all persons in the client book who match the specified search criterion.
  */
 public class FindCommand extends Command {
 

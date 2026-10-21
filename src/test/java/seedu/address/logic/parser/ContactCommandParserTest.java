@@ -24,7 +24,7 @@ public class ContactCommandParserTest {
                 new PreferredContactChannel("Phone  call"), new PreferredContactTiming("After 6:30 pm"));
         assertParseSuccess(parser, " 1 ch/ Phone  call  tm/ After 6:30 pm ", expected);
         assertParseSuccess(parser, " 1 tm/After 6:30 pm ch/Phone  call", expected);
-        assertEquals(expected, new AddressBookParser().parseCommand("contact 1 ch/Phone  call tm/After 6:30 pm"));
+        assertEquals(expected, new ClientBookParser().parseCommand("contact 1 ch/Phone  call tm/After 6:30 pm"));
         assertParseSuccess(parser, "1 ch/Email", new ContactCommand(INDEX_FIRST_PERSON,
                 new PreferredContactChannel("Email"), null));
         assertParseSuccess(parser, "1 tm/Weekends", new ContactCommand(INDEX_FIRST_PERSON,
@@ -38,7 +38,7 @@ public class ContactCommandParserTest {
                 new PreferredContactTiming("Weekdays AM/PM"));
         assertParseSuccess(parser, " 1 ch/Email or Phone/WhatsApp tm/Weekdays AM/PM", expected);
         assertParseSuccess(parser, " 1 tm/Weekdays AM/PM ch/Email or Phone/WhatsApp", expected);
-        assertEquals(expected, new AddressBookParser().parseCommand(
+        assertEquals(expected, new ClientBookParser().parseCommand(
                 "contact 1 ch/Email or Phone/WhatsApp tm/Weekdays AM/PM"));
         assertParseSuccess(parser, " 1 ch/Email xx/After 6 pm", new ContactCommand(INDEX_FIRST_PERSON,
                 new PreferredContactChannel("Email xx/After 6 pm"), null));

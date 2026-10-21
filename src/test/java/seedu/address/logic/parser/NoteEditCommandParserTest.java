@@ -50,6 +50,6 @@ public class NoteEditCommandParserTest {
     @Test
     public void parseCommand_routesToNoteEditParser() throws Exception {
         assertEquals(new NoteEditCommand(INDEX_FIRST_PERSON, INDEX_SECOND_PERSON, "Updated"),
-                new AddressBookParser().parseCommand("noteedit 1 2 n/Updated"));
+                new ClientBookParser().parseCommand("noteedit 1 2 n/Updated"));
     }
 }

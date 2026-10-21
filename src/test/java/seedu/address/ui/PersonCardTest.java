@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalPersons.ALICE;
-import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
+import static seedu.address.testutil.TypicalPersons.getTypicalClientBook;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -206,7 +206,7 @@ public class PersonCardTest {
         CompletableFuture<Void> checked = new CompletableFuture<>();
         Platform.runLater(() -> {
             try {
-                Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+                Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
                 InteractionNote duplicate = new InteractionNote(LocalDate.of(2026, 10, 18), "客户 😀");
                 InteractionNote backdated = new InteractionNote(LocalDate.of(2000, 1, 1), "Earlier meeting");
                 model.setPerson(model.getFilteredPersonList().get(0),
@@ -275,7 +275,7 @@ public class PersonCardTest {
         CompletableFuture<Void> checked = new CompletableFuture<>();
         Platform.runLater(() -> {
             try {
-                Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+                Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
                 PersonListPanel panel = new PersonListPanel(model.getFilteredPersonList());
                 StackPane root = new StackPane(panel.getRoot());
                 Scene scene = new Scene(root, 600, 600);
