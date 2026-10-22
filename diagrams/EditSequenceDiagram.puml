@@ -4,7 +4,7 @@ skinparam ArrowFontStyle plain
 
 box Logic LOGIC_COLOR_T1
 participant ":LogicManager" as LogicManager LOGIC_COLOR
-participant ":AddressBookParser" as AddressBookParser LOGIC_COLOR
+participant ":ClientBookParser" as ClientBookParser LOGIC_COLOR
 participant ":EditCommandParser" as EditCommandParser LOGIC_COLOR
 participant "e:EditCommand" as EditCommand LOGIC_COLOR
 participant "r:CommandResult" as CommandResult LOGIC_COLOR
@@ -17,17 +17,17 @@ end box
 [-> LogicManager : execute("edit 1 n/Alex Tan")
 activate LogicManager
 
-LogicManager -> AddressBookParser : parseCommand(commandText)
-activate AddressBookParser
+LogicManager -> ClientBookParser : parseCommand(commandText)
+activate ClientBookParser
 
 create EditCommandParser
-AddressBookParser -> EditCommandParser : new EditCommandParser()
+ClientBookParser -> EditCommandParser : new EditCommandParser()
 activate EditCommandParser
 
-EditCommandParser --> AddressBookParser
+EditCommandParser --> ClientBookParser
 deactivate EditCommandParser
 
-AddressBookParser -> EditCommandParser : parse(arguments)
+ClientBookParser -> EditCommandParser : parse(arguments)
 activate EditCommandParser
 
 create EditCommand
@@ -37,14 +37,14 @@ activate EditCommand
 EditCommand --> EditCommandParser : e: EditCommand
 deactivate EditCommand
 
-EditCommandParser --> AddressBookParser : e
+EditCommandParser --> ClientBookParser : e
 deactivate EditCommandParser
 ' Hidden arrow positions the destroy marker below the activation bar.
-EditCommandParser -[hidden]-> AddressBookParser
+EditCommandParser -[hidden]-> ClientBookParser
 destroy EditCommandParser
 
-AddressBookParser --> LogicManager : e
-deactivate AddressBookParser
+ClientBookParser --> LogicManager : e
+deactivate ClientBookParser
 
 LogicManager -> EditCommand : execute(m)
 activate EditCommand
