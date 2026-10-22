@@ -1,0 +1,60 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as Logic LOGIC_COLOR
+participant ":ClientBookParser" as Parser LOGIC_COLOR
+participant ":FindCommandParser" as FindParser LOGIC_COLOR
+participant "command:FindCommand" as Command LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "predicate:PersonMatchesFiltersPredicate" as Predicate MODEL_COLOR
+participant "model:Model" as Model MODEL_COLOR
+participant "filteredPersons:FilteredList<Person>" as FilteredList MODEL_COLOR
+end box
+
+[-> Logic : execute("find Alex David r/client t/priority referral")
+activate Logic
+Logic -> Parser : parseCommand(commandText)
+activate Parser
+Parser -> FindParser : parse(arguments)
+activate FindParser
+note right of FindParser
+Tokenize the optional r/ and t/ filters.
+Reject duplicate prefixes and validate supplied values.
+Require at least one name, relationship or tag filter.
+end note
+create Predicate
+FindParser -> Predicate : new PersonMatchesFiltersPredicate(\nnameKeywords, relationship, tagKeywords)
+create Command
+FindParser -> Command : new FindCommand(predicate)
+FindParser --> Parser : command
+deactivate FindParser
+Parser --> Logic : command
+deactivate Parser
+Logic -> Command : execute(model)
+activate Command
+Command -> Model : updateFilteredPersonList(predicate)
+activate Model
+Model -> FilteredList : setPredicate(predicate)
+loop for each source person
+    FilteredList -> Predicate : test(person)
+    note right of Predicate
+    Names: any keyword (OR)
+    Relationship: exact match
+    Tags: any keyword (OR)
+    Supplied filter types: all must match (AND)
+    end note
+    Predicate --> FilteredList : matches
+end
+FilteredList --> Model
+deactivate Model
+Command -> Model : getFilteredPersonList()
+Model --> Command : matchingPersons
+Command --> Logic : CommandResult(matchCount)
+deactivate Command
+[<-- Logic : CommandResult
+deactivate Logic
+@enduml

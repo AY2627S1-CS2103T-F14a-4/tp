@@ -4,7 +4,7 @@ skinparam ArrowFontStyle plain
 
 box Logic LOGIC_COLOR_T1
 participant ":LogicManager" as Logic LOGIC_COLOR
-participant ":AddressBookParser" as Parser LOGIC_COLOR
+participant ":ClientBookParser" as Parser LOGIC_COLOR
 participant ":NoteDeleteCommandParser" as NoteDeleteParser LOGIC_COLOR
 participant "command:NoteDeleteCommand" as Command LOGIC_COLOR
 end box
@@ -72,9 +72,9 @@ The excerpt collapses whitespace and limits text to 80 code points.
 end note
 Command --> Logic : CommandResult
 deactivate Command
-Logic -> Model : getAddressBook()
-Model --> Logic : addressBook
-Logic -> Storage : saveAddressBook(addressBook)
+Logic -> Model : getClientBook()
+Model --> Logic : clientBook
+Logic -> Storage : saveClientBook(clientBook)
 Storage --> Logic
 [<-- Logic : CommandResult
 deactivate Logic

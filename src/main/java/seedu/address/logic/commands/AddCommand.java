@@ -14,13 +14,13 @@ import seedu.address.model.Model;
 import seedu.address.model.person.Person;
 
 /**
- * Adds a person to the address book.
+ * Adds a person to the client book.
  */
 public class AddCommand extends Command {
 
     public static final String COMMAND_WORD = "add";
 
-    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Adds a person to the address book. "
+    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Adds a person to the client book. "
             + "Parameters: "
             + PREFIX_RELATIONSHIP + "RELATIONSHIP "
             + PREFIX_NAME + "NAME "
@@ -58,11 +58,11 @@ public class AddCommand extends Command {
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
 
-        boolean hasMatchingEmail = model.getAddressBook().getPersonList().stream()
+        boolean hasMatchingEmail = model.getClientBook().getPersonList().stream()
                 .anyMatch(person -> person.getEmail().equals(toAdd.getEmail()));
-        boolean hasMatchingPhone = model.getAddressBook().getPersonList().stream()
+        boolean hasMatchingPhone = model.getClientBook().getPersonList().stream()
                 .anyMatch(person -> person.getPhone().equals(toAdd.getPhone()));
-        boolean hasMatchingEmailAndPhone = model.getAddressBook().getPersonList().stream()
+        boolean hasMatchingEmailAndPhone = model.getClientBook().getPersonList().stream()
                 .anyMatch(person -> person.getEmail().equals(toAdd.getEmail())
                         && person.getPhone().equals(toAdd.getPhone()));
 

@@ -9,7 +9,7 @@ import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static seedu.address.logic.commands.CommandTestUtil.showPersonAtIndex;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
-import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
+import static seedu.address.testutil.TypicalPersons.getTypicalClientBook;
 
 import java.time.LocalDate;
 
@@ -29,7 +29,7 @@ import seedu.address.testutil.PersonBuilder;
 public class DoneCommandTest {
     private static final LocalDate DATE = LocalDate.of(2000, 1, 1);
     private static final NextAction ACTION = new NextAction("Call client", DATE, false);
-    private final Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+    private final Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
 
     @Test
     public void execute_pendingAction_completesAndPreservesAllOtherFields() {
@@ -41,7 +41,7 @@ public class DoneCommandTest {
         model.setPerson(model.getFilteredPersonList().getFirst(), original);
         Person expected = new PersonBuilder(original).withNextAction(
                 new NextAction("Call client", DATE, true)).build();
-        Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+        Model expectedModel = new ModelManager(model.getClientBook(), new UserPrefs());
         expectedModel.setPerson(original, expected);
 
         assertCommandSuccess(new DoneCommand(INDEX_FIRST_PERSON), model,
@@ -58,7 +58,7 @@ public class DoneCommandTest {
 
         new DoneCommand(INDEX_FIRST_PERSON).execute(model);
 
-        assertEquals(first, model.getAddressBook().getPersonList().getFirst());
+        assertEquals(first, model.getClientBook().getPersonList().getFirst());
         assertEquals(second.withNextAction(ACTION.markCompleted()), model.getFilteredPersonList().getFirst());
         assertEquals(1, model.getFilteredPersonList().size());
         assertCommandFailure(new DoneCommand(INDEX_SECOND_PERSON), model,
@@ -91,7 +91,7 @@ public class DoneCommandTest {
         DoneCommand command = new DoneCommand(INDEX_FIRST_PERSON);
         command.execute(model);
         Person completed = model.getFilteredPersonList().getFirst();
-        Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+        Model expectedModel = new ModelManager(model.getClientBook(), new UserPrefs());
 
         for (int attempt = 0; attempt < 2; attempt++) {
             assertCommandSuccess(command, model,
@@ -105,13 +105,13 @@ public class DoneCommandTest {
         Person original = model.getFilteredPersonList().get(1);
         Person completed = original.withNextAction(ACTION.markCompleted());
         model.setPerson(original, completed);
-        Model readOnlyModel = new ModelManager(model.getAddressBook(), new UserPrefs()) {
+        Model readOnlyModel = new ModelManager(model.getClientBook(), new UserPrefs()) {
             @Override
             public void setPerson(Person target, Person editedPerson) {
                 throw new AssertionError("An already completed action must not replace the person.");
             }
         };
-        Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+        Model expectedModel = new ModelManager(model.getClientBook(), new UserPrefs());
         showPersonAtIndex(readOnlyModel, INDEX_SECOND_PERSON);
         showPersonAtIndex(expectedModel, INDEX_SECOND_PERSON);
 

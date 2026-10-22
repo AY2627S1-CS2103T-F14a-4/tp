@@ -6,7 +6,7 @@ import static seedu.address.commons.util.AppUtil.checkArgument;
 import java.util.regex.Pattern;
 
 /**
- * Represents a Person's phone number in the address book.
+ * Represents a Person's phone number in the client book.
  * Guarantees: immutable; is valid as declared in {@link #isValidPhone(String)}
  */
 public class Phone {

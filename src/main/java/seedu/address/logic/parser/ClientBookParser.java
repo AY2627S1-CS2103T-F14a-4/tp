@@ -31,7 +31,7 @@ import seedu.address.logic.parser.exceptions.ParseException;
 /**
  * Parses user input.
  */
-public class AddressBookParser {
+public class ClientBookParser {
 
     /**
      * Used for initial separation of command word and args.
@@ -39,7 +39,7 @@ public class AddressBookParser {
     private static final Pattern BASIC_COMMAND_FORMAT = Pattern.compile("(?<commandWord>\\S+)(?<arguments>.*)");
     private static final Pattern INFO_COMMAND_FORMAT = Pattern.compile(
             "\\s*" + InfoCommand.COMMAND_WORD + "(?=\\s|$)(?<arguments>.*)", Pattern.DOTALL);
-    private static final Logger logger = LogsCenter.getLogger(AddressBookParser.class);
+    private static final Logger logger = LogsCenter.getLogger(ClientBookParser.class);
 
     /**
      * Parses user input into command for execution.

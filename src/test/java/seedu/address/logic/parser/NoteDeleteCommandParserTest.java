@@ -47,6 +47,6 @@ public class NoteDeleteCommandParserTest {
     @Test
     public void parseCommand_routesToNoteDeleteParser() throws Exception {
         assertEquals(new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_SECOND_PERSON),
-                new AddressBookParser().parseCommand("notedelete 1 2"));
+                new ClientBookParser().parseCommand("notedelete 1 2"));
     }
 }

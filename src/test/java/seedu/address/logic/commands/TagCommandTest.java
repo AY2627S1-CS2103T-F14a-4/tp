@@ -5,7 +5,7 @@ import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.showPersonAtIndex;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
-import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
+import static seedu.address.testutil.TypicalPersons.getTypicalClientBook;
 
 import java.util.Set;
 
@@ -20,7 +20,7 @@ import seedu.address.model.tag.Tag;
 import seedu.address.testutil.PersonBuilder;
 
 public class TagCommandTest {
-    private final Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+    private final Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
 
     @Test
     public void execute_newAndDuplicateTags_addsUniqueTagsAndPreservesFields() throws Exception {
@@ -43,7 +43,7 @@ public class TagCommandTest {
 
         new TagCommand(INDEX_FIRST_PERSON, Set.of(new Tag("priority"))).execute(model);
 
-        assertEquals(first, model.getAddressBook().getPersonList().get(0));
+        assertEquals(first, model.getClientBook().getPersonList().get(0));
         assertEquals(new PersonBuilder(target).withTags("owesMoney", "friends", "priority").build(),
                 model.getFilteredPersonList().get(0));
     }
