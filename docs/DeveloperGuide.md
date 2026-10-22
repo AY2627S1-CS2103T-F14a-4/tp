@@ -374,7 +374,7 @@ then passes the replacement person to `Model#setPerson`. Both new and replacemen
 `completed = false`. The observable list updates the card. `LogicManager` then saves through the existing
 storage pipeline; the command itself does not write files.
 
-![Next command sequence diagram](images/NextSequenceDiagram.png)
+<puml src="diagrams/NextSequenceDiagram.puml" alt="Next command sequence diagram" />
 
 Diagram source: [NextSequenceDiagram.puml](diagrams/NextSequenceDiagram.puml).
 The diagram shows the successful path. Parser failures and invalid displayed indices stop before mutation;
