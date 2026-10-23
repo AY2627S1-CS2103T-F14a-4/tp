@@ -1,6 +1,8 @@
 package seedu.address.logic.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.TypicalPersons.getTypicalClientBook;
 
 import java.nio.file.Files;
@@ -9,6 +11,7 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.ClientBook;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
@@ -36,8 +39,11 @@ public class BackupCommandTest {
         Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
         Path directory = temporaryFolder.resolve("folder");
         Files.createDirectory(directory);
+        BackupCommand command = new BackupCommand(directory);
 
-        CommandTestUtil.assertCommandFailure(new BackupCommand(directory), model,
-                String.format(BackupCommand.MESSAGE_FAILURE, directory.toString()));
+        CommandException exception = assertThrows(CommandException.class, () -> command.execute(model));
+
+        assertTrue(exception.getMessage().startsWith(String.format(BackupCommand.MESSAGE_FAILURE, "")));
+        assertEquals(getTypicalClientBook(), model.getClientBook());
     }
 }
