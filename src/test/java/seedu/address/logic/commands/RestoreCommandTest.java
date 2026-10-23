@@ -3,7 +3,7 @@ package seedu.address.logic.commands;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
+import static seedu.address.testutil.TypicalPersons.getTypicalClientBook;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,28 +15,28 @@ import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
-import seedu.address.storage.JsonAddressBookStorage;
+import seedu.address.storage.JsonClientBookStorage;
 
 public class RestoreCommandTest {
     @TempDir
     public Path temporaryFolder;
 
     @Test
-    public void execute_restoresCompleteAddressBookAndResetsFilter() throws Exception {
+    public void execute_restoresCompleteClientBookAndResetsFilter() throws Exception {
         Path backupFile = temporaryFolder.resolve("records.json");
-        new JsonAddressBookStorage(backupFile).saveAddressBook(getTypicalAddressBook());
+        new JsonClientBookStorage(backupFile).saveClientBook(getTypicalClientBook());
         Model model = new ModelManager();
 
         CommandResult result = new RestoreCommand(backupFile).execute(model);
 
         assertEquals(new CommandResult(String.format(RestoreCommand.MESSAGE_SUCCESS, backupFile)), result);
-        assertEquals(getTypicalAddressBook(), model.getAddressBook());
-        assertEquals(getTypicalAddressBook().getPersonList().size(), model.getFilteredPersonList().size());
+        assertEquals(getTypicalClientBook(), model.getClientBook());
+        assertEquals(getTypicalClientBook().getPersonList().size(), model.getFilteredPersonList().size());
     }
 
     @Test
     public void execute_missingBackup_preservesRecords() {
-        Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+        Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
         Path missingFile = temporaryFolder.resolve("missing.json");
 
         CommandTestUtil.assertCommandFailure(new RestoreCommand(missingFile), model,
@@ -45,7 +45,7 @@ public class RestoreCommandTest {
 
     @Test
     public void execute_invalidBackup_preservesRecords() throws Exception {
-        Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+        Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
         Path invalidFile = temporaryFolder.resolve("invalid.json");
         Files.writeString(invalidFile, "not JSON");
 
@@ -53,6 +53,6 @@ public class RestoreCommandTest {
                 new RestoreCommand(invalidFile).execute(model));
 
         assertTrue(exception.getMessage().startsWith("Could not restore backup:"));
-        assertEquals(getTypicalAddressBook(), model.getAddressBook());
+        assertEquals(getTypicalClientBook(), model.getClientBook());
     }
 }

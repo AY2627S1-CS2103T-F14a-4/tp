@@ -441,7 +441,7 @@ Creates a complete copy of all records, including financial information, interac
 
 Format: `backup`
 
-The backup is saved as `addressbook-backup.json` in ClientBook's `data` folder.
+The backup is saved as `clientbook-backup.json` in ClientBook's `data` folder.
 
 Example: `backup`
 
@@ -452,7 +452,7 @@ current records are changed. Restoring resets any active search so all restored 
 
 Format: `restore`
 
-The backup is read from `addressbook-backup.json` in ClientBook's `data` folder.
+The backup is read from `clientbook-backup.json` in ClientBook's `data` folder.
 
 Example: `restore`
 

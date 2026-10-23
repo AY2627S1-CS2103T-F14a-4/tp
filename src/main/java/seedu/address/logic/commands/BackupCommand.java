@@ -7,7 +7,7 @@ import java.nio.file.Path;
 
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
-import seedu.address.storage.JsonAddressBookStorage;
+import seedu.address.storage.JsonClientBookStorage;
 
 /** Saves a copy of all current records to a JSON backup file. */
 public class BackupCommand extends Command {
@@ -15,7 +15,7 @@ public class BackupCommand extends Command {
     public static final String MESSAGE_USAGE = "backup";
     public static final String MESSAGE_SUCCESS = "Backup saved to %s.";
     public static final String MESSAGE_FAILURE = "Could not create backup: %s";
-    public static final Path BACKUP_FILE_PATH = Path.of("data", "addressbook-backup.json");
+    public static final Path BACKUP_FILE_PATH = Path.of("data", "clientbook-backup.json");
 
     private final Path backupFilePath;
 
@@ -32,7 +32,7 @@ public class BackupCommand extends Command {
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
         try {
-            new JsonAddressBookStorage(backupFilePath).saveAddressBook(model.getAddressBook());
+            new JsonClientBookStorage(backupFilePath).saveClientBook(model.getClientBook());
             return new CommandResult(String.format(MESSAGE_SUCCESS, backupFilePath));
         } catch (IOException exception) {
             throw new CommandException(String.format(MESSAGE_FAILURE, exception.getMessage()), exception);

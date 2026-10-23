@@ -8,8 +8,8 @@ import java.nio.file.Path;
 import seedu.address.commons.exceptions.DataLoadingException;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
-import seedu.address.model.ReadOnlyAddressBook;
-import seedu.address.storage.JsonAddressBookStorage;
+import seedu.address.model.ReadOnlyClientBook;
+import seedu.address.storage.JsonClientBookStorage;
 
 /** Replaces current records with the records held in a JSON backup file. */
 public class RestoreCommand extends Command {
@@ -38,10 +38,10 @@ public class RestoreCommand extends Command {
             throw new CommandException(String.format(MESSAGE_FILE_NOT_FOUND, backupFilePath));
         }
         try {
-            ReadOnlyAddressBook restoredAddressBook = new JsonAddressBookStorage(backupFilePath)
-                    .readAddressBook().orElseThrow(() -> new CommandException(
+            ReadOnlyClientBook restoredClientBook = new JsonClientBookStorage(backupFilePath)
+                    .readClientBook().orElseThrow(() -> new CommandException(
                             String.format(MESSAGE_FAILURE, "The backup file is empty.")));
-            model.setAddressBook(restoredAddressBook);
+            model.setClientBook(restoredClientBook);
             model.updateFilteredPersonList(Model.PREDICATE_SHOW_ALL_PERSONS);
             return new CommandResult(String.format(MESSAGE_SUCCESS, backupFilePath));
         } catch (DataLoadingException exception) {
