@@ -435,6 +435,33 @@ Clears all entries from the address book.
 
 Format: `clear`
 
+### Backing up records: `backup`
+
+Creates a complete copy of all records, including financial information, interaction notes, and next actions.
+
+Format: `backup`
+
+The backup is saved as `addressbook-backup.json` in ClientBook's `data` folder.
+
+Example: `backup`
+
+### Restoring records: `restore`
+
+Replaces all current records with the records from a backup created by ClientBook. The backup is validated before any
+current records are changed. Restoring resets any active search so all restored records are visible.
+
+Format: `restore`
+
+The backup is read from `addressbook-backup.json` in ClientBook's `data` folder.
+
+Example: `restore`
+
+<box type="warning" seamless>
+
+Restoring replaces the current records and cannot be undone. Create a backup first if you might need the current
+records later.
+</box>
+
 ### Exiting the program: `exit`
 
 Exits the program.
@@ -481,6 +508,7 @@ _Details coming soon ..._
 Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 **Add**    | `add r/RELATIONSHIP n/NAME e/EMAIL p/PHONE_NUMBER [t/TAG]...` <br> e.g., `add r/Client n/James Ho e/jamesho@example.com p/22224444 t/referral`
+**Backup** | `backup`<br> e.g., `backup`
 **Clear**  | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit**   | `edit INDEX [r/RELATIONSHIP] [n/NAME] [p/PHONE_NUMBER] [e/EMAIL]`<br> e.g.,`edit 2 r/Client n/James Lee e/jameslee@example.com`
@@ -490,6 +518,7 @@ Action     | Format, Examples
 **Note**   | `note INDEX d/DATE n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
 **Note edit** | `noteedit CONTACT_INDEX NOTE_INDEX n/NEW_NOTE_CONTENT`<br> e.g., `noteedit 1 2 n/Discussed insurance renewal`
 **Note delete** | `notedelete CONTACT_INDEX NOTE_INDEX`<br> e.g., `notedelete 1 2`
+**Restore** | `restore`<br> e.g., `restore`
 **Tag**    | `tag INDEX TAG [MORE_TAGS...]`<br> e.g., `tag 1 priority referral`
 **Next**   | `next INDEX a/ACTION d/yyyy-MM-dd`<br> e.g., `next 1 a/Call d/2026-10-20`
 **Done**   | `done INDEX`<br> e.g., `done 1`
