@@ -5,7 +5,7 @@ import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.showPersonAtIndex;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
-import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
+import static seedu.address.testutil.TypicalPersons.getTypicalClientBook;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -13,7 +13,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.Messages;
-import seedu.address.logic.parser.AddressBookParser;
+import seedu.address.logic.parser.ClientBookParser;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
@@ -23,8 +23,8 @@ import seedu.address.model.person.Relationship;
 import seedu.address.testutil.PersonBuilder;
 
 public class NoteCommandTest {
-    private final Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
-    private final AddressBookParser parser = new AddressBookParser();
+    private final Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
+    private final ClientBookParser parser = new ClientBookParser();
 
     @Test
     public void execute_firstAndRepeatedNotes_appendAndPreserveOtherFields() throws Exception {
@@ -63,7 +63,7 @@ public class NoteCommandTest {
         Person target = model.getFilteredPersonList().get(1);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
         parser.parseCommand("note 1 d/2000-01-01 n/Called").execute(model);
-        assertEquals(first, model.getAddressBook().getPersonList().get(0));
+        assertEquals(first, model.getClientBook().getPersonList().get(0));
         assertEquals(target.getName(), model.getFilteredPersonList().get(0).getName());
         assertEquals(1, model.getFilteredPersonList().size());
         assertEquals(1, model.getFilteredPersonList().get(0).getInteractionNotes().size());

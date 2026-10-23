@@ -5,9 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalPersons.ALICE;
-import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
+import static seedu.address.testutil.TypicalPersons.getTypicalClientBook;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -21,17 +22,113 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import seedu.address.logic.commands.NoteCommand;
+import seedu.address.logic.commands.NoteDeleteCommand;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.InteractionNote;
+import seedu.address.model.person.NextAction;
 import seedu.address.testutil.PersonBuilder;
 
 public class PersonCardTest {
+    @Test
+    public void tags_allDisplayedInSortedOrder() throws Exception {
+        CompletableFuture<Void> checked = new CompletableFuture<>();
+        Platform.runLater(() -> {
+            try {
+                Region card = new PersonCard(new PersonBuilder(ALICE)
+                        .withTags("priority", "Friends", "referral").build(), 1).getRoot();
+                FlowPane tags = (FlowPane) card.lookup("#tags");
+                assertEquals(List.of("Friends", "priority", "referral"), tags.getChildren().stream()
+                        .map(Label.class::cast).map(Label::getText).toList());
+                checked.complete(null);
+            } catch (Throwable error) {
+                checked.completeExceptionally(error);
+            }
+        });
+        checked.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void contactPreferences_hiddenWhenAbsentAndLongValuesWrap() throws Exception {
+        CompletableFuture<Void> checked = new CompletableFuture<>();
+        Platform.runLater(() -> {
+            try {
+                for (boolean present : new boolean[] {false, true}) {
+                    PersonBuilder builder = new PersonBuilder(ALICE);
+                    if (present) {
+                        builder.withPreferredContactChannel("a".repeat(200))
+                                .withPreferredContactTiming("b".repeat(200));
+                    }
+                    Region card = new PersonCard(builder.build(), 1).getRoot();
+                    StackPane root = new StackPane(card);
+                    Scene scene = new Scene(root, 400, 600);
+                    scene.getStylesheets().add(getClass().getResource("/view/DarkTheme.css").toExternalForm());
+                    root.applyCss();
+                    root.layout();
+                    String[] fields = {"preferredContactChannel", "preferredContactTiming"};
+                    String[] texts = {"Preferred contact channel: " + "a".repeat(200),
+                        "Preferred contact timing: " + "b".repeat(200)};
+                    for (int i = 0; i < fields.length; i++) {
+                        Label label = (Label) card.lookup("#" + fields[i]);
+                        assertEquals(present, label.isVisible());
+                        assertEquals(present, label.isManaged());
+                        assertEquals(present ? texts[i] : "", label.getText());
+                        if (present) {
+                            assertTrue(label.isWrapText());
+                            assertTrue(label.getHeight() > 30);
+                            assertTrue(label.getBoundsInParent().getMaxX() <= card.getWidth());
+                        }
+                    }
+                }
+                checked.complete(null);
+            } catch (Throwable error) {
+                checked.completeExceptionally(error);
+            }
+        });
+        checked.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void nextAction_hiddenWhenAbsent_showsStatusDateAndWrappedDescription() throws Exception {
+        CompletableFuture<Void> checked = new CompletableFuture<>();
+        Platform.runLater(() -> {
+            try {
+                Label absent = (Label) new PersonCard(ALICE, 1).getRoot().lookup("#nextAction");
+                assertFalse(absent.isVisible());
+                assertFalse(absent.isManaged());
+                LocalDate today = LocalDate.now();
+                LocalDate[] dates = {today.minusDays(1), today, today.plusDays(1), today.minusDays(1)};
+                String[] statuses = {"Overdue", "Pending", "Pending", "Completed"};
+                for (int i = 0; i < dates.length; i++) {
+                    NextAction action = new NextAction("A".repeat(200), dates[i], i == 3);
+                    Region card = new PersonCard(ALICE.withNextAction(action), 1).getRoot();
+                    Label label = (Label) card.lookup("#nextAction");
+                    assertTrue(label.isVisible());
+                    assertTrue(label.isManaged());
+                    assertTrue(label.isWrapText());
+                    assertEquals(statuses[i] + " | Due " + dates[i] + ": " + action.getAction(), label.getText());
+                    StackPane root = new StackPane(card);
+                    Scene scene = new Scene(root, 400, 600);
+                    scene.getStylesheets().add(getClass().getResource("/view/DarkTheme.css").toExternalForm());
+                    root.applyCss();
+                    root.layout();
+                    assertTrue(label.getHeight() > 30, "Maximum-length action must wrap in a narrow card");
+                    assertTrue(label.getBoundsInParent().getMaxX() <= card.getWidth());
+                }
+                checked.complete(null);
+            } catch (Throwable error) {
+                checked.completeExceptionally(error);
+            }
+        });
+        checked.get(10, TimeUnit.SECONDS);
+    }
+
     /** Starts the real toolkit; headless Linux runs need a virtual display such as Xvfb. */
     @BeforeAll
     public static void startToolkit() throws Exception {
@@ -93,9 +190,53 @@ public class PersonCardTest {
                 assertTrue(notes.isManaged());
                 assertEquals(3, notes.getChildren().size());
                 Label first = (Label) notes.getChildren().get(1);
-                assertEquals(note.toString(), first.getText());
+                assertEquals("1. " + note, first.getText());
                 assertTrue(first.isWrapText());
-                assertEquals(note.toString(), ((Label) notes.getChildren().get(2)).getText());
+                assertEquals("2. " + note, ((Label) notes.getChildren().get(2)).getText());
+                checked.complete(null);
+            } catch (Throwable error) {
+                checked.completeExceptionally(error);
+            }
+        });
+        checked.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void interactionNotes_deletionRenumbersDisplayedHistoryAndHidesEmptyHistory() throws Exception {
+        CompletableFuture<Void> checked = new CompletableFuture<>();
+        Platform.runLater(() -> {
+            try {
+                Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
+                InteractionNote duplicate = new InteractionNote(LocalDate.of(2026, 10, 18), "客户 😀");
+                InteractionNote backdated = new InteractionNote(LocalDate.of(2000, 1, 1), "Earlier meeting");
+                model.setPerson(model.getFilteredPersonList().get(0),
+                        new PersonBuilder(model.getFilteredPersonList().get(0))
+                                .withInteractionNotes(duplicate, backdated, duplicate).build());
+                PersonListPanel panel = new PersonListPanel(model.getFilteredPersonList());
+                StackPane root = new StackPane(panel.getRoot());
+                new Scene(root, 600, 600);
+                root.applyCss();
+                root.layout();
+                ListView<?> list = (ListView<?>) root.lookup("#personListView");
+                VBox notes = (VBox) displayedCell(list, 0).getGraphic().lookup("#interactionNotes");
+                assertEquals("1. " + duplicate, ((Label) notes.getChildren().get(1)).getText());
+                assertEquals("2. " + backdated, ((Label) notes.getChildren().get(2)).getText());
+                assertEquals("3. " + duplicate, ((Label) notes.getChildren().get(3)).getText());
+
+                new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON).execute(model);
+                root.layout();
+                notes = (VBox) displayedCell(list, 0).getGraphic().lookup("#interactionNotes");
+                assertEquals(3, notes.getChildren().size());
+                assertEquals("1. " + backdated, ((Label) notes.getChildren().get(1)).getText());
+                assertEquals("2. " + duplicate, ((Label) notes.getChildren().get(2)).getText());
+
+                new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON).execute(model);
+                new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON).execute(model);
+                root.layout();
+                notes = (VBox) displayedCell(list, 0).getGraphic().lookup("#interactionNotes");
+                assertFalse(notes.isVisible());
+                assertFalse(notes.isManaged());
+                assertEquals(1, notes.getChildren().size());
                 checked.complete(null);
             } catch (Throwable error) {
                 checked.completeExceptionally(error);
@@ -134,7 +275,7 @@ public class PersonCardTest {
         CompletableFuture<Void> checked = new CompletableFuture<>();
         Platform.runLater(() -> {
             try {
-                Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+                Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
                 PersonListPanel panel = new PersonListPanel(model.getFilteredPersonList());
                 StackPane root = new StackPane(panel.getRoot());
                 Scene scene = new Scene(root, 600, 600);

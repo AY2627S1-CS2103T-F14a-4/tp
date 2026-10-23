@@ -37,6 +37,12 @@
              wrapText="true" minWidth="0" prefWidth="0" maxWidth="Infinity" />
       <Label fx:id="areaOfInterest" styleClass="cell_small_label" visible="false" managed="false"
              wrapText="true" minWidth="0" prefWidth="0" maxWidth="Infinity" />
+      <Label fx:id="preferredContactChannel" styleClass="cell_small_label" visible="false" managed="false"
+             wrapText="true" minWidth="0" prefWidth="0" maxWidth="Infinity" />
+      <Label fx:id="preferredContactTiming" styleClass="cell_small_label" visible="false" managed="false"
+             wrapText="true" minWidth="0" prefWidth="0" maxWidth="Infinity" />
+      <Label fx:id="nextAction" styleClass="cell_small_label" visible="false" managed="false"
+             wrapText="true" minWidth="0" prefWidth="0" maxWidth="Infinity" />
       <VBox fx:id="interactionNotes" spacing="4" visible="false" managed="false">
         <Label text="Interaction notes:" styleClass="cell_small_label" />
       </VBox>

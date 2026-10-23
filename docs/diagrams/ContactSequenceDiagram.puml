@@ -1,0 +1,54 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as Logic LOGIC_COLOR
+participant ":ClientBookParser" as Parser LOGIC_COLOR
+participant ":ContactCommandParser" as ContactParser LOGIC_COLOR
+participant "command:ContactCommand" as Command LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "model:Model" as Model MODEL_COLOR
+participant "original:Person" as Person MODEL_COLOR
+end box
+
+box Storage STORAGE_COLOR_T1
+participant ":Storage" as Storage STORAGE_COLOR
+end box
+
+[-> Logic : execute("contact 1 ch/WhatsApp tm/After 6 pm")
+activate Logic
+Logic -> Parser : parseCommand(commandText)
+activate Parser
+Parser -> ContactParser : parse(arguments)
+activate ContactParser
+note right of ContactParser
+Validate index syntax, supplied fields and duplicate prefixes.
+Create validated channel and timing values.
+end note
+create Command
+ContactParser -> Command : new ContactCommand(index, channel, timing)
+ContactParser --> Parser : command
+deactivate ContactParser
+Parser --> Logic : command
+deactivate Parser
+Logic -> Command : execute(model)
+activate Command
+Command -> Model : getFilteredPersonList()
+Model --> Command : displayedPersons
+note right of Command : Reject an out-of-range index before changing data.
+Command -> Person : withContactPreferences(channel, timing)
+Person --> Command : updatedPerson
+Command -> Model : setPerson(original, updatedPerson)
+note right of Model : Observable list updates the PersonCard.
+Command --> Logic : CommandResult
+deactivate Command
+Logic -> Model : getClientBook()
+Model --> Logic : clientBook
+Logic -> Storage : saveClientBook(clientBook)
+Storage --> Logic
+[<-- Logic : CommandResult
+deactivate Logic
+@enduml

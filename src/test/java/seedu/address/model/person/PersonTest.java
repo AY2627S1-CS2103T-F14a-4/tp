@@ -2,6 +2,7 @@ package seedu.address.model.person;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_EMAIL_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_NAME_BOB;
@@ -18,6 +19,22 @@ import org.junit.jupiter.api.Test;
 import seedu.address.testutil.PersonBuilder;
 
 public class PersonTest {
+
+    @Test
+    public void contactPreferences_copyAndEquality_preserveValues() {
+        Person original = new PersonBuilder(ALICE).withPreferredContactChannel("Email")
+                .withPreferredContactTiming("Weekends").build();
+        assertEquals(original, new PersonBuilder(original).build());
+        assertEquals(original.hashCode(), new PersonBuilder(original).build().hashCode());
+        assertEquals(original, original.withContactPreferences(null, null));
+        assertEquals(original, original.withNextAction(null));
+        assertNotEquals(original, ALICE);
+        assertNotEquals(original, new PersonBuilder(original).withPreferredContactChannel("Phone").build());
+        assertNotEquals(original, new PersonBuilder(original).withPreferredContactTiming("Evenings").build());
+        assertTrue(original.isSamePerson(ALICE));
+        assertTrue(ALICE.getPreferredContactChannel().isEmpty());
+        assertTrue(ALICE.getPreferredContactTiming().isEmpty());
+    }
 
     @Test
     public void asObservableList_modifyList_throwsUnsupportedOperationException() {
@@ -162,7 +179,8 @@ public class PersonTest {
     public void toStringMethod() {
         String expected = Person.class.getCanonicalName() + "{name=" + ALICE.getName() + ", phone=" + ALICE.getPhone()
                 + ", email=" + ALICE.getEmail() + ", relationship=" + ALICE.getRelationship() + ", tags="
-                + ALICE.getTags() + ", financialNeed=null, priority=null, areaOfInterest=null, interactionNotes=[]}";
+                + ALICE.getTags() + ", financialNeed=null, priority=null, areaOfInterest=null, interactionNotes=[], "
+                + "nextAction=null, preferredContactChannel=null, preferredContactTiming=null}";
         assertEquals(expected, ALICE.toString());
     }
 }

@@ -8,7 +8,7 @@ import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static seedu.address.testutil.TypicalPersons.CARL;
 import static seedu.address.testutil.TypicalPersons.ELLE;
 import static seedu.address.testutil.TypicalPersons.FIONA;
-import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
+import static seedu.address.testutil.TypicalPersons.getTypicalClientBook;
 
 import java.util.List;
 
@@ -22,15 +22,15 @@ import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Relationship;
 import seedu.address.model.person.RelationshipMatchesPredicate;
-import seedu.address.testutil.AddressBookBuilder;
+import seedu.address.testutil.ClientBookBuilder;
 import seedu.address.testutil.PersonBuilder;
 
 /**
  * Contains integration tests (interaction with the Model) for {@code FindCommand}.
  */
 public class FindCommandTest {
-    private Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
-    private Model expectedModel = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+    private Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
+    private Model expectedModel = new ModelManager(getTypicalClientBook(), new UserPrefs());
 
     @Test
     public void equals() {
@@ -83,12 +83,12 @@ public class FindCommandTest {
     public void execute_relationship_multiplePersonsFoundInOriginalOrder() {
         Person clientCarl = new PersonBuilder(CARL).withRelationship(Relationship.CLIENT).build();
         Person clientFiona = new PersonBuilder(FIONA).withRelationship(Relationship.CLIENT).build();
-        Model relationshipModel = new ModelManager(new AddressBookBuilder()
+        Model relationshipModel = new ModelManager(new ClientBookBuilder()
                 .withPerson(ELLE)
                 .withPerson(clientCarl)
                 .withPerson(clientFiona)
                 .build(), new UserPrefs());
-        Model expectedRelationshipModel = new ModelManager(relationshipModel.getAddressBook(), new UserPrefs());
+        Model expectedRelationshipModel = new ModelManager(relationshipModel.getClientBook(), new UserPrefs());
         RelationshipMatchesPredicate predicate = new RelationshipMatchesPredicate(Relationship.CLIENT);
         FindCommand command = new FindCommand(predicate);
         String expectedMessage = String.format(MESSAGE_PERSONS_LISTED_OVERVIEW, 2);
@@ -103,12 +103,12 @@ public class FindCommandTest {
     public void execute_nameAndRelationship_onlyPersonsMatchingBothFound() {
         Person clientCarl = new PersonBuilder(CARL).withRelationship(Relationship.CLIENT).build();
         Person clientFiona = new PersonBuilder(FIONA).withRelationship(Relationship.CLIENT).build();
-        Model combinedFilterModel = new ModelManager(new AddressBookBuilder()
+        Model combinedFilterModel = new ModelManager(new ClientBookBuilder()
                 .withPerson(ELLE)
                 .withPerson(clientCarl)
                 .withPerson(clientFiona)
                 .build(), new UserPrefs());
-        Model expectedCombinedFilterModel = new ModelManager(combinedFilterModel.getAddressBook(), new UserPrefs());
+        Model expectedCombinedFilterModel = new ModelManager(combinedFilterModel.getClientBook(), new UserPrefs());
         NameAndRelationshipMatchesPredicate predicate =
                 new NameAndRelationshipMatchesPredicate(List.of("Elle", "Kurz"), Relationship.CLIENT);
         FindCommand command = new FindCommand(predicate);
@@ -124,12 +124,12 @@ public class FindCommandTest {
     public void execute_multipleClientsMatchDifferentKeywords_allFound() {
         Person clientCarl = new PersonBuilder(CARL).withRelationship(Relationship.CLIENT).build();
         Person clientFiona = new PersonBuilder(FIONA).withRelationship(Relationship.CLIENT).build();
-        Model combinedFilterModel = new ModelManager(new AddressBookBuilder()
+        Model combinedFilterModel = new ModelManager(new ClientBookBuilder()
                 .withPerson(ELLE)
                 .withPerson(clientCarl)
                 .withPerson(clientFiona)
                 .build(), new UserPrefs());
-        Model expectedCombinedFilterModel = new ModelManager(combinedFilterModel.getAddressBook(), new UserPrefs());
+        Model expectedCombinedFilterModel = new ModelManager(combinedFilterModel.getClientBook(), new UserPrefs());
         NameAndRelationshipMatchesPredicate predicate =
                 new NameAndRelationshipMatchesPredicate(List.of("Elle", "Kurz", "Kunz"), Relationship.CLIENT);
         FindCommand command = new FindCommand(predicate);

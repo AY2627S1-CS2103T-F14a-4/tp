@@ -6,7 +6,7 @@ import static seedu.address.logic.commands.CommandTestUtil.showPersonAtIndex;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BENSON;
-import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
+import static seedu.address.testutil.TypicalPersons.getTypicalClientBook;
 
 import java.util.List;
 
@@ -29,8 +29,8 @@ public class ListCommandTest {
 
     @BeforeEach
     public void setUp() {
-        model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
-        expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+        model = new ModelManager(getTypicalClientBook(), new UserPrefs());
+        expectedModel = new ModelManager(model.getClientBook(), new UserPrefs());
     }
 
     @Test
@@ -51,7 +51,7 @@ public class ListCommandTest {
         model = new ModelManager();
         model.addPerson(client);
         model.addPerson(prospect);
-        expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+        expectedModel = new ModelManager(model.getClientBook(), new UserPrefs());
         model.updateFilteredPersonList(person -> person.getRelationship() == Relationship.CLIENT);
 
         assertCommandSuccess(new ListCommand(), model, "Listed all clients and prospects.", expectedModel);
@@ -59,7 +59,7 @@ public class ListCommandTest {
     }
 
     @Test
-    public void execute_emptyAddressBook_success() {
+    public void execute_emptyClientBook_success() {
         model = new ModelManager();
         expectedModel = new ModelManager();
 

@@ -17,6 +17,8 @@ import seedu.address.model.person.InteractionNote;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
+import seedu.address.model.person.PreferredContactChannel;
+import seedu.address.model.person.PreferredContactTiming;
 import seedu.address.model.person.Priority;
 import seedu.address.model.person.Relationship;
 import seedu.address.model.tag.Tag;
@@ -35,6 +37,9 @@ class JsonAdaptedPerson {
     private final String financialNeed;
     private final String priority;
     private final String areaOfInterest;
+    private final JsonAdaptedNextAction nextAction;
+    private final String preferredContactChannel;
+    private final String preferredContactTiming;
     private final List<JsonAdaptedTag> tags = new ArrayList<>();
     private final List<JsonAdaptedInteractionNote> interactionNotes = new ArrayList<>();
 
@@ -58,14 +63,32 @@ class JsonAdaptedPerson {
         this(name, phone, email, tags, relationship, financialNeed, priority, areaOfInterest, null);
     }
 
-    /** Missing interaction history in older files is treated as empty. */
+    /** Retains the existing constructor for callers without follow-up information. */
+    public JsonAdaptedPerson(String name, String phone, String email, List<JsonAdaptedTag> tags,
+            String relationship, String financialNeed, String priority, String areaOfInterest,
+            List<JsonAdaptedInteractionNote> interactionNotes) {
+        this(name, phone, email, tags, relationship, financialNeed, priority, areaOfInterest, interactionNotes, null);
+    }
+
+    /** Retains callers without contact preferences. */
+    public JsonAdaptedPerson(String name, String phone, String email, List<JsonAdaptedTag> tags,
+            String relationship, String financialNeed, String priority, String areaOfInterest,
+            List<JsonAdaptedInteractionNote> interactionNotes, JsonAdaptedNextAction nextAction) {
+        this(name, phone, email, tags, relationship, financialNeed, priority, areaOfInterest,
+                interactionNotes, nextAction, null, null);
+    }
+
+    /** Missing optional information in older files is treated as absent. */
     @JsonCreator
     public JsonAdaptedPerson(@JsonProperty("name") String name, @JsonProperty("phone") String phone,
             @JsonProperty("email") String email, @JsonProperty("tags") List<JsonAdaptedTag> tags,
             @JsonProperty("relationship") String relationship,
             @JsonProperty("financialNeed") String financialNeed, @JsonProperty("priority") String priority,
             @JsonProperty("areaOfInterest") String areaOfInterest,
-            @JsonProperty("interactionNotes") List<JsonAdaptedInteractionNote> interactionNotes) {
+            @JsonProperty("interactionNotes") List<JsonAdaptedInteractionNote> interactionNotes,
+            @JsonProperty("nextAction") JsonAdaptedNextAction nextAction,
+            @JsonProperty("preferredContactChannel") String preferredContactChannel,
+            @JsonProperty("preferredContactTiming") String preferredContactTiming) {
         this.name = name;
         this.phone = phone;
         this.email = email;
@@ -73,6 +96,9 @@ class JsonAdaptedPerson {
         this.financialNeed = financialNeed;
         this.priority = priority;
         this.areaOfInterest = areaOfInterest;
+        this.nextAction = nextAction;
+        this.preferredContactChannel = preferredContactChannel;
+        this.preferredContactTiming = preferredContactTiming;
         if (tags != null) {
             this.tags.addAll(tags);
         }
@@ -85,6 +111,9 @@ class JsonAdaptedPerson {
      * Converts a given {@code Person} into this class for Jackson use.
      */
     public JsonAdaptedPerson(Person source) {
+        preferredContactChannel = source.getPreferredContactChannel().map(value -> value.value).orElse(null);
+        preferredContactTiming = source.getPreferredContactTiming().map(value -> value.value).orElse(null);
+        nextAction = source.getNextAction().map(JsonAdaptedNextAction::new).orElse(null);
         name = source.getName().fullName;
         phone = source.getPhone().value;
         email = source.getEmail().value;
@@ -166,6 +195,21 @@ class JsonAdaptedPerson {
             modelAreaOfInterest = new AreaOfInterest(areaOfInterest);
         }
 
+        PreferredContactChannel modelChannel = null;
+        if (preferredContactChannel != null) {
+            if (!PreferredContactChannel.isValidPreferredContactChannel(preferredContactChannel)) {
+                throw new IllegalValueException(PreferredContactChannel.MESSAGE_CONSTRAINTS);
+            }
+            modelChannel = new PreferredContactChannel(preferredContactChannel);
+        }
+        PreferredContactTiming modelTiming = null;
+        if (preferredContactTiming != null) {
+            if (!PreferredContactTiming.isValidPreferredContactTiming(preferredContactTiming)) {
+                throw new IllegalValueException(PreferredContactTiming.MESSAGE_CONSTRAINTS);
+            }
+            modelTiming = new PreferredContactTiming(preferredContactTiming);
+        }
+
         List<InteractionNote> modelNotes = new ArrayList<>();
         for (JsonAdaptedInteractionNote note : interactionNotes) {
             if (note == null) {
@@ -174,7 +218,8 @@ class JsonAdaptedPerson {
             modelNotes.add(note.toModelType());
         }
         return new Person(modelName, modelPhone, modelEmail, modelTags, modelRelationship,
-                modelFinancialNeed, modelPriority, modelAreaOfInterest, modelNotes);
+                modelFinancialNeed, modelPriority, modelAreaOfInterest, modelNotes,
+                nextAction == null ? null : nextAction.toModelType(), modelChannel, modelTiming);
     }
 
     private static Relationship parseRelationship(String relationship) throws IllegalValueException {

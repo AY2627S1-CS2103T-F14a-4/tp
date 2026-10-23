@@ -1,6 +1,7 @@
 package seedu.address.logic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.address.logic.commands.CommandTestUtil.EMAIL_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.NAME_DESC_AMY;
@@ -12,6 +13,7 @@ import static seedu.address.testutil.TypicalPersons.BOB;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -26,13 +28,16 @@ import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
-import seedu.address.model.ReadOnlyAddressBook;
+import seedu.address.model.ReadOnlyClientBook;
 import seedu.address.model.UserPrefs;
+import seedu.address.model.person.InteractionNote;
+import seedu.address.model.person.NextAction;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Relationship;
-import seedu.address.storage.JsonAddressBookStorage;
+import seedu.address.storage.JsonClientBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
+import seedu.address.testutil.PersonBuilder;
 
 public class LogicManagerTest {
     private static final IOException DUMMY_IO_EXCEPTION = new IOException("dummy IO exception");
@@ -46,11 +51,31 @@ public class LogicManagerTest {
 
     @BeforeEach
     public void setUp() {
-        JsonAddressBookStorage addressBookStorage =
-                new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json"));
+        JsonClientBookStorage clientBookStorage =
+                new JsonClientBookStorage(temporaryFolder.resolve("clientBook.json"));
         JsonUserPrefsStorage userPrefsStorage = new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"));
-        StorageManager storage = new StorageManager(addressBookStorage, userPrefsStorage);
+        StorageManager storage = new StorageManager(clientBookStorage, userPrefsStorage);
         logic = new LogicManager(model, storage);
+    }
+
+    @Test
+    public void execute_contactThenUpdates_preferencesSurviveReopening() throws Exception {
+        model.addPerson(new PersonBuilder(AMY).withTags("friend")
+                .withFinancialNeed("Retirement").withPriority("High").withAreaOfInterest("Insurance").build());
+        logic.execute("contact 1 ch/WhatsApp tm/Weekdays after 6 pm");
+        logic.execute("edit 1 p/81234567");
+        logic.execute("info 1 /pr Protection");
+        logic.execute("note 1 d/2000-01-01 n/Discussed plans");
+        logic.execute("next 1 a/Call d/2000-01-02");
+        logic.execute("done 1");
+        Person beforeInvalidInput = model.getFilteredPersonList().getFirst();
+        assertThrows(ParseException.class, () -> logic.execute("contact 1 ch/Phone tm/"));
+        assertEquals(beforeInvalidInput, model.getFilteredPersonList().getFirst());
+        JsonClientBookStorage reopened = new JsonClientBookStorage(temporaryFolder.resolve("clientBook.json"));
+        assertEquals(model.getClientBook(), reopened.readClientBook().orElseThrow());
+        Person restored = reopened.readClientBook().orElseThrow().getPersonList().getFirst();
+        assertEquals("WhatsApp", restored.getPreferredContactChannel().orElseThrow().value);
+        assertEquals("Weekdays after 6 pm", restored.getPreferredContactTiming().orElseThrow().value);
     }
 
     @Test
@@ -72,6 +97,41 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_clearFinancialFields_savedAbsenceSurvivesReopening() throws Exception {
+        Person original = new PersonBuilder(AMY).withRelationship(Relationship.CLIENT).withTags("friend")
+                .withFinancialNeed("Retirement").withPriority("High").withAreaOfInterest("Insurance")
+                .withInteractionNotes(new InteractionNote(LocalDate.of(2000, 1, 1), "Discussed plans"))
+                .withNextAction(new NextAction("Call", LocalDate.of(2000, 1, 2), false)).build();
+        model.addPerson(original);
+        logic.execute("info 1 /pr -");
+        Person expected = new Person(original.getName(), original.getPhone(), original.getEmail(), original.getTags(),
+                original.getRelationship(), original.getFinancialNeed().orElseThrow(), null,
+                original.getAreaOfInterest().orElseThrow(), original.getInteractionNotes(),
+                original.getNextAction().orElseThrow());
+        JsonClientBookStorage reopened = new JsonClientBookStorage(temporaryFolder.resolve("clientBook.json"));
+        assertEquals(expected, reopened.readClientBook().orElseThrow().getPersonList().getFirst());
+        assertEquals(expected, model.getFilteredPersonList().getFirst());
+
+        // A requested clear followed by an invalid field must change neither the model nor the saved file.
+        assertThrows(ParseException.class, () -> logic.execute("info 1 /fn - /ai"));
+        assertEquals(expected, model.getFilteredPersonList().getFirst());
+        assertEquals(expected, reopened.readClientBook().orElseThrow().getPersonList().getFirst());
+        logic.execute("info 1 /ai - /fn - /pr High-priority");
+        Person restored = reopened.readClientBook().orElseThrow().getPersonList().getFirst();
+        assertEquals(model.getFilteredPersonList().getFirst(), restored);
+        assertTrue(restored.getFinancialNeed().isEmpty());
+        assertTrue(restored.getAreaOfInterest().isEmpty());
+        assertEquals("High-priority", restored.getPriority().orElseThrow().value);
+        assertEquals(original.getName(), restored.getName());
+        assertEquals(original.getPhone(), restored.getPhone());
+        assertEquals(original.getEmail(), restored.getEmail());
+        assertEquals(original.getRelationship(), restored.getRelationship());
+        assertEquals(original.getTags(), restored.getTags());
+        assertEquals(original.getInteractionNotes(), restored.getInteractionNotes());
+        assertEquals(original.getNextAction(), restored.getNextAction());
+    }
+
+    @Test
     public void execute_notesThenUpdates_savedHistorySurvivesReopening() throws Exception {
         model.addPerson(new Person(AMY.getName(), AMY.getPhone(), AMY.getEmail(), Relationship.CLIENT));
         logic.execute("note 1 d/2000-02-29 n/Discussed retirement; https://example.com/a/b n/text d/text");
@@ -80,10 +140,10 @@ public class LogicManagerTest {
         logic.execute("edit 1 p/81234567");
         logic.execute("info 1 /fn Retirement");
 
-        JsonAddressBookStorage reopenedStorage =
-                new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json"));
-        Model reopened = new ModelManager(reopenedStorage.readAddressBook().orElseThrow(), new UserPrefs());
-        assertEquals(model.getAddressBook(), reopened.getAddressBook());
+        JsonClientBookStorage reopenedStorage =
+                new JsonClientBookStorage(temporaryFolder.resolve("clientBook.json"));
+        Model reopened = new ModelManager(reopenedStorage.readClientBook().orElseThrow(), new UserPrefs());
+        assertEquals(model.getClientBook(), reopened.getClientBook());
         Person restored = reopened.getFilteredPersonList().get(0);
         assertEquals(2, restored.getInteractionNotes().size());
         assertEquals(restored.getInteractionNotes().get(0), restored.getInteractionNotes().get(1));
@@ -96,7 +156,7 @@ public class LogicManagerTest {
     public void execute_findThenList_restoresCompleteList() throws Exception {
         model.addPerson(AMY);
         model.addPerson(BOB);
-        Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+        Model expectedModel = new ModelManager(model.getClientBook(), new UserPrefs());
 
         logic.execute("find Amy");
         assertEquals(List.of(AMY), logic.getFilteredPersonList());
@@ -113,7 +173,7 @@ public class LogicManagerTest {
     public void execute_listVariants_restoreSameCompleteList() throws Exception {
         model.addPerson(AMY);
         model.addPerson(BOB);
-        Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+        Model expectedModel = new ModelManager(model.getClientBook(), new UserPrefs());
 
         for (String command : List.of("list", "  list  ", "list clients", "  list clients  ")) {
             logic.execute("find Amy");
@@ -176,7 +236,7 @@ public class LogicManagerTest {
      */
     private void assertCommandFailure(String inputCommand, Class<? extends Throwable> expectedException,
             String expectedMessage) {
-        Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+        Model expectedModel = new ModelManager(model.getClientBook(), new UserPrefs());
         assertCommandFailure(inputCommand, expectedException, expectedMessage, expectedModel);
     }
 
@@ -202,21 +262,21 @@ public class LogicManagerTest {
     private void assertCommandFailureForExceptionFromStorage(IOException e, String expectedMessage) {
         Path prefPath = temporaryFolder.resolve("ExceptionUserPrefs.json");
 
-        // Inject LogicManager with a JsonAddressBookStorage that throws the IOException e when saving
-        JsonAddressBookStorage addressBookStorage = new JsonAddressBookStorage(prefPath) {
+        // Inject LogicManager with a JsonClientBookStorage that throws the IOException e when saving
+        JsonClientBookStorage clientBookStorage = new JsonClientBookStorage(prefPath) {
             @Override
-            public void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException {
+            public void saveClientBook(ReadOnlyClientBook clientBook) throws IOException {
                 throw e;
             }
         };
 
         JsonUserPrefsStorage userPrefsStorage =
                 new JsonUserPrefsStorage(temporaryFolder.resolve("ExceptionUserPrefs.json"));
-        StorageManager storage = new StorageManager(addressBookStorage, userPrefsStorage);
+        StorageManager storage = new StorageManager(clientBookStorage, userPrefsStorage);
 
         logic = new LogicManager(model, storage);
 
-        // Triggers the saveAddressBook method by executing an add command
+        // Triggers the saveClientBook method by executing an add command
         String addCommand = AddCommand.COMMAND_WORD + " r/Prospect" + NAME_DESC_AMY + EMAIL_DESC_AMY + PHONE_DESC_AMY;
         Person expectedPerson = new Person(AMY.getName(), AMY.getPhone(), AMY.getEmail(), Relationship.PROSPECT);
         ModelManager expectedModel = new ModelManager();

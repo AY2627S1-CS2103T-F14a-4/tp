@@ -13,7 +13,7 @@ import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.model.tag.Tag;
 
 /**
- * Represents a Person in the address book.
+ * Represents a Person in the client book.
  * Guarantees: required details are not null, field values are validated, immutable.
  */
 public class Person {
@@ -29,6 +29,9 @@ public class Person {
     private final Priority priority;
     private final AreaOfInterest areaOfInterest;
     private final List<InteractionNote> interactionNotes;
+    private final NextAction nextAction;
+    private final PreferredContactChannel preferredContactChannel;
+    private final PreferredContactTiming preferredContactTiming;
     private final Set<Tag> tags = new HashSet<>();
 
     /**
@@ -58,7 +61,23 @@ public class Person {
     public Person(Name name, Phone phone, Email email, Set<Tag> tags, Relationship relationship,
             FinancialNeed financialNeed, Priority priority, AreaOfInterest areaOfInterest,
             List<InteractionNote> interactionNotes) {
-        requireAllNonNull(name, phone, email, tags, relationship);
+        this(name, phone, email, tags, relationship, financialNeed, priority, areaOfInterest, interactionNotes, null);
+    }
+
+    /** Creates a person with optional follow-up information; null means no follow-up. */
+    public Person(Name name, Phone phone, Email email, Set<Tag> tags, Relationship relationship,
+            FinancialNeed financialNeed, Priority priority, AreaOfInterest areaOfInterest,
+            List<InteractionNote> interactionNotes, NextAction nextAction) {
+        this(name, phone, email, tags, relationship, financialNeed, priority, areaOfInterest,
+                interactionNotes, nextAction, null, null);
+    }
+
+    /** Creates a person with optional contact preferences; null represents absence. */
+    public Person(Name name, Phone phone, Email email, Set<Tag> tags, Relationship relationship,
+            FinancialNeed financialNeed, Priority priority, AreaOfInterest areaOfInterest,
+            List<InteractionNote> interactionNotes, NextAction nextAction,
+            PreferredContactChannel preferredContactChannel, PreferredContactTiming preferredContactTiming) {
+        requireAllNonNull(name, phone, email, tags, relationship, interactionNotes);
         this.name = name;
         this.phone = phone;
         this.email = email;
@@ -68,6 +87,9 @@ public class Person {
         this.priority = priority;
         this.areaOfInterest = areaOfInterest;
         this.interactionNotes = List.copyOf(interactionNotes);
+        this.nextAction = nextAction;
+        this.preferredContactChannel = preferredContactChannel;
+        this.preferredContactTiming = preferredContactTiming;
     }
 
     /**
@@ -80,6 +102,31 @@ public class Person {
     /** Returns notes in insertion order, including repeated entries. */
     public List<InteractionNote> getInteractionNotes() {
         return interactionNotes;
+    }
+
+    public Optional<NextAction> getNextAction() {
+        return Optional.ofNullable(nextAction);
+    }
+
+    /** Returns a copy with the supplied follow-up and all other fields preserved. */
+    public Person withNextAction(NextAction nextAction) {
+        return new Person(name, phone, email, tags, relationship, financialNeed, priority, areaOfInterest,
+                interactionNotes, nextAction, preferredContactChannel, preferredContactTiming);
+    }
+
+    public Optional<PreferredContactChannel> getPreferredContactChannel() {
+        return Optional.ofNullable(preferredContactChannel);
+    }
+
+    public Optional<PreferredContactTiming> getPreferredContactTiming() {
+        return Optional.ofNullable(preferredContactTiming);
+    }
+
+    /** Returns a copy replacing supplied preferences; null means keep the existing value. */
+    public Person withContactPreferences(PreferredContactChannel channel, PreferredContactTiming timing) {
+        return new Person(name, phone, email, tags, relationship, financialNeed, priority, areaOfInterest,
+                interactionNotes, nextAction, channel == null ? preferredContactChannel : channel,
+                timing == null ? preferredContactTiming : timing);
     }
 
     public Name getName() {
@@ -116,6 +163,12 @@ public class Person {
      */
     public Set<Tag> getTags() {
         return Collections.unmodifiableSet(tags);
+    }
+
+    /** Returns a copy with the supplied tags and all other fields preserved. */
+    public Person withTags(Set<Tag> tags) {
+        return new Person(name, phone, email, tags, relationship, financialNeed, priority, areaOfInterest,
+                interactionNotes, nextAction, preferredContactChannel, preferredContactTiming);
     }
 
     /**
@@ -155,14 +208,17 @@ public class Person {
                 && Objects.equals(financialNeed, otherPerson.financialNeed)
                 && Objects.equals(priority, otherPerson.priority)
                 && Objects.equals(areaOfInterest, otherPerson.areaOfInterest)
-                && interactionNotes.equals(otherPerson.interactionNotes);
+                && interactionNotes.equals(otherPerson.interactionNotes)
+                && Objects.equals(nextAction, otherPerson.nextAction)
+                && Objects.equals(preferredContactChannel, otherPerson.preferredContactChannel)
+                && Objects.equals(preferredContactTiming, otherPerson.preferredContactTiming);
     }
 
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
         return Objects.hash(name, phone, email, tags, relationship, financialNeed, priority, areaOfInterest,
-                interactionNotes);
+                interactionNotes, nextAction, preferredContactChannel, preferredContactTiming);
     }
 
     @Override
@@ -177,6 +233,9 @@ public class Person {
                 .add("priority", priority)
                 .add("areaOfInterest", areaOfInterest)
                 .add("interactionNotes", interactionNotes)
+                .add("nextAction", nextAction)
+                .add("preferredContactChannel", preferredContactChannel)
+                .add("preferredContactTiming", preferredContactTiming)
                 .toString();
     }
 

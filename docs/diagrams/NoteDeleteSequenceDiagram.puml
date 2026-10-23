@@ -1,0 +1,81 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as Logic LOGIC_COLOR
+participant ":ClientBookParser" as Parser LOGIC_COLOR
+participant ":NoteDeleteCommandParser" as NoteDeleteParser LOGIC_COLOR
+participant "command:NoteDeleteCommand" as Command LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "model:Model" as Model MODEL_COLOR
+participant "original:Person" as Original MODEL_COLOR
+participant "updated:Person" as Updated MODEL_COLOR
+end box
+
+box Storage STORAGE_COLOR_T1
+participant ":Storage" as Storage STORAGE_COLOR
+end box
+
+[-> Logic : execute("notedelete 1 2")
+activate Logic
+Logic -> Parser : parseCommand(commandText)
+activate Parser
+Parser -> NoteDeleteParser : parse(arguments)
+activate NoteDeleteParser
+note right of NoteDeleteParser
+Require exactly two positive indices using ParserUtil.parseIndex.
+For this command: contactIndex = 1, noteIndex = 2 (one-based).
+end note
+create Command
+NoteDeleteParser -> Command : new NoteDeleteCommand(contactIndex, noteIndex)
+NoteDeleteParser --> Parser : command
+deactivate NoteDeleteParser
+Parser --> Logic : command
+deactivate Parser
+Logic -> Command : execute(model)
+activate Command
+Command -> Model : getFilteredPersonList()
+Model --> Command : displayedPersons
+note right of Command
+Check contactIndex.getZeroBased() against displayedPersons.size().
+Select original = displayedPersons.get(0).
+end note
+Command -> Original : getInteractionNotes()
+Original --> Command : interactionNotes
+note right of Command
+Copy into notes = new ArrayList<>(interactionNotes).
+Check noteIndex.getZeroBased() against notes.size().
+Remove deletedNote = notes.remove(1) from the copy.
+Both indices are valid on this successful path.
+end note
+Command -> Original : getName()
+Original --> Command : name
+note right of Original
+Other getters supply phone, email, tags, relationship,
+financial fields, next action and both contact preferences.
+All unrelated fields and remaining note order are preserved.
+end note
+create Updated
+Command -> Updated : new Person(preserved details, notes,\npreserved next action and preferences)
+Command -> Model : setPerson(original, updated)
+note right of Model
+Observable list updates the PersonCard; the filter remains active.
+The card labels remaining notes by their new one-based positions.
+end note
+note right of Command
+Create CommandResult with deleted note index, contact name,
+deletedNote.getDate() and excerpt(deletedNote.getText()).
+The excerpt collapses whitespace and limits text to 80 code points.
+end note
+Command --> Logic : CommandResult
+deactivate Command
+Logic -> Model : getClientBook()
+Model --> Logic : clientBook
+Logic -> Storage : saveClientBook(clientBook)
+Storage --> Logic
+[<-- Logic : CommandResult
+deactivate Logic
+@enduml

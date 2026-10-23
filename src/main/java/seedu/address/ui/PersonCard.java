@@ -1,6 +1,8 @@
 package seedu.address.ui;
 
+import java.time.LocalDate;
 import java.util.Comparator;
+import java.util.Locale;
 import java.util.Optional;
 
 import javafx.fxml.FXML;
@@ -22,8 +24,6 @@ public class PersonCard extends UiPart<Region> {
      * Note: Certain keywords such as "location" and "resources" are reserved keywords in JavaFX.
      * As a consequence, UI elements' variable names cannot be set to such keywords
      * or an exception will be thrown by JavaFX during runtime.
-     *
-     * @see <a href="https://github.com/se-edu/addressbook-level4/issues/336">The issue on AddressBook level 4</a>
      */
 
     public final Person person;
@@ -50,6 +50,12 @@ public class PersonCard extends UiPart<Region> {
     private Label areaOfInterest;
     @FXML
     private VBox interactionNotes;
+    @FXML
+    private Label nextAction;
+    @FXML
+    private Label preferredContactChannel;
+    @FXML
+    private Label preferredContactTiming;
 
     /**
      * Creates a {@code PersonCard} with the given {@code Person} and index to display.
@@ -66,10 +72,20 @@ public class PersonCard extends UiPart<Region> {
         setOptionalInformation(priority, "Priority: ", person.getPriority().map(value -> value.value));
         setOptionalInformation(areaOfInterest, "Area of interest: ",
                 person.getAreaOfInterest().map(value -> value.value));
+        setOptionalInformation(preferredContactChannel, "Preferred contact channel: ",
+                person.getPreferredContactChannel().map(value -> value.value));
+        setOptionalInformation(preferredContactTiming, "Preferred contact timing: ",
+                person.getPreferredContactTiming().map(value -> value.value));
+        setOptionalInformation(nextAction, "", person.getNextAction().map(action -> {
+            String status = action.isCompleted() ? "Completed"
+                    : action.getDueDate().isBefore(LocalDate.now()) ? "Overdue" : "Pending";
+            nextAction.getStyleClass().add("followup-" + status.toLowerCase(Locale.ROOT));
+            return status + " | Due " + action.getDueDate() + ": " + action.getAction();
+        }));
         interactionNotes.setVisible(!person.getInteractionNotes().isEmpty());
         interactionNotes.setManaged(!person.getInteractionNotes().isEmpty());
-        person.getInteractionNotes().forEach(note -> {
-            Label label = new Label(note.toString());
+        for (int i = 0; i < person.getInteractionNotes().size(); i++) {
+            Label label = new Label((i + 1) + ". " + person.getInteractionNotes().get(i));
             label.getStyleClass().add("cell_small_label");
             label.setWrapText(true);
             // Let the parent supply the width during measurement, before the card is laid out.
@@ -78,7 +94,7 @@ public class PersonCard extends UiPart<Region> {
             label.setPrefWidth(0);
             label.setMaxWidth(Double.MAX_VALUE);
             interactionNotes.getChildren().add(label);
-        });
+        }
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.tagName))
                 .forEach(tag -> tags.getChildren().add(new Label(tag.tagName)));
