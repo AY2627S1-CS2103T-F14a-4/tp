@@ -50,7 +50,7 @@ public class NoteDeleteCommandTest {
                 .withInteractionNotes(NOTE, OTHER_NOTE, NOTE, OTHER_NOTE).build();
         model.setPerson(model.getFilteredPersonList().get(0), original);
 
-        CommandResult result = new NoteDeleteCommand(INDEX_FIRST_PERSON, Index.fromOneBased(3)).execute(model);
+        CommandResult result = new NoteDeleteCommand(INDEX_FIRST_PERSON, Index.fromOneBased(3)).execute(model, null);
 
         assertEquals(new PersonBuilder(original).withInteractionNotes(NOTE, OTHER_NOTE, OTHER_NOTE).build(),
                 model.getFilteredPersonList().get(0));
@@ -69,7 +69,7 @@ public class NoteDeleteCommandTest {
             model.setPerson(model.getFilteredPersonList().get(0), original);
 
             String feedback = new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_SECOND_PERSON)
-                    .execute(model).getFeedbackToUser();
+                    .execute(model, null).getFeedbackToUser();
 
             String expectedExcerpt = length > 80 ? "😀".repeat(80) + "…" : text;
             assertEquals("Deleted interaction note 2 for " + original.getName().fullName
@@ -90,7 +90,7 @@ public class NoteDeleteCommandTest {
 
         assertEquals("Deleted interaction note 1 for " + original.getName().fullName
                 + " (2000-02-29): Discussed insurance renewal plans",
-                new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON).execute(model).getFeedbackToUser());
+                new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON).execute(model, null).getFeedbackToUser());
         assertEquals("Discussed\ninsurance\t renewal\u2003plans", target.getText());
         assertEquals(List.of(target), model.getFilteredPersonList().get(0).getInteractionNotes());
     }
@@ -101,10 +101,10 @@ public class NoteDeleteCommandTest {
         model.setPerson(original, new PersonBuilder(original).withInteractionNotes(NOTE, OTHER_NOTE).build());
         NoteDeleteCommand command = new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON);
 
-        command.execute(model);
+        command.execute(model, null);
         assertEquals(new PersonBuilder(original).withInteractionNotes(OTHER_NOTE).build(),
                 model.getFilteredPersonList().get(0));
-        command.execute(model);
+        command.execute(model, null);
         assertEquals(original, model.getFilteredPersonList().get(0));
     }
 
@@ -116,7 +116,7 @@ public class NoteDeleteCommandTest {
         model.setPerson(model.getFilteredPersonList().get(1), original);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
 
-        new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_SECOND_PERSON).execute(model);
+        new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_SECOND_PERSON).execute(model, null);
 
         assertEquals(1, model.getFilteredPersonList().size());
         assertEquals(new PersonBuilder(original).withInteractionNotes(NOTE).build(),
@@ -175,7 +175,7 @@ public class NoteDeleteCommandTest {
         assertThrows(NullPointerException.class, () -> new NoteDeleteCommand(null, INDEX_FIRST_PERSON));
         assertThrows(NullPointerException.class, () -> new NoteDeleteCommand(INDEX_FIRST_PERSON, null));
         assertThrows(NullPointerException.class, () ->
-                new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON).execute(null));
+                new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON).execute(null, null));
     }
 
     @Test

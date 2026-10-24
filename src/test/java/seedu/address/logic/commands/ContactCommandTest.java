@@ -45,14 +45,14 @@ public class ContactCommandTest {
         Person original = populatedPerson();
         model.setPerson(model.getFilteredPersonList().getFirst(), original);
         assertEquals(String.format(ContactCommand.MESSAGE_SUCCESS, original.getName().fullName),
-                parser.parseCommand("contact 1 tm/After 6 pm ch/Phone").execute(model).getFeedbackToUser());
+                parser.parseCommand("contact 1 tm/After 6 pm ch/Phone").execute(model, null).getFeedbackToUser());
         Person expected = new PersonBuilder(original).withPreferredContactChannel("Phone")
                 .withPreferredContactTiming("After 6 pm").build();
         assertEquals(expected, model.getFilteredPersonList().getFirst());
-        parser.parseCommand("contact 1 ch/WhatsApp").execute(model);
+        parser.parseCommand("contact 1 ch/WhatsApp").execute(model, null);
         expected = new PersonBuilder(expected).withPreferredContactChannel("WhatsApp").build();
         assertEquals(expected, model.getFilteredPersonList().getFirst());
-        parser.parseCommand("contact 1 tm/Lunch break").execute(model);
+        parser.parseCommand("contact 1 tm/Lunch break").execute(model, null);
         assertEquals(new PersonBuilder(expected).withPreferredContactTiming("Lunch break").build(),
                 model.getFilteredPersonList().getFirst());
         assertEquals("Email", original.getPreferredContactChannel().orElseThrow().value);
@@ -63,20 +63,20 @@ public class ContactCommandTest {
         Person original = populatedPerson();
         model.setPerson(model.getFilteredPersonList().getFirst(), original);
         Person expected = new PersonBuilder(original).withPhone("81234567").build();
-        parser.parseCommand("edit 1 p/81234567").execute(model);
+        parser.parseCommand("edit 1 p/81234567").execute(model, null);
         assertEquals(expected, model.getFilteredPersonList().getFirst());
         expected = new PersonBuilder(expected).withFinancialNeed("Protection").build();
-        parser.parseCommand("info 1 /fn Protection").execute(model);
+        parser.parseCommand("info 1 /fn Protection").execute(model, null);
         assertEquals(expected, model.getFilteredPersonList().getFirst());
         expected = new PersonBuilder(expected).withInteractionNotes(original.getInteractionNotes().getFirst(),
                 new InteractionNote(LocalDate.of(2000, 1, 2), "Followed up")).build();
-        parser.parseCommand("note 1 d/2000-01-02 n/Followed up").execute(model);
+        parser.parseCommand("note 1 d/2000-01-02 n/Followed up").execute(model, null);
         assertEquals(expected, model.getFilteredPersonList().getFirst());
         NextAction action = new NextAction("Email", LocalDate.of(2000, 1, 3), false);
         expected = new PersonBuilder(expected).withNextAction(action).build();
-        parser.parseCommand("next 1 a/Email d/2000-01-03").execute(model);
+        parser.parseCommand("next 1 a/Email d/2000-01-03").execute(model, null);
         assertEquals(expected, model.getFilteredPersonList().getFirst());
-        parser.parseCommand("done 1").execute(model);
+        parser.parseCommand("done 1").execute(model, null);
         assertEquals(new PersonBuilder(expected).withNextAction(action.markCompleted()).build(),
                 model.getFilteredPersonList().getFirst());
     }
@@ -85,7 +85,7 @@ public class ContactCommandTest {
     public void execute_filteredList_usesDisplayedIndexAndKeepsFilter() throws Exception {
         Person second = model.getFilteredPersonList().get(1);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
-        parser.parseCommand("contact 1 ch/Email").execute(model);
+        parser.parseCommand("contact 1 ch/Email").execute(model, null);
         assertEquals(List.of(new PersonBuilder(second).withPreferredContactChannel("Email").build()),
                 model.getFilteredPersonList());
         assertCommandFailure(new ContactCommand(INDEX_SECOND_PERSON, new PreferredContactChannel("Phone"), null),
@@ -105,10 +105,10 @@ public class ContactCommandTest {
     public void execute_lastDisplayedIndexAndRepeatedValue_success() throws Exception {
         int size = model.getFilteredPersonList().size();
         Person last = model.getFilteredPersonList().getLast();
-        parser.parseCommand("contact " + size + " tm/Weekends").execute(model);
+        parser.parseCommand("contact " + size + " tm/Weekends").execute(model, null);
         Person expected = new PersonBuilder(last).withPreferredContactTiming("Weekends").build();
         assertEquals(expected, model.getFilteredPersonList().getLast());
-        parser.parseCommand("contact " + size + " tm/Weekends").execute(model);
+        parser.parseCommand("contact " + size + " tm/Weekends").execute(model, null);
         assertEquals(expected, model.getFilteredPersonList().getLast());
     }
 
@@ -119,7 +119,7 @@ public class ContactCommandTest {
         assertThrows(IllegalArgumentException.class, () ->
                 new ContactCommand(INDEX_FIRST_PERSON, null, null));
         assertThrows(NullPointerException.class, () ->
-                new ContactCommand(INDEX_FIRST_PERSON, new PreferredContactChannel("Email"), null).execute(null));
+                new ContactCommand(INDEX_FIRST_PERSON, new PreferredContactChannel("Email"), null).execute(null, null));
     }
 
     @Test

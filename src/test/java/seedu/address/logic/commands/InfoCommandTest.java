@@ -57,12 +57,12 @@ public class InfoCommandTest {
                     clearPriority ? null : original.getPriority().orElseThrow(),
                     clearInterest ? null : original.getAreaOfInterest().orElseThrow(),
                     original.getInteractionNotes(), original.getNextAction().orElseThrow());
-            CommandResult result = parser.parse(args).execute(model);
+            CommandResult result = parser.parse(args).execute(model, null);
             assertEquals(expected, model.getFilteredPersonList().getFirst());
             assertEquals(String.format(InfoCommand.MESSAGE_SUCCESS, original.getName().fullName),
                     result.getFeedbackToUser());
             // Repeating the same clears must also be safe when those fields are already absent.
-            parser.parse(args).execute(model);
+            parser.parse(args).execute(model, null);
             assertEquals(expected, model.getFilteredPersonList().getFirst());
         }
     }
@@ -71,7 +71,7 @@ public class InfoCommandTest {
     public void execute_mixedSetAndClear_preservesOmittedAndUnrelatedFields() throws Exception {
         Person original = populatedPerson();
         model.setPerson(model.getFilteredPersonList().getFirst(), original);
-        parser.parse("1 /pr High /ai -").execute(model);
+        parser.parse("1 /pr High /ai -").execute(model, null);
         Person expected = new Person(original.getName(), original.getPhone(), original.getEmail(), original.getTags(),
                 original.getRelationship(), original.getFinancialNeed().orElseThrow(), new Priority("High"), null,
                 original.getInteractionNotes(), original.getNextAction().orElseThrow());
@@ -86,7 +86,7 @@ public class InfoCommandTest {
         Person target = new PersonBuilder(second).withPriority("High").build();
         model.setPerson(second, target);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
-        parser.parse("1 /pr -").execute(model);
+        parser.parse("1 /pr -").execute(model, null);
         assertEquals(List.of(second), model.getFilteredPersonList());
         assertEquals(first, model.getClientBook().getPersonList().getFirst());
         assertCommandFailure(parser.parse("2 /pr -"), model, "No client exists at index 2.");
@@ -152,7 +152,7 @@ public class InfoCommandTest {
         };
         for (int i = 0; i < args.length; i++) {
             model.setPerson(model.getFilteredPersonList().get(0), original);
-            CommandResult result = parser.parse(args[i]).execute(model);
+            CommandResult result = parser.parse(args[i]).execute(model, null);
             assertEquals(expected[i], model.getFilteredPersonList().get(0));
             assertEquals("Client information for " + original.getName().fullName
                     + " has been updated successfully.", result.getFeedbackToUser());
@@ -164,7 +164,7 @@ public class InfoCommandTest {
         Person first = model.getFilteredPersonList().get(0);
         Person target = model.getFilteredPersonList().get(1);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
-        parser.parse("1 /fn Retirement").execute(model);
+        parser.parse("1 /fn Retirement").execute(model, null);
         assertEquals(new PersonBuilder(target).withFinancialNeed("Retirement").build(),
                 model.getFilteredPersonList().get(0));
         assertEquals(first, model.getClientBook().getPersonList().get(0));
