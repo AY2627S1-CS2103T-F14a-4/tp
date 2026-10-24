@@ -48,10 +48,28 @@ public interface Storage {
     Optional<ReadOnlyClientBook> readClientBook() throws DataLoadingException;
 
     /**
+     * Returns ClientBook data from the specified file path.
+     * Returns {@code Optional.empty()} if the file is not found.
+     *
+     * @param filePath location of the data file.
+     * @throws DataLoadingException if loading the data from storage failed.
+     */
+    Optional<ReadOnlyClientBook> readClientBook(Path filePath) throws DataLoadingException;
+
+    /**
      * Saves the given {@link ReadOnlyClientBook} to the storage.
      * @param clientBook cannot be null.
      * @throws IOException if there was any problem writing to the file.
      */
     void saveClientBook(ReadOnlyClientBook clientBook) throws IOException;
+
+    /**
+     * Saves the given {@link ReadOnlyClientBook} to the specified file path.
+     *
+     * @param clientBook client book to save. Cannot be null.
+     * @param filePath destination for the client book. Cannot be null.
+     * @throws IOException if there was any problem writing to the file.
+     */
+    void saveClientBook(ReadOnlyClientBook clientBook, Path filePath) throws IOException;
 
 }
