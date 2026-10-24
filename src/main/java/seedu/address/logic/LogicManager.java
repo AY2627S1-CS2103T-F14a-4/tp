@@ -46,7 +46,7 @@ public class LogicManager implements Logic {
 
         CommandResult commandResult;
         Command command = clientBookParser.parseCommand(commandText);
-        commandResult = command.execute(model);
+        commandResult = command.execute(model, storage);
 
         try {
             storage.saveClientBook(model.getClientBook());

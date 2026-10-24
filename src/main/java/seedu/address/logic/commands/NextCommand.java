@@ -9,6 +9,7 @@ import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
 import seedu.address.model.person.NextAction;
 import seedu.address.model.person.Person;
+import seedu.address.storage.Storage;
 
 /** Sets or replaces the next action of a person in the displayed list. */
 public class NextCommand extends Command {
@@ -27,7 +28,7 @@ public class NextCommand extends Command {
     }
 
     @Override
-    public CommandResult execute(Model model) throws CommandException {
+    public CommandResult execute(Model model, Storage storage) throws CommandException {
         requireAllNonNull(model);
         if (index.getZeroBased() >= model.getFilteredPersonList().size()) {
             throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);

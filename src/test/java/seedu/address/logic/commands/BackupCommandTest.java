@@ -17,6 +17,9 @@ import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.storage.JsonClientBookStorage;
+import seedu.address.storage.JsonUserPrefsStorage;
+import seedu.address.storage.Storage;
+import seedu.address.storage.StorageManager;
 
 public class BackupCommandTest {
     @TempDir
@@ -27,7 +30,7 @@ public class BackupCommandTest {
         Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
         Path backupFile = temporaryFolder.resolve("records.json");
 
-        CommandResult result = new BackupCommand(backupFile).execute(model);
+        CommandResult result = new BackupCommand(backupFile).execute(model, createStorage());
 
         assertEquals(new CommandResult(String.format(BackupCommand.MESSAGE_SUCCESS, backupFile)), result);
         assertEquals(getTypicalClientBook(), new ClientBook(
@@ -41,9 +44,16 @@ public class BackupCommandTest {
         Files.createDirectory(directory);
         BackupCommand command = new BackupCommand(directory);
 
-        CommandException exception = assertThrows(CommandException.class, () -> command.execute(model));
+        CommandException exception = assertThrows(CommandException.class, () -> command.execute(
+                model, createStorage()));
 
         assertTrue(exception.getMessage().startsWith(String.format(BackupCommand.MESSAGE_FAILURE, "")));
         assertEquals(getTypicalClientBook(), model.getClientBook());
+    }
+
+    private Storage createStorage() {
+        return new StorageManager(
+                new JsonClientBookStorage(temporaryFolder.resolve("clientbook.json")),
+                new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
     }
 }

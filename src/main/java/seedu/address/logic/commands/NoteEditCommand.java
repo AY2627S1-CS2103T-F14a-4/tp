@@ -12,6 +12,7 @@ import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
 import seedu.address.model.person.InteractionNote;
 import seedu.address.model.person.Person;
+import seedu.address.storage.Storage;
 
 /** Edits the text of a dated note belonging to a displayed person. */
 public class NoteEditCommand extends Command {
@@ -34,7 +35,7 @@ public class NoteEditCommand extends Command {
     }
 
     @Override
-    public CommandResult execute(Model model) throws CommandException {
+    public CommandResult execute(Model model, Storage storage) throws CommandException {
         requireAllNonNull(model);
         List<Person> displayedPersons = model.getFilteredPersonList();
         if (contactIndex.getZeroBased() >= displayedPersons.size()) {

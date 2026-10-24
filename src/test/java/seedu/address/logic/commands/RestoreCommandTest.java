@@ -16,6 +16,9 @@ import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.storage.JsonClientBookStorage;
+import seedu.address.storage.JsonUserPrefsStorage;
+import seedu.address.storage.Storage;
+import seedu.address.storage.StorageManager;
 
 public class RestoreCommandTest {
     @TempDir
@@ -27,7 +30,7 @@ public class RestoreCommandTest {
         new JsonClientBookStorage(backupFile).saveClientBook(getTypicalClientBook());
         Model model = new ModelManager();
 
-        CommandResult result = new RestoreCommand(backupFile).execute(model);
+        CommandResult result = new RestoreCommand(backupFile).execute(model, createStorage());
 
         assertEquals(new CommandResult(String.format(RestoreCommand.MESSAGE_SUCCESS, backupFile)), result);
         assertEquals(getTypicalClientBook(), model.getClientBook());
@@ -39,8 +42,11 @@ public class RestoreCommandTest {
         Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
         Path missingFile = temporaryFolder.resolve("missing.json");
 
-        CommandTestUtil.assertCommandFailure(new RestoreCommand(missingFile), model,
-                String.format(RestoreCommand.MESSAGE_FILE_NOT_FOUND, missingFile));
+        CommandException exception = assertThrows(CommandException.class, () ->
+                new RestoreCommand(missingFile).execute(model, createStorage()));
+
+        assertEquals(String.format(RestoreCommand.MESSAGE_FILE_NOT_FOUND, missingFile), exception.getMessage());
+        assertEquals(getTypicalClientBook(), model.getClientBook());
     }
 
     @Test
@@ -50,9 +56,15 @@ public class RestoreCommandTest {
         Files.writeString(invalidFile, "not JSON");
 
         CommandException exception = assertThrows(CommandException.class, () ->
-                new RestoreCommand(invalidFile).execute(model));
+                new RestoreCommand(invalidFile).execute(model, createStorage()));
 
         assertTrue(exception.getMessage().startsWith("Could not restore backup:"));
         assertEquals(getTypicalClientBook(), model.getClientBook());
+    }
+
+    private Storage createStorage() {
+        return new StorageManager(
+                new JsonClientBookStorage(temporaryFolder.resolve("clientbook.json")),
+                new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json")));
     }
 }
