@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.model.Model;
 import seedu.address.model.person.NextActionDuePredicate;
+import seedu.address.storage.Storage;
 
 /**
  * Lists persons whose incomplete next action is due today or earlier.
@@ -29,7 +30,7 @@ public class DueCommand extends Command {
     }
 
     @Override
-    public CommandResult execute(Model model) {
+    public CommandResult execute(Model model, Storage storage) {
         requireNonNull(model);
         LocalDate today = LocalDate.now(clock);
         model.updateFilteredPersonList(new NextActionDuePredicate(today));

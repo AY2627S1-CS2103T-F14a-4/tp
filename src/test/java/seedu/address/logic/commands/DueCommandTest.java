@@ -48,7 +48,7 @@ public class DueCommandTest {
             .withPerson(DUE_YESTERDAY).withPerson(NO_ACTION).build(), new UserPrefs());
 
     @Test
-    public void execute_mixedActions_showsOnlyDuePeopleInOriginalOrder() {
+    public void execute_mixedActions_showsOnlyDuePeopleInOriginalOrder() throws Exception {
         List<Person> originalPeople = List.copyOf(model.getClientBook().getPersonList());
 
         CommandResult result = command.execute(model);
@@ -59,7 +59,7 @@ public class DueCommandTest {
     }
 
     @Test
-    public void execute_noDueActions_returnsEmptyResultMessage() {
+    public void execute_noDueActions_returnsEmptyResultMessage() throws Exception {
         Model noDueModel = new ModelManager(new ClientBookBuilder().withPerson(DUE_TOMORROW)
                 .withPerson(COMPLETED).withPerson(NO_ACTION).build(), new UserPrefs());
 
@@ -69,7 +69,7 @@ public class DueCommandTest {
     }
 
     @Test
-    public void execute_singleDueAction_returnsCountMessage() {
+    public void execute_singleDueAction_returnsCountMessage() throws Exception {
         Model singleDueModel = new ModelManager(new ClientBookBuilder().withPerson(DUE_TODAY).build(),
                 new UserPrefs());
 
@@ -77,7 +77,7 @@ public class DueCommandTest {
     }
 
     @Test
-    public void execute_previousFindFilter_replacesFilter() {
+    public void execute_previousFindFilter_replacesFilter() throws Exception {
         new FindCommand(new NameContainsKeywordsPredicate(List.of("Tomorrow"))).execute(model);
         assertEquals(List.of(DUE_TOMORROW), model.getFilteredPersonList());
 
@@ -100,7 +100,7 @@ public class DueCommandTest {
     }
 
     @Test
-    public void execute_differentClockDate_usesClockAtExecution() {
+    public void execute_differentClockDate_usesClockAtExecution() throws Exception {
         DueCommand laterCommand = new DueCommand(Clock.fixed(Instant.parse("2026-10-20T16:30:00Z"),
                 CLOCK.getZone()));
 

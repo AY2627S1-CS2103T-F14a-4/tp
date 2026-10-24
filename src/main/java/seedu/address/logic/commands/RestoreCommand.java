@@ -2,14 +2,13 @@ package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 import seedu.address.commons.exceptions.DataLoadingException;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
 import seedu.address.model.ReadOnlyClientBook;
-import seedu.address.storage.JsonClientBookStorage;
+import seedu.address.storage.Storage;
 
 /** Replaces current records with the records held in a JSON backup file. */
 public class RestoreCommand extends Command {
@@ -32,15 +31,13 @@ public class RestoreCommand extends Command {
     }
 
     @Override
-    public CommandResult execute(Model model) throws CommandException {
+    public CommandResult execute(Model model, Storage storage) throws CommandException {
         requireNonNull(model);
-        if (!Files.isRegularFile(backupFilePath)) {
-            throw new CommandException(String.format(MESSAGE_FILE_NOT_FOUND, backupFilePath));
-        }
+        requireNonNull(storage);
         try {
-            ReadOnlyClientBook restoredClientBook = new JsonClientBookStorage(backupFilePath)
-                    .readClientBook().orElseThrow(() -> new CommandException(
-                            String.format(MESSAGE_FAILURE, "The backup file is empty.")));
+            ReadOnlyClientBook restoredClientBook = storage.readClientBook(backupFilePath)
+                    .orElseThrow(() -> new CommandException(
+                            String.format(MESSAGE_FILE_NOT_FOUND, backupFilePath)));
             model.setClientBook(restoredClientBook);
             model.updateFilteredPersonList(Model.PREDICATE_SHOW_ALL_PERSONS);
             return new CommandResult(String.format(MESSAGE_SUCCESS, backupFilePath));
