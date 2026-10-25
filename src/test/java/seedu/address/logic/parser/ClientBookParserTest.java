@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.commands.AddCommand;
+import seedu.address.logic.commands.BackupCommand;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.DoneCommand;
@@ -26,6 +27,7 @@ import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.InfoCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.RestoreCommand;
 import seedu.address.logic.commands.TagCommand;
 import seedu.address.logic.commands.TagDeleteCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
@@ -54,6 +56,16 @@ public class ClientBookParserTest {
     public void parseCommand_clear() throws Exception {
         assertTrue(parser.parseCommand(ClearCommand.COMMAND_WORD) instanceof ClearCommand);
         assertTrue(parser.parseCommand(ClearCommand.COMMAND_WORD + " 3") instanceof ClearCommand);
+    }
+
+    @Test
+    public void parseCommand_backupAndRestore() throws Exception {
+        assertEquals(new BackupCommand(), parser.parseCommand("backup"));
+        assertEquals(new RestoreCommand(), parser.parseCommand("restore"));
+        assertThrows(ParseException.class, "The backup command takes no arguments.", () ->
+                parser.parseCommand("backup records.json"));
+        assertThrows(ParseException.class, "The restore command takes no arguments.", () ->
+                parser.parseCommand("restore records.json"));
     }
 
     @Test

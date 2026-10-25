@@ -10,6 +10,7 @@ import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.Messages;
 import seedu.address.model.Model;
 import seedu.address.model.person.Person;
+import seedu.address.storage.Storage;
 
 /**
  * Finds and lists all persons in the client book who match the specified search criterion.
@@ -38,7 +39,7 @@ public class FindCommand extends Command {
     }
 
     @Override
-    public CommandResult execute(Model model) {
+    public CommandResult execute(Model model, Storage storage) {
         requireNonNull(model);
         model.updateFilteredPersonList(predicate);
         return new CommandResult(

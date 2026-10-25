@@ -76,13 +76,16 @@ public class LogicManager implements Logic {
 
     private CommandResult executeCommand(Command command) throws CommandException {
         CommandResult commandResult = command.execute(model);
+        commandResult = command.execute(model, storage);
 
-        try {
-            storage.saveClientBook(model.getClientBook());
-        } catch (AccessDeniedException e) {
-            throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
-        } catch (IOException ioe) {
-            throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
+        if (!commandResult.isModelSaved()) {
+            try {
+                storage.saveClientBook(model.getClientBook());
+            } catch (AccessDeniedException e) {
+                throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
+            } catch (IOException ioe) {
+                throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
+            }
         }
 
         return commandResult;

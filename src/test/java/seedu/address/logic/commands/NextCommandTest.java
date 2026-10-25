@@ -38,7 +38,7 @@ public class NextCommandTest {
                 .withInteractionNotes(new InteractionNote(LocalDate.of(2000, 1, 1), "Discussed plans")).build();
         model.setPerson(model.getFilteredPersonList().getFirst(), original);
         assertEquals(String.format(NextCommand.MESSAGE_SUCCESS, original.getName().fullName),
-                parser.parseCommand("next 1 a/Call d/2000-01-01").execute(model).getFeedbackToUser());
+                parser.parseCommand("next 1 a/Call d/2000-01-01").execute(model, null).getFeedbackToUser());
         assertEquals(new PersonBuilder(original).withNextAction(ACTION).build(),
                 model.getFilteredPersonList().getFirst());
     }
@@ -48,7 +48,7 @@ public class NextCommandTest {
         for (boolean completed : new boolean[] {false, true}) {
             Person original = model.getFilteredPersonList().getFirst();
             model.setPerson(original, original.withNextAction(new NextAction("Email", LocalDate.now(), completed)));
-            new NextCommand(INDEX_FIRST_PERSON, ACTION).execute(model);
+            new NextCommand(INDEX_FIRST_PERSON, ACTION).execute(model, null);
             assertEquals(ACTION, model.getFilteredPersonList().getFirst().getNextAction().orElseThrow());
             assertFalse(model.getFilteredPersonList().getFirst().getNextAction().orElseThrow().isCompleted());
         }
@@ -59,7 +59,7 @@ public class NextCommandTest {
         Person first = model.getFilteredPersonList().getFirst();
         Person second = model.getFilteredPersonList().get(1);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
-        new NextCommand(INDEX_FIRST_PERSON, ACTION).execute(model);
+        new NextCommand(INDEX_FIRST_PERSON, ACTION).execute(model, null);
         assertEquals(first, model.getClientBook().getPersonList().getFirst());
         assertEquals(second.withNextAction(ACTION), model.getFilteredPersonList().getFirst());
         assertEquals(1, model.getFilteredPersonList().size());
@@ -83,7 +83,7 @@ public class NextCommandTest {
             model.setPerson(original, original.withNextAction(action));
             for (String command : new String[] {"edit 1 p/81234567", "info 1 /fn Retirement",
                 "note 1 d/2000-01-01 n/Discussed plans"}) {
-                parser.parseCommand(command).execute(model);
+                parser.parseCommand(command).execute(model, null);
                 assertEquals(action, model.getFilteredPersonList().getFirst().getNextAction().orElseThrow());
             }
         }
