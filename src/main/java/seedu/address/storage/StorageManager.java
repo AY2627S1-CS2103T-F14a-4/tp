@@ -60,9 +60,21 @@ public class StorageManager implements Storage {
     }
 
     @Override
+    public Optional<ReadOnlyClientBook> readClientBook(Path filePath) throws DataLoadingException {
+        logger.fine("Attempting to read data from file: " + filePath);
+        return clientBookStorage.readClientBook(filePath);
+    }
+
+    @Override
     public void saveClientBook(ReadOnlyClientBook clientBook) throws IOException {
         logger.fine("Attempting to write to data file: " + clientBookStorage.getClientBookFilePath());
         clientBookStorage.saveClientBook(clientBook);
+    }
+
+    @Override
+    public void saveClientBook(ReadOnlyClientBook clientBook, Path filePath) throws IOException {
+        logger.fine("Attempting to write to data file: " + filePath);
+        clientBookStorage.saveClientBook(clientBook, filePath);
     }
 
 }
