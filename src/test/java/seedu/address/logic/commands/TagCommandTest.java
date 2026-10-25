@@ -23,7 +23,7 @@ public class TagCommandTest {
     private final Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
 
     @Test
-    public void execute_newAndDuplicateTags_addsUniqueTagsAndPreservesFields() throws Exception {
+    public void execute_newTags_addsTagsAndPreservesFields() throws Exception {
         Person original = model.getFilteredPersonList().get(0);
         Set<Tag> tagsToAdd = Set.of(new Tag("friend"), new Tag("priority"));
 
@@ -31,8 +31,23 @@ public class TagCommandTest {
 
         Person expected = new PersonBuilder(original).withTags("friends", "friend", "priority").build();
         assertEquals(expected, model.getFilteredPersonList().get(0));
-        new TagCommand(INDEX_FIRST_PERSON, Set.of(new Tag("PRIORITY"))).execute(model);
-        assertEquals(expected, model.getFilteredPersonList().get(0));
+    }
+
+    @Test
+    public void execute_existingTag_failure() {
+        TagCommand command = new TagCommand(INDEX_FIRST_PERSON, Set.of(new Tag("FRIENDS")));
+
+        assertCommandFailure(command, model,
+                String.format(TagCommand.MESSAGE_DUPLICATE_TAGS, "[FRIENDS]"));
+    }
+
+    @Test
+    public void execute_newAndExistingTags_failureWithoutAddingNewTag() {
+        TagCommand command = new TagCommand(INDEX_FIRST_PERSON,
+                Set.of(new Tag("priority"), new Tag("friends")));
+
+        assertCommandFailure(command, model,
+                String.format(TagCommand.MESSAGE_DUPLICATE_TAGS, "[friends]"));
     }
 
     @Test

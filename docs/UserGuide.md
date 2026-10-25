@@ -119,8 +119,8 @@ Format: `tag INDEX TAG [MORE_TAGS...]`
 * `INDEX` must be a positive integer that refers to a person in the currently displayed list, including filtered
   search results.
 * Each `TAG` must contain only letters and numbers, with no spaces.
-* Existing tags are preserved. Tags are compared case-insensitively, so adding `PRIORITY` when `priority` exists does
-  not create a duplicate; the existing spelling is retained.
+* Existing tags are preserved. Tags are compared case-insensitively, so adding `PRIORITY` when `priority` exists
+  produces an error and no tags are added.
 
 Examples:
 * `tag 1 priority`
