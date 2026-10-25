@@ -90,6 +90,9 @@ public class EmailTest {
         // same values -> returns true
         assertTrue(email.equals(new Email("valid@email.com")));
 
+        // different domain casing -> returns true
+        assertTrue(email.equals(new Email("valid@EMAIL.COM")));
+
         // same object -> returns true
         assertTrue(email.equals(email));
 
@@ -101,5 +104,8 @@ public class EmailTest {
 
         // different values -> returns false
         assertFalse(email.equals(new Email("other.valid@email.com")));
+
+        // different local-part casing -> returns false
+        assertFalse(email.equals(new Email("VALID@email.com")));
     }
 }

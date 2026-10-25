@@ -3,6 +3,7 @@ package seedu.address.model.person;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.AppUtil.checkArgument;
 
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 /**
@@ -124,12 +125,17 @@ public class Email {
             return false;
         }
 
-        return value.equals(otherEmail.value);
+        return getNormalizedValue().equals(otherEmail.getNormalizedValue());
     }
 
     @Override
     public int hashCode() {
-        return value.hashCode();
+        return getNormalizedValue().hashCode();
+    }
+
+    private String getNormalizedValue() {
+        int atSignIndex = value.indexOf('@');
+        return value.substring(0, atSignIndex + 1) + value.substring(atSignIndex + 1).toLowerCase(Locale.ROOT);
     }
 
 }

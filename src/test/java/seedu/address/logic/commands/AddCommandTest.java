@@ -56,6 +56,18 @@ public class AddCommandTest {
     }
 
     @Test
+    public void execute_duplicateEmailWithDifferentDomainCasing_throwsCommandException() {
+        Person existingPerson = new PersonBuilder().withEmail("alice@example.com").build();
+        Person personWithSameEmail = new PersonBuilder(existingPerson).withName("Different Name")
+                .withPhone("91234567").withEmail("alice@EXAMPLE.COM").build();
+        AddCommand addCommand = new AddCommand(personWithSameEmail);
+        ModelStub modelStub = new ModelStubWithPerson(existingPerson);
+
+        assertThrows(CommandException.class, AddCommand.MESSAGE_DUPLICATE_EMAIL, () ->
+                addCommand.execute(modelStub, null));
+    }
+
+    @Test
     public void execute_duplicatePhone_throwsCommandException() {
         Person validPerson = new PersonBuilder().build();
         Person personWithSamePhone = new PersonBuilder(validPerson).withName("Different Name")
