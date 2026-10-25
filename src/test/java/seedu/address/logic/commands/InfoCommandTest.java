@@ -86,10 +86,10 @@ public class InfoCommandTest {
         Person target = new PersonBuilder(second).withPriority("High").build();
         model.setPerson(second, target);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
-        parser.parse("1 /pr -").execute(model);
+        parser.parse("2 /pr -").execute(model);
         assertEquals(List.of(second), model.getFilteredPersonList());
         assertEquals(first, model.getClientBook().getPersonList().getFirst());
-        assertCommandFailure(parser.parse("2 /pr -"), model, "No client exists at index 2.");
+        assertCommandFailure(parser.parse("1 /pr -"), model, "No client exists at index 1.");
     }
 
     @Test
@@ -164,7 +164,7 @@ public class InfoCommandTest {
         Person first = model.getFilteredPersonList().get(0);
         Person target = model.getFilteredPersonList().get(1);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
-        parser.parse("1 /fn Retirement").execute(model);
+        parser.parse("2 /fn Retirement").execute(model);
         assertEquals(new PersonBuilder(target).withFinancialNeed("Retirement").build(),
                 model.getFilteredPersonList().get(0));
         assertEquals(first, model.getClientBook().getPersonList().get(0));

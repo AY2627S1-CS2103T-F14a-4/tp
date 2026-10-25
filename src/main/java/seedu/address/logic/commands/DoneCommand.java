@@ -29,10 +29,8 @@ public class DoneCommand extends Command {
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireAllNonNull(model);
-        if (index.getZeroBased() >= model.getFilteredPersonList().size()) {
-            throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
-        }
-        Person original = model.getFilteredPersonList().get(index.getZeroBased());
+        Person original = getVisiblePersonAtIndex(model, index,
+                Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
         String name = original.getName().fullName;
         if (original.getNextAction().isEmpty()) {
             throw new CommandException(String.format(MESSAGE_NO_NEXT_ACTION, name));

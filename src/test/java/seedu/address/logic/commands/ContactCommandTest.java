@@ -85,10 +85,10 @@ public class ContactCommandTest {
     public void execute_filteredList_usesDisplayedIndexAndKeepsFilter() throws Exception {
         Person second = model.getFilteredPersonList().get(1);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
-        parser.parseCommand("contact 1 ch/Email").execute(model);
+        parser.parseCommand("contact 2 ch/Email").execute(model);
         assertEquals(List.of(new PersonBuilder(second).withPreferredContactChannel("Email").build()),
                 model.getFilteredPersonList());
-        assertCommandFailure(new ContactCommand(INDEX_SECOND_PERSON, new PreferredContactChannel("Phone"), null),
+        assertCommandFailure(new ContactCommand(INDEX_FIRST_PERSON, new PreferredContactChannel("Phone"), null),
                 model, Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
     }
 

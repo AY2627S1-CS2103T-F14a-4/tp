@@ -2,8 +2,6 @@ package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.List;
-
 import seedu.address.commons.core.index.Index;
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.commands.exceptions.CommandException;
@@ -34,13 +32,8 @@ public class DeleteCommand extends Command {
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
-        List<Person> lastShownList = model.getFilteredPersonList();
-
-        if (targetIndex.getZeroBased() >= lastShownList.size()) {
-            throw new CommandException(String.format(MESSAGE_INVALID_INDEX, targetIndex.getOneBased()));
-        }
-
-        Person personToDelete = lastShownList.get(targetIndex.getZeroBased());
+        String invalidIndexMessage = String.format(MESSAGE_INVALID_INDEX, targetIndex.getOneBased());
+        Person personToDelete = getVisiblePersonAtIndex(model, targetIndex, invalidIndexMessage);
         model.deletePerson(personToDelete);
         return new CommandResult(String.format(MESSAGE_DELETE_PERSON_SUCCESS,
                 personToDelete.getRelationship(), personToDelete.getName().fullName));

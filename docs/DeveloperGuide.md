@@ -136,6 +136,8 @@ The `Model` component,
 
 * stores the client book data i.e., all `Person` objects (which are contained in a `UniquePersonList` object).
 * stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list. It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
+* retains the complete list as the source of displayed indexes. Filtering and editing do not change a person's index;
+  deleting a person removes it from the source list and renumbers the persons after it.
 * stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
 
@@ -185,7 +187,9 @@ contain `priority` or `referral`.
 
 `FindCommand` passes the predicate to `Model#updateFilteredPersonList(Predicate<Person>)`, which updates the
 `FilteredList<Person>` observed by the UI. Filtering does not reorder the source list, so matching persons retain the
-same order as in the `list` command.
+same order and indexes as in the `list` command. `PersonListPanel` looks up each filtered person in the complete list
+when rendering its index. Index-based commands use `Command#getVisiblePersonAtIndex` to resolve that complete-list
+index and reject it if the corresponding person is not in the current filter.
 
 The following sequence shows a combined search. The `FilteredList` applies the predicate to each source person;
 omitted filter types evaluate as matched, while the supplied filter types must all match.
@@ -196,7 +200,7 @@ omitted filter types evaluate as matched, while the supplied filter types must a
 
 `TagCommandParser` reads the first whitespace-separated argument as the displayed-list index and validates each
 remaining argument with `ParserUtil#parseTags(Collection<String>)`. Tag names use the existing alphanumeric-only
-`Tag` validation. `TagCommand` resolves the person against `Model#getFilteredPersonList()`, unions the supplied tags
+`Tag` validation. `TagCommand` resolves the visible person against its index in the complete list, unions the supplied tags
 with the person's existing tag set, and replaces the immutable `Person` through `Model#setPerson`. The replacement
 preserves every non-tag field and the active list filter. `Tag#equals` and `Tag#hashCode` compare normalized casing,
 so the `Set<Tag>` treats case variants as duplicates while preserving the spelling of the existing tag. Repeated
@@ -245,7 +249,7 @@ duplicate or unknown parameters. It recognizes an exact `-` surrounded only by o
 and nullable value per field: omitted means unchanged, specified non-null means replace, and specified null
 means explicitly clear. `InfoCommand` defensively copies this descriptor, including its flags.
 
-`InfoCommand#execute` resolves the index against `Model#getFilteredPersonList` and checks its range before mutation.
+`InfoCommand#execute` resolves the visible person against its index in the complete list before mutation.
 It constructs a replacement `Person` using the resolved financial fields and calls `Model#setPerson`.
 Name, phone, email, relationship, tags, interaction notes, next action, preferred contact channel and preferred
 contact timing are copied unchanged; the active filter is preserved. Clearing an absent field is idempotent.
@@ -370,7 +374,7 @@ missing action/date fields. `NextAction` strips surrounding description whitespa
 and strict calendar validation. Both parsing and model construction restrict the year to 1–9999;
 year zero is rejected, including when loading JSON. Backdated follow-ups within this range are valid.
 
-`NextCommand` resolves the index against `Model#getFilteredPersonList`, rejects out-of-range indices,
+`NextCommand` resolves the visible person against its index in the complete list, rejects invalid indices,
 then passes the replacement person to `Model#setPerson`. Both new and replacement actions have
 `completed = false`. The observable list updates the card. `LogicManager` then saves through the existing
 storage pipeline; the command itself does not write files.
@@ -387,7 +391,7 @@ save failures follow the existing `LogicManager` error handling.
 `Person index is required.`; otherwise `ParserUtil#parseIndex` validates the entire argument string,
 rejecting zero, negative, non-integer and multiple indices.
 
-`DoneCommand` first checks the index against `Model#getFilteredPersonList`, then checks that the selected
+`DoneCommand` first resolves the visible person against its index in the complete list, then checks that the selected
 person has a next action. These checks occur before any model mutation and report, respectively,
 `Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX` and `NAME has no next action to complete.`.
 If the action is already completed, the command returns a normal `CommandResult` with
@@ -923,8 +927,8 @@ note 2 d/2026-10-06 n/Discussed next steps.
 
     1. Prerequisites: Recreate the test records above, then run `find Jane`.
 
-    2. Test case: `delete 1`<br>
-       Expected: Jane is deleted, although she was second in the full list. The search results become empty.
+    2. Test case: `delete 2`<br>
+       Expected: Jane is deleted using her unchanged full-list index. The search results become empty.
 
     3. Test case: `list`<br>
        Expected: John is still present. Repeat this test using `find r/prospect` to check relationship-filtered deletion.
@@ -946,8 +950,9 @@ note 2 d/2026-10-06 n/Discussed next steps.
     5. Test case: `delete 3`<br>
        Expected: `No client exists at index 3.`
 
-    6. Test case: `find Jane`, then `delete 2`<br>
-       Expected: `No client exists at index 2.` Jane remains visible, and John is still present in the full list.
+    6. Test case: `find Jane`, then `delete 1`<br>
+       Expected: `No client exists at index 1.` Jane remains visible at index 2, and John is still present in the full
+       list.
 
     7. Test case: `find Nobody`, then `delete 1`<br>
        Expected: `No client exists at index 1.` The empty search stays active. Use `list` and restart the app

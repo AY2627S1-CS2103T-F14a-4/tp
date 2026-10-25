@@ -34,11 +34,8 @@ public class NoteDeleteCommand extends Command {
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireAllNonNull(model);
-        List<Person> displayedPersons = model.getFilteredPersonList();
-        if (contactIndex.getZeroBased() >= displayedPersons.size()) {
-            throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
-        }
-        Person original = displayedPersons.get(contactIndex.getZeroBased());
+        Person original = getVisiblePersonAtIndex(model, contactIndex,
+                Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
         List<InteractionNote> notes = new ArrayList<>(original.getInteractionNotes());
         if (noteIndex.getZeroBased() >= notes.size()) {
             throw new CommandException(MESSAGE_INVALID_NOTE_INDEX);

@@ -3,7 +3,6 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.AppUtil.checkArgument;
 
-import java.util.List;
 import java.util.Objects;
 
 import seedu.address.commons.core.index.Index;
@@ -37,11 +36,8 @@ public class ContactCommand extends Command {
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
-        List<Person> persons = model.getFilteredPersonList();
-        if (index.getZeroBased() >= persons.size()) {
-            throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
-        }
-        Person original = persons.get(index.getZeroBased());
+        Person original = getVisiblePersonAtIndex(model, index,
+                Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
         Person updated = original.withContactPreferences(channel, timing);
         model.setPerson(original, updated);
         return new CommandResult(String.format(MESSAGE_SUCCESS, original.getName().fullName));
