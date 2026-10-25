@@ -198,6 +198,29 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_storageFailure_preservesFilteredList() throws Exception {
+        model.addPerson(AMY);
+        model.addPerson(BOB);
+        logic.execute("find Amy");
+
+        JsonClientBookStorage clientBookStorage = new JsonClientBookStorage(
+                temporaryFolder.resolve("ExceptionClientBook.json")) {
+            @Override
+            public void saveClientBook(ReadOnlyClientBook clientBook) throws IOException {
+                throw DUMMY_IO_EXCEPTION;
+            }
+        };
+        logic = new LogicManager(model, new StorageManager(clientBookStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("ExceptionUserPrefs.json"))));
+
+        String addCommand = "add r/Client n/Test User e/test@example.com p/91234567";
+        assertThrows(CommandException.class, () -> logic.execute(addCommand));
+
+        assertEquals(List.of(AMY), logic.getFilteredPersonList());
+        assertEquals(List.of(AMY, BOB), model.getClientBook().getPersonList());
+    }
+
+    @Test
     public void execute_restoreSavesPrimaryFileOnce() throws Exception {
         Path primaryFile = temporaryFolder.resolve("clientbook.json");
         Path backupFile = primaryFile.resolveSibling(BackupCommand.BACKUP_FILE_NAME);
@@ -301,9 +324,7 @@ public class LogicManagerTest {
 
         // Triggers the saveClientBook method by executing an add command
         String addCommand = AddCommand.COMMAND_WORD + " r/Prospect" + NAME_DESC_AMY + EMAIL_DESC_AMY + PHONE_DESC_AMY;
-        Person expectedPerson = new Person(AMY.getName(), AMY.getPhone(), AMY.getEmail(), Relationship.PROSPECT);
         ModelManager expectedModel = new ModelManager();
-        expectedModel.addPerson(expectedPerson);
         assertCommandFailure(addCommand, CommandException.class, expectedMessage, expectedModel);
     }
 }
