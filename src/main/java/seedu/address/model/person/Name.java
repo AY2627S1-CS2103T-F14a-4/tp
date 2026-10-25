@@ -12,7 +12,9 @@ import java.util.regex.Pattern;
 public class Name {
 
     public static final String MESSAGE_BLANK = "Name cannot be blank.";
-    public static final String MESSAGE_INVALID_CHARACTERS = "The name contains invalid characters.";
+    public static final String MESSAGE_INVALID_CHARACTERS = "The name contains invalid characters. "
+            + "A name may contain only letters, spaces, hyphens (-), apostrophes ('), "
+            + "and the relationship markers s/o, d/o, or w/o.";
     public static final String MESSAGE_LENGTH = "The name must not exceed 100 characters.";
 
     private static final int MAX_NAME_LENGTH = 100;
