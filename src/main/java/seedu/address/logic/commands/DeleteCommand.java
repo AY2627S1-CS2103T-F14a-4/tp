@@ -7,6 +7,7 @@ import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
 import seedu.address.model.person.Person;
+import seedu.address.storage.Storage;
 
 /**
  * Deletes a client or prospect identified using its displayed index from the client list.
@@ -30,7 +31,7 @@ public class DeleteCommand extends Command {
     }
 
     @Override
-    public CommandResult execute(Model model) throws CommandException {
+    public CommandResult execute(Model model, Storage storage) throws CommandException {
         requireNonNull(model);
         String invalidIndexMessage = String.format(MESSAGE_INVALID_INDEX, targetIndex.getOneBased());
         Person personToDelete = getVisiblePersonAtIndex(model, targetIndex, invalidIndexMessage);

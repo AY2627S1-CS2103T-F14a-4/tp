@@ -12,6 +12,7 @@ import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
 import seedu.address.model.person.Person;
 import seedu.address.model.tag.Tag;
+import seedu.address.storage.Storage;
 
 /** Adds one or more tags to a person in the currently displayed list. */
 public class TagCommand extends Command {
@@ -33,7 +34,7 @@ public class TagCommand extends Command {
     }
 
     @Override
-    public CommandResult execute(Model model) throws CommandException {
+    public CommandResult execute(Model model, Storage storage) throws CommandException {
         requireAllNonNull(model);
         Person personToTag = getVisiblePersonAtIndex(model, index,
                 Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);

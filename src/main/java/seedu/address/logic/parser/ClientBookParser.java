@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.commands.AddCommand;
+import seedu.address.logic.commands.BackupCommand;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.Command;
 import seedu.address.logic.commands.ContactCommand;
@@ -25,6 +26,7 @@ import seedu.address.logic.commands.NextCommand;
 import seedu.address.logic.commands.NoteCommand;
 import seedu.address.logic.commands.NoteDeleteCommand;
 import seedu.address.logic.commands.NoteEditCommand;
+import seedu.address.logic.commands.RestoreCommand;
 import seedu.address.logic.commands.TagCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 
@@ -70,6 +72,12 @@ public class ClientBookParser {
         return switch (commandWord) {
             case ContactCommand.COMMAND_WORD -> new ContactCommandParser().parse(arguments);
             case AddCommand.COMMAND_WORD -> new AddCommandParser().parse(arguments);
+            case BackupCommand.COMMAND_WORD -> {
+                if (!arguments.isBlank()) {
+                    throw new ParseException("The backup command takes no arguments.");
+                }
+                yield new BackupCommand();
+            }
             case EditCommand.COMMAND_WORD -> new EditCommandParser().parse(arguments);
             case DeleteCommand.COMMAND_WORD -> new DeleteCommandParser().parse(arguments);
             case DoneCommand.COMMAND_WORD -> new DoneCommandParser().parse(arguments);
@@ -86,6 +94,12 @@ public class ClientBookParser {
             case NoteCommand.COMMAND_WORD -> new NoteCommandParser().parse(arguments);
             case NoteDeleteCommand.COMMAND_WORD -> new NoteDeleteCommandParser().parse(arguments);
             case NoteEditCommand.COMMAND_WORD -> new NoteEditCommandParser().parse(arguments);
+            case RestoreCommand.COMMAND_WORD -> {
+                if (!arguments.isBlank()) {
+                    throw new ParseException("The restore command takes no arguments.");
+                }
+                yield new RestoreCommand();
+            }
             case TagCommand.COMMAND_WORD -> new TagCommandParser().parse(arguments);
             case ExitCommand.COMMAND_WORD -> new ExitCommand();
             case HelpCommand.COMMAND_WORD -> new HelpCommand();

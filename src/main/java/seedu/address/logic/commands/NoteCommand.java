@@ -11,6 +11,7 @@ import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
 import seedu.address.model.person.InteractionNote;
 import seedu.address.model.person.Person;
+import seedu.address.storage.Storage;
 
 /** Appends a dated note to a person in the currently displayed list. */
 public class NoteCommand extends Command {
@@ -29,7 +30,7 @@ public class NoteCommand extends Command {
     }
 
     @Override
-    public CommandResult execute(Model model) throws CommandException {
+    public CommandResult execute(Model model, Storage storage) throws CommandException {
         requireAllNonNull(model);
         Person original = getVisiblePersonAtIndex(model, index,
                 Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);

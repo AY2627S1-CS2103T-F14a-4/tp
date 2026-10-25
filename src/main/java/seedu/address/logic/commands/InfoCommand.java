@@ -13,6 +13,7 @@ import seedu.address.model.person.AreaOfInterest;
 import seedu.address.model.person.FinancialNeed;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Priority;
+import seedu.address.storage.Storage;
 
 /** Updates financial information for a person in the displayed list. */
 public class InfoCommand extends Command {
@@ -32,7 +33,7 @@ public class InfoCommand extends Command {
     }
 
     @Override
-    public CommandResult execute(Model model) throws CommandException {
+    public CommandResult execute(Model model, Storage storage) throws CommandException {
         requireNonNull(model);
         String invalidIndexMessage = String.format(MESSAGE_INVALID_INDEX, index.getOneBased());
         Person original = getVisiblePersonAtIndex(model, index, invalidIndexMessage);

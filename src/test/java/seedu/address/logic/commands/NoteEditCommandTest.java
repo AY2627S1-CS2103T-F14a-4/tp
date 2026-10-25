@@ -47,7 +47,7 @@ public class NoteEditCommandTest {
         model.setPerson(model.getFilteredPersonList().get(0), original);
 
         CommandResult result = new NoteEditCommand(INDEX_FIRST_PERSON, INDEX_SECOND_PERSON, " Updated ")
-                .execute(model);
+                .execute(model, null);
 
         Person expected = new PersonBuilder(original).withInteractionNotes(NOTE,
                 new InteractionNote(NOTE.getDate(), "Updated"), NOTE).build();
@@ -66,6 +66,7 @@ public class NoteEditCommandTest {
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
 
         new NoteEditCommand(INDEX_SECOND_PERSON, INDEX_FIRST_PERSON, "Updated").execute(model);
+        new NoteEditCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON, "Updated").execute(model, null);
 
         assertEquals(1, model.getFilteredPersonList().size());
         assertEquals(new PersonBuilder(original).withInteractionNotes(

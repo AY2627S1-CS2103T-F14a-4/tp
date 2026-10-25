@@ -15,12 +15,14 @@ import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import seedu.address.logic.commands.AddCommand;
+import seedu.address.logic.commands.BackupCommand;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.ListCommand;
@@ -193,6 +195,27 @@ public class LogicManagerTest {
     public void execute_storageThrowsAdException_throwsCommandException() {
         assertCommandFailureForExceptionFromStorage(DUMMY_AD_EXCEPTION, String.format(
                 LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, DUMMY_AD_EXCEPTION.getMessage()));
+    }
+
+    @Test
+    public void execute_restoreSavesPrimaryFileOnce() throws Exception {
+        Path primaryFile = temporaryFolder.resolve("clientbook.json");
+        Path backupFile = primaryFile.resolveSibling(BackupCommand.BACKUP_FILE_NAME);
+        new JsonClientBookStorage(backupFile).saveClientBook(new ModelManager().getClientBook());
+        AtomicInteger saveAttempts = new AtomicInteger();
+        StorageManager storage = new StorageManager(new JsonClientBookStorage(primaryFile),
+                new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"))) {
+            @Override
+            public void saveClientBook(ReadOnlyClientBook clientBook) throws IOException {
+                saveAttempts.incrementAndGet();
+                super.saveClientBook(clientBook);
+            }
+        };
+        logic = new LogicManager(model, storage);
+
+        logic.execute("restore");
+
+        assertEquals(1, saveAttempts.get());
     }
 
     @Test

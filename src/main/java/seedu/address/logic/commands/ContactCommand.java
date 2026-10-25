@@ -12,6 +12,7 @@ import seedu.address.model.Model;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.PreferredContactChannel;
 import seedu.address.model.person.PreferredContactTiming;
+import seedu.address.storage.Storage;
 
 /** Updates contact preferences for a person in the currently displayed list. */
 public class ContactCommand extends Command {
@@ -34,7 +35,7 @@ public class ContactCommand extends Command {
     }
 
     @Override
-    public CommandResult execute(Model model) throws CommandException {
+    public CommandResult execute(Model model, Storage storage) throws CommandException {
         requireNonNull(model);
         Person original = getVisiblePersonAtIndex(model, index,
                 Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);

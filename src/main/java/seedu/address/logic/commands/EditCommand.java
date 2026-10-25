@@ -21,6 +21,7 @@ import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
 import seedu.address.model.person.Relationship;
+import seedu.address.storage.Storage;
 
 /**
  * Edits the details of an existing person in the client book.
@@ -61,7 +62,7 @@ public class EditCommand extends Command {
     }
 
     @Override
-    public CommandResult execute(Model model) throws CommandException {
+    public CommandResult execute(Model model, Storage storage) throws CommandException {
         requireNonNull(model);
         Person personToEdit = getVisiblePersonAtIndex(model, index,
                 Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);

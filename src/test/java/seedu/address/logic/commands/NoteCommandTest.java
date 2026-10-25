@@ -35,10 +35,10 @@ public class NoteCommandTest {
         InteractionNote note = new InteractionNote(LocalDate.of(2000, 1, 1), "Discussed retirement");
         Command command = parser.parseCommand("note 1 d/2000-01-01 n/Discussed retirement");
         assertEquals("Added interaction note for " + original.getName().fullName + ".",
-                command.execute(model).getFeedbackToUser());
+                command.execute(model, null).getFeedbackToUser());
         assertEquals(new PersonBuilder(original).withInteractionNotes(note).build(),
                 model.getFilteredPersonList().get(0));
-        command.execute(model);
+        command.execute(model, null);
         assertEquals(List.of(note, note), model.getFilteredPersonList().get(0).getInteractionNotes());
     }
 
@@ -51,7 +51,7 @@ public class NoteCommandTest {
                 .withPriority("High").withAreaOfInterest("Insurance").withInteractionNotes(existing).build();
         model.setPerson(model.getFilteredPersonList().get(0), original);
 
-        new NoteCommand(INDEX_FIRST_PERSON, backdated).execute(model);
+        new NoteCommand(INDEX_FIRST_PERSON, backdated).execute(model, null);
 
         assertEquals(new PersonBuilder(original).withInteractionNotes(existing, backdated).build(),
                 model.getFilteredPersonList().get(0));
@@ -62,7 +62,7 @@ public class NoteCommandTest {
         Person first = model.getFilteredPersonList().get(0);
         Person target = model.getFilteredPersonList().get(1);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
-        parser.parseCommand("note 2 d/2000-01-01 n/Called").execute(model);
+        parser.parseCommand("note 1 d/2000-01-01 n/Called").execute(model, null);
         assertEquals(first, model.getClientBook().getPersonList().get(0));
         assertEquals(target.getName(), model.getFilteredPersonList().get(0).getName());
         assertEquals(1, model.getFilteredPersonList().size());
@@ -81,12 +81,12 @@ public class NoteCommandTest {
 
     @Test
     public void execute_editAndInfo_preserveNotes() throws Exception {
-        parser.parseCommand("note 1 d/2000-01-01 n/Called").execute(model);
+        parser.parseCommand("note 1 d/2000-01-01 n/Called").execute(model, null);
         List<InteractionNote> notes = model.getFilteredPersonList().get(0).getInteractionNotes();
-        parser.parseCommand("edit 1 p/81234567").execute(model);
+        parser.parseCommand("edit 1 p/81234567").execute(model, null);
         assertEquals(notes, model.getFilteredPersonList().get(0).getInteractionNotes());
         assertEquals("81234567", model.getFilteredPersonList().get(0).getPhone().value);
-        parser.parseCommand("info 1 /fn Retirement").execute(model);
+        parser.parseCommand("info 1 /fn Retirement").execute(model, null);
         assertEquals(notes, model.getFilteredPersonList().get(0).getInteractionNotes());
         assertEquals("Retirement", model.getFilteredPersonList().get(0).getFinancialNeed().orElseThrow().value);
     }

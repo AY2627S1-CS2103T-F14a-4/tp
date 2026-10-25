@@ -56,6 +56,7 @@ public class DoneCommandTest {
         model.setPerson(model.getFilteredPersonList().get(1), second);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
 
+        new DoneCommand(INDEX_FIRST_PERSON).execute(model, null);
         new DoneCommand(INDEX_SECOND_PERSON).execute(model);
 
         assertEquals(first, model.getClientBook().getPersonList().getFirst());
@@ -89,7 +90,7 @@ public class DoneCommandTest {
         Person original = model.getFilteredPersonList().getFirst();
         model.setPerson(original, original.withNextAction(ACTION));
         DoneCommand command = new DoneCommand(INDEX_FIRST_PERSON);
-        command.execute(model);
+        command.execute(model, null);
         Person completed = model.getFilteredPersonList().getFirst();
         Model expectedModel = new ModelManager(model.getClientBook(), new UserPrefs());
 
