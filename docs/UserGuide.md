@@ -92,9 +92,9 @@ Format: `add r/RELATIONSHIP n/NAME e/EMAIL p/PHONE_NUMBER [t/TAG]...`
 * `EMAIL` must contain one `@`, no whitespace, text in both the local and domain parts, and at least one dot in the
   domain. Its local part may use common characters such as `.`, `_`, `+`, and `-`; each domain label may use
   letters, digits, and hyphens.
-* Each phone number must contain 8 to 15 digits, excluding an optional leading `+`. Spaces, hyphens, parentheses,
-  and periods may separate digits. You can record multiple numbers in one value by separating them with labels, for
-  example, `home: 92849584 ph: 02848594`.
+* Each phone number must contain 8 to 15 digits, excluding an optional leading `+`, following the E.164 international
+  maximum. Spaces, hyphens, parentheses, and periods may separate digits. You can record multiple numbers in one
+  value by separating them with labels, for example, `home: 92849584 ph: 02848594`.
 * Email addresses and phone numbers must be unique. Email comparison ignores casing in the domain, so
   `alice@example.com` and `alice@EXAMPLE.COM` are duplicates; the local part remains case-sensitive. Phone-number
   comparison ignores formatting and compares each complete numeric sequence, so `9999 9999` and `99999999` are
