@@ -198,6 +198,24 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_readOnlyCommand_doesNotSaveClientBook() throws Exception {
+        AtomicInteger saveAttempts = new AtomicInteger();
+        JsonClientBookStorage clientBookStorage = new JsonClientBookStorage(
+                temporaryFolder.resolve("ExceptionClientBook.json")) {
+            @Override
+            public void saveClientBook(ReadOnlyClientBook clientBook) throws IOException {
+                saveAttempts.incrementAndGet();
+                throw DUMMY_IO_EXCEPTION;
+            }
+        };
+        logic = new LogicManager(model, new StorageManager(clientBookStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("ExceptionUserPrefs.json"))));
+
+        assertEquals(new CommandResult(ListCommand.MESSAGE_SUCCESS), logic.execute(ListCommand.COMMAND_WORD));
+        assertEquals(0, saveAttempts.get());
+    }
+
+    @Test
     public void execute_storageFailure_preservesFilteredList() throws Exception {
         model.addPerson(AMY);
         model.addPerson(BOB);

@@ -52,7 +52,7 @@ public class LogicManager implements Logic {
         List<Person> filteredPersonsBeforeCommand = List.copyOf(model.getFilteredPersonList());
         CommandResult commandResult = command.execute(model, storage);
 
-        if (!commandResult.isModelSaved()) {
+        if (!commandResult.isModelSaved() && !model.getClientBook().equals(clientBookBeforeCommand)) {
             try {
                 storage.saveClientBook(model.getClientBook());
             } catch (AccessDeniedException e) {

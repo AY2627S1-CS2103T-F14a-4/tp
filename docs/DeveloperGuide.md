@@ -114,6 +114,11 @@ How the `Logic` component works:
    Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
 4. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
+`LogicManager` saves the client book only when a command changes its records. Read-only commands, such as `list`,
+`find`, and `due`, update the displayed view from memory without writing to storage. Before saving a changed client
+book, `LogicManager` keeps a copy of the previous records and filtered view. If saving fails, it restores both so the
+application does not display a change that will be lost after restart.
+
 The sequence diagram below shows the corresponding flow for an `edit` command.
 
 <puml src="diagrams/EditSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the edit command" />
