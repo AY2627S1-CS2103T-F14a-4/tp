@@ -13,6 +13,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.commands.FindCommand;
+import seedu.address.model.person.Name;
 import seedu.address.model.person.PersonMatchesFiltersPredicate;
 import seedu.address.model.person.Relationship;
 import seedu.address.model.tag.Tag;
@@ -36,6 +37,13 @@ public class FindCommandParserTest {
 
         // multiple whitespaces between keywords
         assertParseSuccess(parser, " \n Alice \n \t Bob  \t", expectedFindCommand);
+    }
+
+    @Test
+    public void parse_nonAlphabeticalNameKeywords_throwsParseException() {
+        assertParseFailure(parser, "1", Name.MESSAGE_INVALID_CHARACTERS);
+        assertParseFailure(parser, "Alice1", Name.MESSAGE_INVALID_CHARACTERS);
+        assertParseFailure(parser, "Alice Bob2 r/client", Name.MESSAGE_INVALID_CHARACTERS);
     }
 
     @Test

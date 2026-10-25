@@ -293,6 +293,8 @@ Finds persons using any combination of name keywords, relationship and tags.
 Format: `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...]]`
 
 * Every filter is optional, but at least one name keyword, relationship or tag must be provided.
+* Name keywords follow the same character rules as `NAME`: digits are not allowed. Letters, spaces, hyphens (`-`),
+  apostrophes (`'`), and the relationship markers `s/o`, `d/o`, or `w/o` are accepted.
 * Name keywords, relationship values and tags are case-insensitive; for example, `hans` matches `Hans`, and `client`
   matches `Client`.
 * Keyword order does not matter; for example, `Hans Bo` matches `Bo Hans`.

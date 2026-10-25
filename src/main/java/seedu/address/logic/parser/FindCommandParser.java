@@ -38,10 +38,18 @@ public class FindCommandParser implements Parser<FindCommand> {
         Optional<Relationship> relationship = relationshipValue.isEmpty()
                 ? Optional.empty() : Optional.of(ParserUtil.parseRelationship(relationshipValue.get()));
         String nameKeywordsValue = argumentMultimap.getPreamble();
-        List<String> nameKeywords = nameKeywordsValue.isEmpty()
-                ? List.of() : List.of(nameKeywordsValue.split("\\s+"));
+        List<String> nameKeywords = parseNameKeywords(nameKeywordsValue);
         List<String> tagKeywords = parseTagKeywords(argumentMultimap.getValue(PREFIX_TAG));
         return new FindCommand(new PersonMatchesFiltersPredicate(nameKeywords, relationship, tagKeywords));
+    }
+
+    private static List<String> parseNameKeywords(String nameKeywordsValue) throws ParseException {
+        if (nameKeywordsValue.isEmpty()) {
+            return List.of();
+        }
+        String normalizedNameKeywords = String.join(" ", nameKeywordsValue.split("\\s+"));
+        String validatedNameKeywords = ParserUtil.parseName(normalizedNameKeywords).toString();
+        return List.of(validatedNameKeywords.split("\\s+"));
     }
 
     private static List<String> parseTagKeywords(Optional<String> tagValue) throws ParseException {
