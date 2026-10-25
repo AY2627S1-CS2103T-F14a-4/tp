@@ -223,15 +223,15 @@ public class PersonCardTest {
                 assertEquals("2. " + backdated, ((Label) notes.getChildren().get(2)).getText());
                 assertEquals("3. " + duplicate, ((Label) notes.getChildren().get(3)).getText());
 
-                new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON).execute(model);
+                new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON).execute(model, null);
                 root.layout();
                 notes = (VBox) displayedCell(list, 0).getGraphic().lookup("#interactionNotes");
                 assertEquals(3, notes.getChildren().size());
                 assertEquals("1. " + backdated, ((Label) notes.getChildren().get(1)).getText());
                 assertEquals("2. " + duplicate, ((Label) notes.getChildren().get(2)).getText());
 
-                new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON).execute(model);
-                new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON).execute(model);
+                new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON).execute(model, null);
+                new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON).execute(model, null);
                 root.layout();
                 notes = (VBox) displayedCell(list, 0).getGraphic().lookup("#interactionNotes");
                 assertFalse(notes.isVisible());
@@ -286,7 +286,7 @@ public class PersonCardTest {
                 double compactHeight = displayedCell(list, 1).getHeight();
 
                 new NoteCommand(INDEX_FIRST_PERSON, new InteractionNote(LocalDate.of(2026, 10, 6),
-                        "Discussed retirement planning and investment options.")).execute(model);
+                        "Discussed retirement planning and investment options.")).execute(model, null);
                 root.layout();
                 ListCell<?> first = displayedCell(list, 0);
                 double firstNoteHeight = first.getHeight();
@@ -295,7 +295,7 @@ public class PersonCardTest {
                 assertTrue(displayedCell(list, 1).getBoundsInParent().getMaxY() < list.getHeight());
 
                 new NoteCommand(INDEX_FIRST_PERSON,
-                        new InteractionNote(LocalDate.of(2026, 10, 6), "Second note")).execute(model);
+                        new InteractionNote(LocalDate.of(2026, 10, 6), "Second note")).execute(model, null);
                 root.layout();
                 first = displayedCell(list, 0);
                 assertTrue(first.getHeight() > firstNoteHeight);
@@ -303,7 +303,7 @@ public class PersonCardTest {
 
                 double shortNotesHeight = first.getHeight();
                 new NoteCommand(INDEX_FIRST_PERSON, new InteractionNote(LocalDate.of(2026, 10, 6),
-                        "Long wrapped interaction note with realistic detail. ".repeat(80))).execute(model);
+                        "Long wrapped interaction note with realistic detail. ".repeat(80))).execute(model, null);
                 root.layout();
                 first = displayedCell(list, 0);
                 assertTrue(first.getHeight() > shortNotesHeight);

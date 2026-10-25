@@ -51,7 +51,7 @@ public class DueCommandTest {
     public void execute_mixedActions_showsOnlyDuePeopleInOriginalOrder() throws Exception {
         List<Person> originalPeople = List.copyOf(model.getClientBook().getPersonList());
 
-        CommandResult result = command.execute(model);
+        CommandResult result = command.execute(model, null);
 
         assertEquals(List.of(DUE_TODAY, DUE_YESTERDAY), model.getFilteredPersonList());
         assertEquals("2 follow-up(s) due today or earlier.", result.getFeedbackToUser());
@@ -63,9 +63,9 @@ public class DueCommandTest {
         Model noDueModel = new ModelManager(new ClientBookBuilder().withPerson(DUE_TOMORROW)
                 .withPerson(COMPLETED).withPerson(NO_ACTION).build(), new UserPrefs());
 
-        assertEquals("No follow-ups are due.", command.execute(noDueModel).getFeedbackToUser());
+        assertEquals("No follow-ups are due.", command.execute(noDueModel, null).getFeedbackToUser());
         assertTrue(noDueModel.getFilteredPersonList().isEmpty());
-        assertEquals("No follow-ups are due.", command.execute(new ModelManager()).getFeedbackToUser());
+        assertEquals("No follow-ups are due.", command.execute(new ModelManager(), null).getFeedbackToUser());
     }
 
     @Test
@@ -73,24 +73,24 @@ public class DueCommandTest {
         Model singleDueModel = new ModelManager(new ClientBookBuilder().withPerson(DUE_TODAY).build(),
                 new UserPrefs());
 
-        assertEquals("1 follow-up(s) due today or earlier.", command.execute(singleDueModel).getFeedbackToUser());
+        assertEquals("1 follow-up(s) due today or earlier.", command.execute(singleDueModel, null).getFeedbackToUser());
     }
 
     @Test
     public void execute_previousFindFilter_replacesFilter() throws Exception {
-        new FindCommand(new NameContainsKeywordsPredicate(List.of("Tomorrow"))).execute(model);
+        new FindCommand(new NameContainsKeywordsPredicate(List.of("Tomorrow"))).execute(model, null);
         assertEquals(List.of(DUE_TOMORROW), model.getFilteredPersonList());
 
-        command.execute(model);
+        command.execute(model, null);
 
         assertEquals(List.of(DUE_TODAY, DUE_YESTERDAY), model.getFilteredPersonList());
     }
 
     @Test
     public void execute_doneAfterDue_removesCompletedPersonFromDisplayedList() throws Exception {
-        command.execute(model);
+        command.execute(model, null);
 
-        new DoneCommand(INDEX_FIRST_PERSON).execute(model);
+        new DoneCommand(INDEX_FIRST_PERSON).execute(model, null);
 
         assertEquals(List.of(DUE_YESTERDAY), model.getFilteredPersonList());
         Person completedPerson = model.getClientBook().getPersonList().getFirst();
@@ -104,7 +104,7 @@ public class DueCommandTest {
         DueCommand laterCommand = new DueCommand(Clock.fixed(Instant.parse("2026-10-20T16:30:00Z"),
                 CLOCK.getZone()));
 
-        assertEquals("3 follow-up(s) due today or earlier.", laterCommand.execute(model).getFeedbackToUser());
+        assertEquals("3 follow-up(s) due today or earlier.", laterCommand.execute(model, null).getFeedbackToUser());
         assertEquals(List.of(DUE_TODAY, DUE_TOMORROW, DUE_YESTERDAY), model.getFilteredPersonList());
     }
 

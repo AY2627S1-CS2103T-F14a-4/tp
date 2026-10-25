@@ -2,6 +2,7 @@ package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 
+import java.io.IOException;
 import java.nio.file.Path;
 
 import seedu.address.commons.exceptions.DataLoadingException;
@@ -17,13 +18,11 @@ public class RestoreCommand extends Command {
     public static final String MESSAGE_SUCCESS = "Records restored from %s.";
     public static final String MESSAGE_FILE_NOT_FOUND = "Backup file does not exist: %s";
     public static final String MESSAGE_FAILURE = "Could not restore backup: %s";
-    public static final Path BACKUP_FILE_PATH = BackupCommand.BACKUP_FILE_PATH;
-
     private final Path backupFilePath;
 
     /** Creates a command that restores records from the default backup file. */
     public RestoreCommand() {
-        this(BACKUP_FILE_PATH);
+        backupFilePath = null;
     }
 
     RestoreCommand(Path backupFilePath) {
@@ -34,21 +33,26 @@ public class RestoreCommand extends Command {
     public CommandResult execute(Model model, Storage storage) throws CommandException {
         requireNonNull(model);
         requireNonNull(storage);
+        Path resolvedBackupFilePath = backupFilePath == null
+                ? storage.getClientBookFilePath().resolveSibling(BackupCommand.BACKUP_FILE_NAME) : backupFilePath;
         try {
-            ReadOnlyClientBook restoredClientBook = storage.readClientBook(backupFilePath)
+            ReadOnlyClientBook restoredClientBook = storage.readClientBook(resolvedBackupFilePath)
                     .orElseThrow(() -> new CommandException(
-                            String.format(MESSAGE_FILE_NOT_FOUND, backupFilePath)));
+                            String.format(MESSAGE_FILE_NOT_FOUND, resolvedBackupFilePath)));
+            storage.saveClientBook(restoredClientBook);
             model.setClientBook(restoredClientBook);
             model.updateFilteredPersonList(Model.PREDICATE_SHOW_ALL_PERSONS);
-            return new CommandResult(String.format(MESSAGE_SUCCESS, backupFilePath));
+            return new CommandResult(String.format(MESSAGE_SUCCESS, resolvedBackupFilePath), false, false, true);
         } catch (DataLoadingException exception) {
             throw new CommandException(String.format(MESSAGE_FAILURE, exception.getCause().getMessage()), exception);
+        } catch (IOException exception) {
+            throw new CommandException(String.format(MESSAGE_FAILURE, exception.getMessage()), exception);
         }
     }
 
     @Override
     public boolean equals(Object other) {
         return other == this || other instanceof RestoreCommand command
-                && backupFilePath.equals(command.backupFilePath);
+                && java.util.Objects.equals(backupFilePath, command.backupFilePath);
     }
 }
