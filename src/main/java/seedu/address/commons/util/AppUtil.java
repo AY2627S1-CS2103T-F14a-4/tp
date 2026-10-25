@@ -2,6 +2,10 @@ package seedu.address.commons.util;
 
 import static java.util.Objects.requireNonNull;
 
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import javafx.scene.image.Image;
 import seedu.address.MainApp;
 
@@ -38,5 +42,18 @@ public class AppUtil {
         if (!condition) {
             throw new IllegalArgumentException(errorMessage);
         }
+    }
+
+    /**
+     * Returns the directory containing the application JAR, or the classes directory when running from an IDE.
+     */
+    public static Path getApplicationDirectory() throws URISyntaxException {
+        Path applicationLocation = Path.of(MainApp.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+        return getApplicationDirectory(applicationLocation);
+    }
+
+    static Path getApplicationDirectory(Path applicationLocation) {
+        requireNonNull(applicationLocation);
+        return Files.isRegularFile(applicationLocation) ? applicationLocation.getParent() : applicationLocation;
     }
 }
