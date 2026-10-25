@@ -91,7 +91,7 @@ Format: `add r/RELATIONSHIP n/NAME e/EMAIL p/PHONE_NUMBER [t/TAG]...`
   spaces, hyphens (`-`), apostrophes (`'`), and the relationship markers `s/o`, `d/o`, or `w/o`.
 * `EMAIL` must contain one `@`, no whitespace, text in both the local and domain parts, and at least one dot in the
   domain. Its local part may use common characters such as `.`, `_`, `+`, and `-`; each domain label may use
-  letters, digits, and hyphens.
+  letters, digits, and hyphens, and cannot exceed 63 characters.
 * Each phone number must contain 8 to 15 digits, excluding an optional leading `+`, following the E.164 international
   maximum. Spaces, hyphens, parentheses, and periods may separate digits. You can record multiple numbers in one
   value by separating them with labels, for example, `home: 92849584 ph: 02848594`.
@@ -144,6 +144,7 @@ Format: `edit INDEX [r/RELATIONSHIP] [n/NAME] [p/PHONE] [e/EMAIL]`
 * At least one of the optional fields must be provided.
 * Existing values will be updated to the input values.
 * `RELATIONSHIP` must be either `Client` or `Prospect`.
+* `EMAIL` must meet the same format requirements as `add`, including a maximum of 63 characters for each domain label.
 * The edited email address and phone number must not duplicate those of another contact. Phone numbers use the same
   formatting-insensitive, multiple-number comparison as `add`; for example, `9999 9999` and `99999999` conflict.
   Email-domain casing is also ignored, so `alice@example.com` conflicts with `alice@EXAMPLE.COM`.

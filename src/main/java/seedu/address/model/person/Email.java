@@ -29,9 +29,11 @@ public class Email {
             "The domain must contain at least one dot.";
     public static final String MESSAGE_DOMAIN_LABEL =
             "Each domain label must use letters, digits, or hyphens, and cannot start or end with a hyphen.";
+    public static final String MESSAGE_DOMAIN_LABEL_LENGTH = "Each domain label cannot exceed 63 characters.";
 
     private static final int MIN_EMAIL_LENGTH = 5;
     private static final int MAX_EMAIL_LENGTH = 254;
+    private static final int MAX_DOMAIN_LABEL_LENGTH = 63;
     private static final Pattern LOCAL_PART_PATTERN =
             Pattern.compile("[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+");
     private static final Pattern DOMAIN_LABEL_PATTERN =
@@ -101,6 +103,9 @@ public class Email {
         for (String domainLabel : domainLabels) {
             if (domainLabel.isEmpty()) {
                 return MESSAGE_DOMAIN_EMPTY_LABEL;
+            }
+            if (domainLabel.length() > MAX_DOMAIN_LABEL_LENGTH) {
+                return MESSAGE_DOMAIN_LABEL_LENGTH;
             }
             if (!DOMAIN_LABEL_PATTERN.matcher(domainLabel).matches()) {
                 return MESSAGE_DOMAIN_LABEL;

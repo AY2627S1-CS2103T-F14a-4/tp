@@ -54,6 +54,7 @@ public class EmailTest {
         assertFalse(Email.isValidEmail("a@")); // fewer than 5 characters
         assertFalse(Email.isValidEmail("a@b")); // fewer than 5 characters
         assertFalse(Email.isValidEmail("a".repeat(255) + "@b")); // more than 254 characters
+        assertFalse(Email.isValidEmail("a@" + "b".repeat(64) + ".com")); // domain label exceeds 63 characters
 
         // valid email
         assertTrue(Email.isValidEmail("PeterJack_1190@example.com")); // underscore in local part
@@ -65,6 +66,7 @@ public class EmailTest {
         assertTrue(Email.isValidEmail("123@145.678")); // numeric local part and domain name
         assertTrue(Email.isValidEmail("a1+be.d@example1.com")); // mixture of alphanumeric and special characters
         assertTrue(Email.isValidEmail("peter_jack@very-very-very-long-example.com")); // long domain name
+        assertTrue(Email.isValidEmail("a@" + "b".repeat(63) + ".com")); // domain label at 63-character limit
         assertTrue(Email.isValidEmail("if.you.dream.it_you.can.do.it@example.com")); // long local part
         assertTrue(Email.isValidEmail("e1234567@u.nus.edu")); // more than one period in domain
     }
@@ -80,6 +82,7 @@ public class EmailTest {
         assertEquals(Email.MESSAGE_LOCAL_PART_CHARACTERS, Email.getValidationError("a,b@example.com"));
         assertEquals(Email.MESSAGE_DOMAIN_DOT, Email.getValidationError("a@localhost"));
         assertEquals(Email.MESSAGE_DOMAIN_EMPTY_LABEL, Email.getValidationError("a@example..com"));
+        assertEquals(Email.MESSAGE_DOMAIN_LABEL_LENGTH, Email.getValidationError("a@" + "b".repeat(64) + ".com"));
         assertEquals(Email.MESSAGE_DOMAIN_LABEL, Email.getValidationError("a@-example.com"));
     }
 

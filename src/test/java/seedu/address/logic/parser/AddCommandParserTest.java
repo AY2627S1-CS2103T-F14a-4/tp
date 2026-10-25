@@ -85,4 +85,12 @@ public class AddCommandParserTest {
         assertParseFailure(parser, " r/Partner n/John Doe e/john.doe@example.com p/91234567",
                 Relationship.MESSAGE_CONSTRAINTS);
     }
+
+    @Test
+    public void parse_domainLabelExceeds63Characters_failure() {
+        String email = "john@" + "a".repeat(64) + ".com";
+
+        assertParseFailure(parser, " r/Client n/John Doe e/" + email + " p/91234567",
+                Email.MESSAGE_DOMAIN_LABEL_LENGTH);
+    }
 }
