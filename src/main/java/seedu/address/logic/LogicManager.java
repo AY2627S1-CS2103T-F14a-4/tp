@@ -75,8 +75,7 @@ public class LogicManager implements Logic {
     }
 
     private CommandResult executeCommand(Command command) throws CommandException {
-        CommandResult commandResult = command.execute(model);
-        commandResult = command.execute(model, storage);
+        CommandResult commandResult = command.execute(model, storage);
 
         if (!commandResult.isModelSaved()) {
             try {

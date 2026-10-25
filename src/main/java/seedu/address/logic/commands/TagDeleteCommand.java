@@ -13,6 +13,7 @@ import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
 import seedu.address.model.person.Person;
 import seedu.address.model.tag.Tag;
+import seedu.address.storage.Storage;
 
 /** Deletes all or selected tags from a person in the currently displayed list. */
 public class TagDeleteCommand extends Command {
@@ -53,7 +54,7 @@ public class TagDeleteCommand extends Command {
     }
 
     @Override
-    public CommandResult execute(Model model) throws CommandException {
+    public CommandResult execute(Model model, Storage storage) throws CommandException {
         Person personToUpdate = getValidatedPerson(model);
         Set<Tag> updatedTags = new HashSet<>(personToUpdate.getTags());
         if (tagsToDelete.isEmpty()) {

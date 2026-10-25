@@ -40,7 +40,7 @@ public class TagDeleteCommandTest {
     public void execute_noTagsSpecified_deletesAllTagsAndPreservesFields() throws Exception {
         Person original = model.getFilteredPersonList().get(1);
 
-        CommandResult result = new TagDeleteCommand(INDEX_SECOND_PERSON, Set.of()).execute(model);
+        CommandResult result = new TagDeleteCommand(INDEX_SECOND_PERSON, Set.of()).execute(model, null);
 
         assertEquals(new PersonBuilder(original).withTags().build(), model.getFilteredPersonList().get(1));
         assertEquals(String.format(TagDeleteCommand.MESSAGE_DELETE_ALL_SUCCESS, original.getName()),
@@ -54,7 +54,7 @@ public class TagDeleteCommandTest {
         model.setPerson(model.getFilteredPersonList().get(0), original);
         Set<Tag> tagsToDelete = Set.of(new Tag("FRIEND"), new Tag("referral"));
 
-        CommandResult result = new TagDeleteCommand(INDEX_FIRST_PERSON, tagsToDelete).execute(model);
+        CommandResult result = new TagDeleteCommand(INDEX_FIRST_PERSON, tagsToDelete).execute(model, null);
 
         assertEquals(new PersonBuilder(original).withTags("priority").build(), model.getFilteredPersonList().get(0));
         assertEquals(String.format(TagDeleteCommand.MESSAGE_DELETE_SELECTED_SUCCESS,
@@ -67,7 +67,7 @@ public class TagDeleteCommandTest {
         Person target = model.getFilteredPersonList().get(1);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
 
-        new TagDeleteCommand(INDEX_FIRST_PERSON, Set.of(new Tag("friends"))).execute(model);
+        new TagDeleteCommand(INDEX_FIRST_PERSON, Set.of(new Tag("friends"))).execute(model, null);
 
         assertEquals(untouched, model.getClientBook().getPersonList().get(0));
         assertEquals(new PersonBuilder(target).withTags("owesMoney").build(),
@@ -176,7 +176,7 @@ public class TagDeleteCommandTest {
         assertThrows(NullPointerException.class, () -> new TagDeleteCommand(null, Set.of()));
         assertThrows(NullPointerException.class, () -> new TagDeleteCommand(INDEX_FIRST_PERSON, null));
         assertThrows(NullPointerException.class, () ->
-                new TagDeleteCommand(INDEX_FIRST_PERSON, Set.of()).execute(null));
+                new TagDeleteCommand(INDEX_FIRST_PERSON, Set.of()).execute(null, null));
     }
 
     @Test
