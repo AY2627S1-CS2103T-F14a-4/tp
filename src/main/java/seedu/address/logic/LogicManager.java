@@ -2,6 +2,7 @@ package seedu.address.logic;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.util.List;
 import java.util.logging.Logger;
 
 import javafx.collections.ObservableList;
@@ -12,6 +13,7 @@ import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.ClientBookParser;
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.ClientBook;
 import seedu.address.model.Model;
 import seedu.address.model.person.Person;
 import seedu.address.storage.Storage;
@@ -44,21 +46,30 @@ public class LogicManager implements Logic {
     public CommandResult execute(String commandText) throws CommandException, ParseException {
         logger.info("----------------[USER COMMAND][" + commandText + "]");
 
-        CommandResult commandResult;
         Command command = clientBookParser.parseCommand(commandText);
-        commandResult = command.execute(model, storage);
+        ClientBook clientBookBeforeCommand = new ClientBook(model.getClientBook());
+        List<Person> filteredPersonsBeforeCommand = List.copyOf(model.getFilteredPersonList());
+        CommandResult commandResult = command.execute(model, storage);
 
         if (!commandResult.isModelSaved()) {
             try {
                 storage.saveClientBook(model.getClientBook());
             } catch (AccessDeniedException e) {
+                restoreModel(clientBookBeforeCommand, filteredPersonsBeforeCommand);
                 throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
             } catch (IOException ioe) {
+                restoreModel(clientBookBeforeCommand, filteredPersonsBeforeCommand);
                 throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
             }
         }
 
         return commandResult;
+    }
+
+    /** Restores the client book and the displayed records after a failed save. */
+    private void restoreModel(ClientBook clientBook, List<Person> filteredPersons) {
+        model.setClientBook(clientBook);
+        model.updateFilteredPersonList(filteredPersons::contains);
     }
 
     @Override
