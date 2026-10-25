@@ -56,8 +56,7 @@ public class DoneCommandTest {
         model.setPerson(model.getFilteredPersonList().get(1), second);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
 
-        new DoneCommand(INDEX_FIRST_PERSON).execute(model, null);
-        new DoneCommand(INDEX_SECOND_PERSON).execute(model);
+        new DoneCommand(INDEX_SECOND_PERSON).execute(model, null);
 
         assertEquals(first, model.getClientBook().getPersonList().getFirst());
         assertEquals(second.withNextAction(ACTION.markCompleted()), model.getFilteredPersonList().getFirst());

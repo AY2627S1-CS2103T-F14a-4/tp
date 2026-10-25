@@ -59,8 +59,7 @@ public class NextCommandTest {
         Person first = model.getFilteredPersonList().getFirst();
         Person second = model.getFilteredPersonList().get(1);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
-        new NextCommand(INDEX_FIRST_PERSON, ACTION).execute(model, null);
-        new NextCommand(INDEX_SECOND_PERSON, ACTION).execute(model);
+        new NextCommand(INDEX_SECOND_PERSON, ACTION).execute(model, null);
         assertEquals(first, model.getClientBook().getPersonList().getFirst());
         assertEquals(second.withNextAction(ACTION), model.getFilteredPersonList().getFirst());
         assertEquals(1, model.getFilteredPersonList().size());

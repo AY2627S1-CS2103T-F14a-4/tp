@@ -116,7 +116,7 @@ public class NoteDeleteCommandTest {
         model.setPerson(model.getFilteredPersonList().get(1), original);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
 
-        new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_SECOND_PERSON).execute(model, null);
+        new NoteDeleteCommand(INDEX_SECOND_PERSON, INDEX_SECOND_PERSON).execute(model, null);
 
         assertEquals(1, model.getFilteredPersonList().size());
         assertEquals(new PersonBuilder(original).withInteractionNotes(NOTE).build(),

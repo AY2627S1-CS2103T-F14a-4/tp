@@ -62,7 +62,7 @@ public class NoteCommandTest {
         Person first = model.getFilteredPersonList().get(0);
         Person target = model.getFilteredPersonList().get(1);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
-        parser.parseCommand("note 1 d/2000-01-01 n/Called").execute(model, null);
+        parser.parseCommand("note 2 d/2000-01-01 n/Called").execute(model, null);
         assertEquals(first, model.getClientBook().getPersonList().get(0));
         assertEquals(target.getName(), model.getFilteredPersonList().get(0).getName());
         assertEquals(1, model.getFilteredPersonList().size());
