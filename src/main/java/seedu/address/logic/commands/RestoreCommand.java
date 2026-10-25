@@ -42,7 +42,7 @@ public class RestoreCommand extends Command {
             storage.saveClientBook(restoredClientBook);
             model.setClientBook(restoredClientBook);
             model.updateFilteredPersonList(Model.PREDICATE_SHOW_ALL_PERSONS);
-            return new CommandResult(String.format(MESSAGE_SUCCESS, resolvedBackupFilePath));
+            return new CommandResult(String.format(MESSAGE_SUCCESS, resolvedBackupFilePath), false, false, true);
         } catch (DataLoadingException exception) {
             throw new CommandException(String.format(MESSAGE_FAILURE, exception.getCause().getMessage()), exception);
         } catch (IOException exception) {

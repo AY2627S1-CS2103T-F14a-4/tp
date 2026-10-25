@@ -34,7 +34,8 @@ public class RestoreCommandTest {
 
         CommandResult result = new RestoreCommand(backupFile).execute(model, createStorage());
 
-        assertEquals(new CommandResult(String.format(RestoreCommand.MESSAGE_SUCCESS, backupFile)), result);
+        assertEquals(new CommandResult(String.format(RestoreCommand.MESSAGE_SUCCESS, backupFile), false, false, true),
+                result);
         assertEquals(getTypicalClientBook(), model.getClientBook());
         assertEquals(getTypicalClientBook().getPersonList().size(), model.getFilteredPersonList().size());
     }

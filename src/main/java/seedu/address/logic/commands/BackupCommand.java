@@ -52,7 +52,7 @@ public class BackupCommand extends Command {
                 try {
                     Files.deleteIfExists(temporaryFilePath);
                 } catch (IOException ignored) {
-                    // The temporary file is cleaned up on a later backup attempt.
+                    // A failed cleanup does not affect the completed backup.
                 }
             }
         }
