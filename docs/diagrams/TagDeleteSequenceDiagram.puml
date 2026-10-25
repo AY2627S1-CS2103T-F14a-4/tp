@@ -1,0 +1,77 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box UI UI_COLOR_T1
+participant ":MainWindow" as Ui UI_COLOR
+end box
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as Logic LOGIC_COLOR
+participant ":ClientBookParser" as Parser LOGIC_COLOR
+participant "command:TagDeleteCommand" as Command LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "model:Model" as Model MODEL_COLOR
+participant "original:Person" as Person MODEL_COLOR
+end box
+
+box Storage STORAGE_COLOR_T1
+participant ":Storage" as Storage STORAGE_COLOR
+end box
+
+[-> Ui : executeCommand("tagdelete 1 friend referral")
+activate Ui
+Ui -> Logic : execute(commandText)
+activate Logic
+Logic -> Parser : parseCommand(commandText)
+Parser --> Logic : command
+Logic -> Command : validate(model)
+activate Command
+Command -> Model : getFilteredPersonList()
+Model --> Command : displayedPersons
+Command -> Person : getTags()
+Person --> Command : existingTags
+Command --> Logic : confirmation message with contact and tags
+deactivate Command
+note right of Logic : Store command as pendingTagDeleteCommand.
+Logic --> Ui : CommandResult
+deactivate Logic
+Ui -> Ui : display confirmation in result box
+[<-- Ui : CommandResult
+deactivate Ui
+
+[-> Ui : executeCommand("yes")
+activate Ui
+Ui -> Logic : execute("yes")
+activate Logic
+
+alt response is n or no, case-insensitively
+    Logic --> Ui : CommandResult("Tag deletion cancelled.")
+else response is neither confirmation nor cancellation
+    Logic --> Ui : CommandException("Please enter Y/Yes or N/No.")
+    note right of Logic : Keep the deletion pending.
+else response is y or yes, case-insensitively
+    Logic -> Command : pendingTagDeleteCommand.execute(model)
+    activate Command
+    Command -> Model : getFilteredPersonList()
+    Model --> Command : displayedPersons
+    Command -> Person : getTags()
+    Person --> Command : existingTags
+    Command -> Command : remove selected tags from a copy
+    Command -> Person : withTags(updatedTags)
+    Person --> Command : updatedPerson
+    Command -> Model : setPerson(original, updatedPerson)
+    Command --> Logic : CommandResult
+    deactivate Command
+    Logic -> Model : getClientBook()
+    Model --> Logic : clientBook
+    Logic -> Storage : saveClientBook(clientBook)
+    Storage --> Logic
+    Logic --> Ui : CommandResult
+end
+deactivate Logic
+[<-- Ui : result message
+deactivate Ui
+@enduml

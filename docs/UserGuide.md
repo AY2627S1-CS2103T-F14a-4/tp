@@ -126,6 +126,27 @@ Examples:
 * `tag 1 priority`
 * `tag 2 referral insurance`
 
+### Deleting tags from a person: `tagdelete`
+
+Deletes all or selected tags from a person in the currently displayed list.
+
+Format: `tagdelete INDEX [TAG...]`
+
+* `INDEX` must be a positive integer that refers to a person in the currently displayed list, including filtered
+  search results.
+* Leave `TAG` empty to delete every tag from the person.
+* Supply one or more whitespace-separated tags to delete only those tags. Tag matching is case-insensitive.
+* If any supplied tag does not belong to the person, an error is shown and no tags are deleted.
+* Before deletion, the result box below the command box asks `Are you sure you want to delete this?` and displays the
+  contact name and exact tags that will be removed. Type `Y` or `Yes` in the command box to proceed, or `N` or `No`
+  to cancel without changing the person. Responses are case-insensitive.
+* While confirmation is pending, other inputs produce an error and the deletion remains pending until a valid
+  confirmation response is entered.
+
+Examples:
+* `tagdelete 1` deletes every tag from the first displayed person after confirmation.
+* `tagdelete 1 friend referral` deletes the `friend` and `referral` tags after confirmation.
+
 ### Editing a person: `edit`
 
 Edits an existing person in the client book.
@@ -491,6 +512,7 @@ Action     | Format, Examples
 **Note edit** | `noteedit CONTACT_INDEX NOTE_INDEX n/NEW_NOTE_CONTENT`<br> e.g., `noteedit 1 2 n/Discussed insurance renewal`
 **Note delete** | `notedelete CONTACT_INDEX NOTE_INDEX`<br> e.g., `notedelete 1 2`
 **Tag**    | `tag INDEX TAG [MORE_TAGS...]`<br> e.g., `tag 1 priority referral`
+**Tag delete** | `tagdelete INDEX [TAG...]`<br> e.g., `tagdelete 1 friend referral`
 **Next**   | `next INDEX a/ACTION d/yyyy-MM-dd`<br> e.g., `next 1 a/Call d/2026-10-20`
 **Done**   | `done INDEX`<br> e.g., `done 1`
 **Due**    | `due`

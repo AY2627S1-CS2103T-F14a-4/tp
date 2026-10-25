@@ -27,6 +27,7 @@ import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.InfoCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.TagCommand;
+import seedu.address.logic.commands.TagDeleteCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.PersonMatchesFiltersPredicate;
@@ -137,6 +138,12 @@ public class ClientBookParserTest {
     public void parseCommand_tag() throws Exception {
         assertEquals(new TagCommand(INDEX_FIRST_PERSON, Set.of(new Tag("priority"), new Tag("referral"))),
                 parser.parseCommand("tag 1 priority referral"));
+    }
+
+    @Test
+    public void parseCommand_tagDelete() throws Exception {
+        assertEquals(new TagDeleteCommand(INDEX_FIRST_PERSON, Set.of(new Tag("friend"), new Tag("referral"))),
+                parser.parseCommand("tagdelete 1 friend referral"));
     }
 
     @Test

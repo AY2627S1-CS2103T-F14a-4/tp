@@ -215,6 +215,27 @@ validation complete before the immutable `Person` is replaced and the updated cl
 
 <puml src="diagrams/TagSequenceDiagram.puml" alt="Tagging a person sequence" />
 
+### Deleting tags from a person
+
+`TagDeleteCommandParser` reads the displayed-list index and an optional set of tag names. An empty set means all
+tags; otherwise, `TagDeleteCommand` requires every supplied tag to exist on the person. Matching uses the same
+case-insensitive `Tag` equality as tag addition. Missing tags, a person with no tags, or an invalid displayed index
+raises a `CommandException` before confirmation or mutation.
+
+Tag deletion uses a two-phase Logic flow. The initial `Logic#execute(String)` call parses and validates the command,
+stores the pending `TagDeleteCommand`, and returns a `CommandResult` containing `Are you sure you want to delete
+this?`, the contact name, the exact stored tags that will be removed, and the accepted responses. `MainWindow`
+displays the result through the existing result box below the command box.
+
+While a deletion is pending, `LogicManager` interprets the next command-box input as a confirmation response instead
+of parsing it as a new command. `y` and `yes` execute the stored command; `n` and `no` discard it. Matching is
+case-insensitive and ignores surrounding whitespace. Any other response raises a `CommandException` and leaves the
+command pending. A confirmed command copies the person's tag set, clears it or removes the selected tags, replaces
+the immutable `Person` through `Model#setPerson`, and saves the updated client book.
+
+The following sequence shows the confirmation gate before selected tags are deleted.
+
+<puml src="diagrams/TagDeleteSequenceDiagram.puml" alt="Deleting tags with confirmation sequence" />
 
 ### Contact preferences (US12)
 
