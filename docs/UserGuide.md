@@ -92,6 +92,12 @@ Format: `add r/RELATIONSHIP n/NAME e/EMAIL p/PHONE_NUMBER [t/TAG]...`
 * `EMAIL` must contain one `@`, no whitespace, text in both the local and domain parts, and at least one dot in the
   domain. Its local part may use common characters such as `.`, `_`, `+`, and `-`; each domain label may use
   letters, digits, and hyphens.
+* Each phone number must contain 8 to 15 digits, excluding an optional leading `+`. Spaces, hyphens, parentheses,
+  and periods may separate digits. You can record multiple numbers in one value by separating them with labels, for
+  example, `home: 92849584 ph: 02848594`.
+* Email addresses and phone numbers must be unique. Phone-number comparison ignores formatting and compares each
+  complete numeric sequence, so `9999 9999` and `99999999` are duplicates. Entries that share any complete phone
+  number are also duplicates, regardless of the order in which multiple numbers are entered.
 * Parameters may be entered in any order.
 * Each optional `TAG` must contain only letters and numbers, with no spaces. Use `t/` before every tag.
 </box>
@@ -136,6 +142,8 @@ Format: `edit INDEX [r/RELATIONSHIP] [n/NAME] [p/PHONE] [e/EMAIL]`
 * At least one of the optional fields must be provided.
 * Existing values will be updated to the input values.
 * `RELATIONSHIP` must be either `Client` or `Prospect`.
+* The edited email address and phone number must not duplicate those of another contact. Phone numbers use the same
+  formatting-insensitive, multiple-number comparison as `add`; for example, `9999 9999` and `99999999` conflict.
 
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.

@@ -68,6 +68,30 @@ public class AddCommandTest {
     }
 
     @Test
+    public void execute_duplicatePhoneWithDifferentFormatting_throwsCommandException() {
+        Person existingPerson = new PersonBuilder().withPhone("9999 9999").build();
+        Person personWithSamePhone = new PersonBuilder(existingPerson).withName("Different Name")
+                .withEmail("different@example.com").withPhone("99999999").build();
+        AddCommand addCommand = new AddCommand(personWithSamePhone);
+        ModelStub modelStub = new ModelStubWithPerson(existingPerson);
+
+        assertThrows(CommandException.class, AddCommand.MESSAGE_DUPLICATE_PHONE, () ->
+                addCommand.execute(modelStub, null));
+    }
+
+    @Test
+    public void execute_duplicatePhoneWithMultipleNumbersInDifferentOrders_throwsCommandException() {
+        Person existingPerson = new PersonBuilder().withPhone("home: 92849584 ph: 02848594").build();
+        Person personWithSamePhone = new PersonBuilder(existingPerson).withName("Different Name")
+                .withEmail("different@example.com").withPhone("ph: 0284 8594 home: 9284 9584").build();
+        AddCommand addCommand = new AddCommand(personWithSamePhone);
+        ModelStub modelStub = new ModelStubWithPerson(existingPerson);
+
+        assertThrows(CommandException.class, AddCommand.MESSAGE_DUPLICATE_PHONE, () ->
+                addCommand.execute(modelStub, null));
+    }
+
+    @Test
     public void execute_duplicateEmailAndPhone_throwsCommandException() {
         Person validPerson = new PersonBuilder().build();
         AddCommand addCommand = new AddCommand(validPerson);

@@ -156,6 +156,29 @@ public class EditCommandTest {
     }
 
     @Test
+    public void execute_duplicatePhoneWithDifferentFormattingUnfilteredList_failure() {
+        Person firstPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        String phone = firstPerson.getPhone().value;
+        String formattedPhone = phone.substring(0, 4) + " " + phone.substring(4);
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withPhone(formattedPhone).build();
+        EditCommand editCommand = new EditCommand(INDEX_SECOND_PERSON, descriptor);
+
+        assertCommandFailure(editCommand, model, EditCommand.MESSAGE_DUPLICATE_PERSON);
+    }
+
+    @Test
+    public void execute_duplicatePhoneWithMultipleNumbersInDifferentOrdersUnfilteredList_failure() {
+        Person phoneOwner = new PersonBuilder().withPhone("home: 92849584 ph: 02848594")
+                .withEmail("phone.owner@example.com").build();
+        model.addPerson(phoneOwner);
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withPhone("ph: 0284 8594 home: 9284 9584").build();
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
+
+        assertCommandFailure(editCommand, model, EditCommand.MESSAGE_DUPLICATE_PERSON);
+    }
+
+    @Test
     public void execute_duplicateEmailUnfilteredList_failure() {
         Person firstPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
