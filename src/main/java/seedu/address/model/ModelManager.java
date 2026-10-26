@@ -105,9 +105,9 @@ public class ModelManager implements Model {
     }
 
     @Override
-    public Predicate<? super Person> getFilteredPersonListPredicate() {
+    public Predicate<Person> getFilteredPersonPredicate() {
         Predicate<? super Person> predicate = filteredPersons.getPredicate();
-        return predicate == null ? PREDICATE_SHOW_ALL_PERSONS : predicate;
+        return predicate == null ? PREDICATE_SHOW_ALL_PERSONS : predicate::test;
     }
 
     @Override

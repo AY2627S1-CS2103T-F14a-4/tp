@@ -15,6 +15,7 @@ import seedu.address.logic.parser.ClientBookParser;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.ClientBook;
 import seedu.address.model.Model;
+import seedu.address.model.ModelManager;
 import seedu.address.model.person.Person;
 import seedu.address.storage.Storage;
 
@@ -48,29 +49,30 @@ public class LogicManager implements Logic {
         logger.info("----------------[USER COMMAND][" + commandText + "]");
 
         Command command = clientBookParser.parseCommand(commandText);
-        ClientBook clientBookBeforeCommand = new ClientBook(model.getClientBook());
-        Predicate<? super Person> filterPredicateBeforeCommand = model.getFilteredPersonListPredicate();
-        CommandResult commandResult = command.execute(model, storage);
+        Model temporaryModel = new ModelManager(model.getClientBook(), model.getUserPrefs());
+        temporaryModel.updateFilteredPersonList(model.getFilteredPersonPredicate());
+        CommandResult commandResult = command.execute(temporaryModel, storage);
 
-        if (!commandResult.isModelSaved() && !model.getClientBook().equals(clientBookBeforeCommand)) {
+        if (!commandResult.isModelSaved() 
+                && !temporaryModel.getClientBook().equals(model.getClientBook())) {
             try {
-                storage.saveClientBook(model.getClientBook());
+                storage.saveClientBook(temporaryModel.getClientBook());
             } catch (AccessDeniedException e) {
-                restoreModel(clientBookBeforeCommand, filterPredicateBeforeCommand);
-                throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
-            } catch (IOException ioe) {
-                restoreModel(clientBookBeforeCommand, filterPredicateBeforeCommand);
+                throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, 
+                                                         e.getMessage()), e);
+            } catch (IOException ioe) {              
                 throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
             }
         }
 
+        commitModel(temporaryModel);
         return commandResult;
     }
 
-    /** Restores the client book and displayed filter after a failed save. */
-    private void restoreModel(ClientBook clientBook, Predicate<? super Person> filterPredicate) {
-        model.setClientBook(clientBook);
-        model.updateFilteredPersonList(filterPredicate::test);
+    /** Replaces the visible model with a command result that has been successfully persisted. */
+    private void commitModel(Model temporaryModel) {
+        model.setClientBook(temporaryModel.getClientBook());
+        model.updateFilteredPersonList(temporaryModel.getFilteredPersonPredicate());
     }
 
     @Override
