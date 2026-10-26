@@ -277,9 +277,10 @@ list. It works for clients and prospects, preserves the current filter, and does
 2. `InteractionNote` stores an immutable `LocalDate` and nonblank text. Date parsing checks the `yyyy-MM-dd` shape
    and uses strict ISO calendar validation. Past dates are allowed. Surrounding text whitespace is stripped;
    internal content and case are preserved without a character whitelist or maximum length.
-3. `NoteCommand` checks the displayed index, copies the selected person's history, appends the new entry and calls
-   `Model#setPerson` with a replacement `Person`. Other fields remain unchanged. Same-date and identical entries
-   are retained in insertion order.
+3. `NoteCommand` checks the displayed index and rejects an exact duplicate in that person's history using
+   `InteractionNote.equals()` before making changes. Otherwise, it copies the history, appends the new entry and calls
+   `Model#setPerson` with a replacement `Person`. Other fields remain unchanged. Entries retain insertion order;
+   the same date with different text, or the same text with different dates, is allowed.
 4. The observable list updates the corresponding `PersonListViewCell`. `LogicManager` saves the client book through
    the existing storage pipeline and returns `Added interaction note for NAME.` on success.
 
