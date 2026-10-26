@@ -2,7 +2,7 @@ package seedu.address.logic;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
-import java.util.List;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
 
 import javafx.collections.ObservableList;
@@ -49,17 +49,17 @@ public class LogicManager implements Logic {
 
         Command command = clientBookParser.parseCommand(commandText);
         ClientBook clientBookBeforeCommand = new ClientBook(model.getClientBook());
-        List<Person> filteredPersonsBeforeCommand = List.copyOf(model.getFilteredPersonList());
+        Predicate<? super Person> filterPredicateBeforeCommand = model.getFilteredPersonListPredicate();
         CommandResult commandResult = command.execute(model, storage);
 
         if (!commandResult.isModelSaved() && !model.getClientBook().equals(clientBookBeforeCommand)) {
             try {
                 storage.saveClientBook(model.getClientBook());
             } catch (AccessDeniedException e) {
-                restoreModel(clientBookBeforeCommand, filteredPersonsBeforeCommand);
+                restoreModel(clientBookBeforeCommand, filterPredicateBeforeCommand);
                 throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
             } catch (IOException ioe) {
-                restoreModel(clientBookBeforeCommand, filteredPersonsBeforeCommand);
+                restoreModel(clientBookBeforeCommand, filterPredicateBeforeCommand);
                 throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
             }
         }
@@ -67,10 +67,10 @@ public class LogicManager implements Logic {
         return commandResult;
     }
 
-    /** Restores the client book and the displayed records after a failed save. */
-    private void restoreModel(ClientBook clientBook, List<Person> filteredPersons) {
+    /** Restores the client book and displayed filter after a failed save. */
+    private void restoreModel(ClientBook clientBook, Predicate<? super Person> filterPredicate) {
         model.setClientBook(clientBook);
-        model.updateFilteredPersonList(filteredPersons::contains);
+        model.updateFilteredPersonList(filterPredicate::test);
     }
 
     @Override
