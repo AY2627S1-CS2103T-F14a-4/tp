@@ -5,7 +5,6 @@ import static seedu.address.logic.parser.CliSyntax.PREFIX_EMAIL;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_RELATIONSHIP;
-import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
 
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.Messages;
@@ -21,30 +20,16 @@ public class AddCommand extends Command {
 
     public static final String COMMAND_WORD = "add";
 
-    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Adds a person to the client book. "
-            + "Parameters: "
+    public static final String MESSAGE_USAGE = "Parameters: "
             + PREFIX_RELATIONSHIP + "RELATIONSHIP "
             + PREFIX_NAME + "NAME "
             + PREFIX_EMAIL + "EMAIL "
-            + PREFIX_PHONE + "PHONE_NUMBER "
-            + "[" + PREFIX_TAG + "TAG]...\n"
-            + "Example: " + COMMAND_WORD + " "
-            + PREFIX_RELATIONSHIP + "Client "
-            + PREFIX_NAME + "John Doe "
-            + PREFIX_EMAIL + "johnd@example.com "
-            + PREFIX_PHONE + "98765432 "
-            + PREFIX_TAG + "priority";
+            + PREFIX_PHONE + "PHONE_NUMBER";
 
     public static final String MESSAGE_SUCCESS = "New person added: %1$s";
     public static final String MESSAGE_DUPLICATE_PERSON = "This contact already exists.";
     public static final String MESSAGE_DUPLICATE_EMAIL = "A contact with this email address already exists.";
     public static final String MESSAGE_DUPLICATE_PHONE = "A contact with this phone number already exists.";
-    public static final String MESSAGE_RELATIONSHIP_REQUIRED = "Relationship is required.";
-    public static final String MESSAGE_NAME_REQUIRED = "Name is required.";
-    public static final String MESSAGE_EMAIL_REQUIRED = "Email is required.";
-    public static final String MESSAGE_PHONE_REQUIRED = "Phone number is required.";
-    public static final String MESSAGE_ALL_PARAMETERS_REQUIRED =
-            "Relationship, name, email and phone number are required.";
     private final Person toAdd;
 
     /**
