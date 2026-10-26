@@ -37,6 +37,19 @@ public class NoteEditCommandTest {
     private final Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
 
     @Test
+    public void execute_existingFutureDatedNote_preservesDateAndEditsText() throws Exception {
+        LocalDate date = LocalDate.now().plusDays(1);
+        Person original = model.getFilteredPersonList().get(0);
+        model.setPerson(original, new PersonBuilder(original)
+                .withInteractionNotes(new InteractionNote(date, "Existing note")).build());
+
+        new NoteEditCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON, "Updated").execute(model, null);
+
+        assertEquals(new PersonBuilder(original).withInteractionNotes(new InteractionNote(date, "Updated")).build(),
+                model.getFilteredPersonList().get(0));
+    }
+
+    @Test
     public void execute_duplicateNotes_preservesDateOtherNotesAndAllContactFields() throws Exception {
         Person original = new PersonBuilder(model.getFilteredPersonList().get(0))
                 .withRelationship(Relationship.CLIENT).withTags("client", "friend").withFinancialNeed("Retirement")
