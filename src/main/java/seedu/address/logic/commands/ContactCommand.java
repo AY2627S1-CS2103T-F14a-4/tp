@@ -78,6 +78,11 @@ public class ContactCommand extends Command {
                 && index.equals(command.index) && descriptor.equals(command.descriptor);
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(index.getZeroBased(), descriptor);
+    }
+
     /** Stores omitted, replacement, and explicit clear states separately for each preference. */
     public static class ContactDescriptor {
         private PreferredContactChannel channel;

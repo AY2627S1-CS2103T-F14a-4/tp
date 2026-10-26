@@ -275,6 +275,57 @@ public class ContactCommandTest {
     }
 
     @Test
+    public void hashCode_separateEquivalentIndices_equalHashes() {
+        ContactDescriptor descriptor = clearBoth();
+        ContactCommand first = new ContactCommand(Index.fromOneBased(1), descriptor);
+        ContactCommand second = new ContactCommand(Index.fromOneBased(1), descriptor);
+        assertEquals(first, second);
+        assertEquals(first.hashCode(), second.hashCode());
+    }
+
+    @Test
+    public void hashCode_equivalentDescriptors_equalHashes() {
+        ContactDescriptor first = new ContactDescriptor();
+        first.setChannel(new PreferredContactChannel("Phone"));
+        first.setTiming(null);
+        ContactDescriptor second = new ContactDescriptor();
+        second.setTiming(null);
+        second.setChannel(new PreferredContactChannel("Phone"));
+        ContactCommand firstCommand = new ContactCommand(Index.fromOneBased(1), first);
+        ContactCommand secondCommand = new ContactCommand(Index.fromOneBased(1), second);
+        assertEquals(firstCommand, secondCommand);
+        assertEquals(firstCommand.hashCode(), secondCommand.hashCode());
+    }
+
+    @Test
+    public void hashCode_originalDescriptorModified_remainsStable() {
+        ContactDescriptor descriptor = new ContactDescriptor();
+        descriptor.setChannel(new PreferredContactChannel("Phone"));
+        ContactCommand command = new ContactCommand(Index.fromOneBased(1), descriptor);
+        ContactCommand equivalent = new ContactCommand(Index.fromOneBased(1), new ContactDescriptor(descriptor));
+        int originalHashCode = command.hashCode();
+
+        descriptor.setChannel(null);
+        descriptor.setTiming(new PreferredContactTiming("Evenings"));
+
+        assertEquals(equivalent, command);
+        assertEquals(originalHashCode, command.hashCode());
+        assertEquals(equivalent.hashCode(), command.hashCode());
+        assertNotEquals(new ContactCommand(Index.fromOneBased(1), descriptor), command);
+    }
+
+    @Test
+    public void equals_differentIndicesOrDescriptorStates_notEqual() throws Exception {
+        ContactCommand command = new ContactCommand(INDEX_FIRST_PERSON, new PreferredContactChannel("Phone"), null);
+        for (String args : List.of("2 ch/Phone", "1 ch/Email", "1 tm/Phone", "1 ch/-", "1 ch/Phone tm/-")) {
+            assertNotEquals(command, parser.parseCommand("contact " + args));
+        }
+        assertNotEquals(parser.parseCommand("contact 1 tm/Weekends"),
+                parser.parseCommand("contact 1 ch/- tm/Weekends"));
+        assertNotEquals(parser.parseCommand("contact 1 ch/-"), parser.parseCommand("contact 1 ch/- tm/-"));
+    }
+
+    @Test
     public void equals_comparesIndexAndBothValues() {
         ContactCommand command = new ContactCommand(INDEX_FIRST_PERSON, new PreferredContactChannel("Email"), null);
         assertEquals(command, command);
