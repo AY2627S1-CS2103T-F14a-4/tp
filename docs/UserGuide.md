@@ -297,8 +297,9 @@ Finds persons using any combination of name keywords, relationship and tags.
 Format: `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...]]`
 
 * Every filter is optional, but at least one name keyword, relationship or tag must be provided.
-* Name keywords follow the same character rules as `NAME`: digits are not allowed. Letters, spaces, hyphens (`-`),
-  apostrophes (`'`), and the relationship markers `s/o`, `d/o`, or `w/o` are accepted.
+* Each whitespace-separated name keyword is validated independently. A keyword may contain letters with internal
+  hyphens (`-`) or apostrophes (`'`), or it may be the standalone relationship marker `s/o`, `d/o`, or `w/o`.
+  Digits, other symbols, and arbitrary slash forms are not allowed.
 * Name keywords, relationship values and tags are case-insensitive; for example, `hans` matches `Hans`, and `client`
   matches `Client`.
 * Keyword order does not matter; for example, `Hans Bo` matches `Bo Hans`.
@@ -319,6 +320,8 @@ Examples:
 * `find r/client` returns all clients.
 * `find r/Prospect` returns all prospects.
 * `find alex david r/prospect` returns prospects whose names contain the full word `alex` or `david`.
+* `find s/o` returns persons whose names contain `s/o` as a standalone component.
+* `find Jack s/o` returns persons whose names contain either `Jack` or `s/o`.
 * `find t/referral priority` returns persons tagged `referral` or `priority`.
 * `find alex r/client t/priority referral` returns clients named `alex` who have a `priority` or `referral` tag.
 

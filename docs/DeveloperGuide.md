@@ -174,10 +174,13 @@ This section describes some noteworthy details on how certain features are imple
 ### Find by name, relationship and tags
 
 The `find` command supports three independently optional filters: name keywords, one relationship, and tag keywords.
-`FindCommandParser` tokenizes the `r/` and `t/` prefixes, rejects duplicate filter prefixes, and delegates value
-validation to `ParserUtil`. At least one filter must be present. Name keywords precede the prefixed filters; multiple
-tag keywords follow one `t/` prefix and are separated by whitespace. The name-keyword preamble is validated with
-`ParserUtil#parseName(String)`, so it accepts the same name characters as `add` and rejects digits.
+`FindCommandParser` tokenizes the `r/` and `t/` prefixes, rejects duplicate filter prefixes, and delegates prefixed
+value validation to `ParserUtil`. At least one filter must be present. Name keywords precede the prefixed filters;
+multiple tag keywords follow one `t/` prefix and are separated by whitespace. The parser splits the name preamble
+into independent keywords and validates each one against the search-keyword grammar. Ordinary keywords contain
+letters with optional internal hyphens or apostrophes, while `s/o`, `d/o`, and `w/o` are also valid standalone
+keywords. Digits, other symbols, and arbitrary slash forms are rejected. This differs from full-name validation,
+which requires relationship markers to appear between name components.
 
 The parser creates a `PersonMatchesFiltersPredicate`. Name keywords use the existing full-word, case-insensitive
 matching and are joined with `OR`. Tag keywords use exact, case-insensitive tag matching and are also joined with
