@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
+import seedu.address.model.person.Email;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Relationship;
 import seedu.address.testutil.EditPersonDescriptorBuilder;
@@ -65,5 +66,13 @@ public class EditCommandParserTest {
     public void parse_tagPrefix_failure() {
         assertParseFailure(parser, INDEX_FIRST_PERSON.getOneBased() + " t/friend",
                 String.format(Messages.MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE));
+    }
+
+    @Test
+    public void parse_domainLabelExceeds63Characters_failure() {
+        String email = "john@" + "a".repeat(64) + ".com";
+
+        assertParseFailure(parser, INDEX_FIRST_PERSON.getOneBased() + " e/" + email,
+                Email.MESSAGE_DOMAIN_LABEL_LENGTH);
     }
 }

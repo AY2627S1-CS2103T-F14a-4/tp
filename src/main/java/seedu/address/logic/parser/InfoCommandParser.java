@@ -5,7 +5,9 @@ import static seedu.address.logic.parser.CliSyntax.PREFIX_AREA_OF_INTEREST;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_FINANCIAL_NEED;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_PRIORITY;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -71,17 +73,33 @@ public class InfoCommandParser implements Parser<InfoCommand> {
             throw new ParseException(MESSAGE_NO_PARAMETERS);
         }
         InfoDescriptor descriptor = new InfoDescriptor();
+        List<String> errors = new ArrayList<>();
         if (values.containsKey(PREFIX_FINANCIAL_NEED.getPrefix())) {
             String value = values.get(PREFIX_FINANCIAL_NEED.getPrefix());
-            descriptor.setFinancialNeed(isClearMarker(value) ? null : ParserUtil.parseFinancialNeed(value));
+            try {
+                descriptor.setFinancialNeed(isClearMarker(value) ? null : ParserUtil.parseFinancialNeed(value));
+            } catch (ParseException e) {
+                errors.add(e.getMessage());
+            }
         }
         if (values.containsKey(PREFIX_PRIORITY.getPrefix())) {
             String value = values.get(PREFIX_PRIORITY.getPrefix());
-            descriptor.setPriority(isClearMarker(value) ? null : ParserUtil.parsePriority(value));
+            try {
+                descriptor.setPriority(isClearMarker(value) ? null : ParserUtil.parsePriority(value));
+            } catch (ParseException e) {
+                errors.add(e.getMessage());
+            }
         }
         if (values.containsKey(PREFIX_AREA_OF_INTEREST.getPrefix())) {
             String value = values.get(PREFIX_AREA_OF_INTEREST.getPrefix());
-            descriptor.setAreaOfInterest(isClearMarker(value) ? null : ParserUtil.parseAreaOfInterest(value));
+            try {
+                descriptor.setAreaOfInterest(isClearMarker(value) ? null : ParserUtil.parseAreaOfInterest(value));
+            } catch (ParseException e) {
+                errors.add(e.getMessage());
+            }
+        }
+        if (!errors.isEmpty()) {
+            throw new ParseException(String.join("\n", errors));
         }
         return new InfoCommand(index, descriptor);
     }

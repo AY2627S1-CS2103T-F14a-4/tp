@@ -65,6 +65,11 @@ public class InfoCommand extends Command {
                 && index.equals(command.index) && descriptor.equals(command.descriptor);
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(index.getZeroBased(), descriptor);
+    }
+
     /**
      * Stores each field's supplied state separately from its value.
      * Unspecified fields are unchanged; specified null values explicitly clear fields.

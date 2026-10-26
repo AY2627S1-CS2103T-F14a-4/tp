@@ -33,10 +33,12 @@ public class PhoneTest {
         assertFalse(Phone.isValidPhone("1234abc5678")); // no complete digit sequence
         assertFalse(Phone.isValidPhone("HP: 1234; Office: 5678")); // two incomplete numbers
         assertFalse(Phone.isValidPhone("91234567\n")); // control character
+        assertFalse(Phone.isValidPhone("1234567890123456")); // more than 15 digits
 
         // valid phone numbers
         assertTrue(Phone.isValidPhone("93121534"));
         assertTrue(Phone.isValidPhone("124293842033123")); // long phone numbers
+        assertTrue(Phone.isValidPhone("+123456789012345")); // 15 digits excluding the plus sign
         assertTrue(Phone.isValidPhone("9123 4567")); // spaces within digits
         assertTrue(Phone.isValidPhone("+65 9123-4567")); // country code and hyphen
         assertTrue(Phone.isValidPhone("1234 5678 (HP) 1111-3333 (Office)")); // labels and two numbers
@@ -48,6 +50,7 @@ public class PhoneTest {
         assertEquals(Phone.MESSAGE_CONTROL_CHARACTERS, Phone.getValidationError("91234567\n"));
         assertEquals(Phone.MESSAGE_NO_DIGITS, Phone.getValidationError("Office"));
         assertEquals(Phone.MESSAGE_INCOMPLETE, Phone.getValidationError("9123"));
+        assertEquals(Phone.MESSAGE_TOO_LONG, Phone.getValidationError("1234567890123456"));
     }
 
     @Test
@@ -68,5 +71,21 @@ public class PhoneTest {
 
         // different values -> returns false
         assertFalse(phone.equals(new Phone("99599999")));
+    }
+
+    @Test
+    public void hasSamePhoneNumber() {
+        Phone formattedPhone = new Phone("9999 9999");
+
+        assertTrue(formattedPhone.hasSamePhoneNumber(new Phone("99999999")));
+        assertFalse(formattedPhone.hasSamePhoneNumber(new Phone("99999998")));
+    }
+
+    @Test
+    public void hasSamePhoneNumber_multipleNumbersInDifferentOrders_returnsTrue() {
+        Phone homeAndMobile = new Phone("home: 92849584 ph: 02848594");
+        Phone mobileAndHome = new Phone("ph: 0284 8594 home: 9284 9584");
+
+        assertTrue(homeAndMobile.hasSamePhoneNumber(mobileAndHome));
     }
 }

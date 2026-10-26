@@ -127,6 +127,83 @@ public class InfoCommandParserTest {
     }
 
     @Test
+    public void parse_twoInvalidFields_reportsBothInFieldOrder() {
+        String needAndPriority = FinancialNeed.MESSAGE_BLANK + "\n" + Priority.MESSAGE_BLANK;
+        for (String fields : new String[] {"/fn /pr", "/pr /fn"}) {
+            assertParseFailure(parser, "1 " + fields, needAndPriority);
+        }
+        String needAndInterest = FinancialNeed.MESSAGE_BLANK + "\n" + AreaOfInterest.MESSAGE_BLANK;
+        for (String fields : new String[] {"/fn /ai", "/ai /fn"}) {
+            assertParseFailure(parser, "1 " + fields, needAndInterest);
+        }
+        String priorityAndInterest = Priority.MESSAGE_BLANK + "\n" + AreaOfInterest.MESSAGE_BLANK;
+        for (String fields : new String[] {"/pr /ai", "/ai /pr"}) {
+            assertParseFailure(parser, "1 " + fields, priorityAndInterest);
+        }
+    }
+
+    @Test
+    public void parse_threeInvalidFieldsAnyOrder_reportsAllInFieldOrder() {
+        String expected = FinancialNeed.MESSAGE_BLANK + "\n" + Priority.MESSAGE_BLANK
+                + "\n" + AreaOfInterest.MESSAGE_BLANK;
+        for (String fields : new String[] {"/fn /pr /ai", "/fn /ai /pr", "/pr /fn /ai",
+            "/pr /ai /fn", "/ai /fn /pr", "/ai /pr /fn"}) {
+            assertParseFailure(parser, "1 " + fields, expected);
+        }
+    }
+
+    @Test
+    public void parse_mixedValidAndInvalidFields_reportsOnlyInvalidFields() {
+        assertParseFailure(parser, "1 /ai /pr /fn Retirement",
+                Priority.MESSAGE_BLANK + "\n" + AreaOfInterest.MESSAGE_BLANK);
+        assertParseFailure(parser, "1 /ai /pr High /fn",
+                FinancialNeed.MESSAGE_BLANK + "\n" + AreaOfInterest.MESSAGE_BLANK);
+        assertParseFailure(parser, "1 /ai Insurance /pr /fn",
+                FinancialNeed.MESSAGE_BLANK + "\n" + Priority.MESSAGE_BLANK);
+        assertParseFailure(parser, "1 /ai Insurance /pr High /fn", FinancialNeed.MESSAGE_BLANK);
+        assertParseFailure(parser, "1 /ai Insurance /pr /fn Retirement", Priority.MESSAGE_BLANK);
+        assertParseFailure(parser, "1 /ai /pr High /fn Retirement", AreaOfInterest.MESSAGE_BLANK);
+    }
+
+    @Test
+    public void parse_multipleInvalidValueCategories_reportsExistingMessages() {
+        String longValue = "A".repeat(201);
+        assertParseFailure(parser, "1 /ai " + longValue + " /pr " + longValue + " /fn " + longValue,
+                FinancialNeed.MESSAGE_LENGTH + "\n" + Priority.MESSAGE_LENGTH + "\n" + AreaOfInterest.MESSAGE_LENGTH);
+        for (String value : new String[] {"Bad!", "Needs/Wants", "\tValue", "Value\n", "Value\r"}) {
+            assertParseFailure(parser, "1 /ai " + value + " /pr " + value + " /fn " + value,
+                    FinancialNeed.MESSAGE_INVALID_CHARACTERS + "\n" + Priority.MESSAGE_INVALID_CHARACTERS
+                            + "\n" + AreaOfInterest.MESSAGE_INVALID_CHARACTERS);
+        }
+        assertParseFailure(parser, "1 /ai Bad! /pr " + longValue + " /fn",
+                FinancialNeed.MESSAGE_BLANK + "\n" + Priority.MESSAGE_LENGTH
+                        + "\n" + AreaOfInterest.MESSAGE_INVALID_CHARACTERS);
+    }
+
+    @Test
+    public void parse_clearMarkersWithInvalidFields_reportsOnlyInvalidFields() {
+        assertParseFailure(parser, "1 /ai /pr /fn   -   ",
+                Priority.MESSAGE_BLANK + "\n" + AreaOfInterest.MESSAGE_BLANK);
+        assertParseFailure(parser, "1 /ai /pr   -   /fn",
+                FinancialNeed.MESSAGE_BLANK + "\n" + AreaOfInterest.MESSAGE_BLANK);
+        assertParseFailure(parser, "1 /ai   -   /pr /fn",
+                FinancialNeed.MESSAGE_BLANK + "\n" + Priority.MESSAGE_BLANK);
+        for (String marker : new String[] {"\t-", "-\n", "-\r"}) {
+            assertParseFailure(parser, "1 /ai " + marker + " /pr - /fn " + marker,
+                    FinancialNeed.MESSAGE_INVALID_CHARACTERS + "\n" + AreaOfInterest.MESSAGE_INVALID_CHARACTERS);
+        }
+    }
+
+    @Test
+    public void parse_invalidIndexOrPrefixesWithInvalidFields_preservesErrorPrecedence() {
+        assertParseFailure(parser, "/ai /pr /fn", InfoCommandParser.MESSAGE_INDEX_REQUIRED);
+        assertParseFailure(parser, "0 /ai /pr /fn", InfoCommandParser.MESSAGE_INVALID_INDEX);
+        assertParseFailure(parser, "1 /ai /fn /pr /fn",
+                String.format(InfoCommandParser.MESSAGE_DUPLICATE_PARAMETER, "/fn"));
+        assertParseFailure(parser, "1 /ai /pr /fn /unknown", InfoCommandParser.MESSAGE_INVALID_PARAMETER);
+    }
+
+    @Test
     public void parse_invalidFinancialNeed_exactMessages() {
         assertParseFailure(parser, "1 /fn ", FinancialNeed.MESSAGE_BLANK);
         assertParseFailure(parser, "1 /fn " + "A".repeat(201), FinancialNeed.MESSAGE_LENGTH);
