@@ -77,7 +77,6 @@ public class LogicManager implements Logic {
     }
 
     private CommandResult executeCommand(Command command) throws CommandException {
-        CommandResult commandResult = command.execute(model, storage);
         Model temporaryModel = new ModelManager(model.getClientBook(), model.getUserPrefs());
         temporaryModel.updateFilteredPersonList(model.getFilteredPersonPredicate());
         CommandResult commandResult = command.execute(temporaryModel, storage);
