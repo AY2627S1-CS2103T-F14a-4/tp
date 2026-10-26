@@ -62,12 +62,12 @@ public class TagDeleteCommandTest {
     }
 
     @Test
-    public void execute_filteredIndex_updatesDisplayedPersonOnly() throws Exception {
+    public void execute_filteredList_usesMainListIndex() throws Exception {
         Person untouched = model.getFilteredPersonList().get(0);
         Person target = model.getFilteredPersonList().get(1);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
 
-        new TagDeleteCommand(INDEX_FIRST_PERSON, Set.of(new Tag("friends"))).execute(model, null);
+        new TagDeleteCommand(INDEX_SECOND_PERSON, Set.of(new Tag("friends"))).execute(model, null);
 
         assertEquals(untouched, model.getClientBook().getPersonList().get(0));
         assertEquals(new PersonBuilder(target).withTags("owesMoney").build(),
