@@ -55,20 +55,8 @@ public class AddCommandParser implements Parser<AddCommand> {
         boolean hasEmail = argumentMultimap.getValue(PREFIX_EMAIL).isPresent();
         boolean hasPhone = argumentMultimap.getValue(PREFIX_PHONE).isPresent();
 
-        if (!hasRelationship && !hasName && !hasEmail && !hasPhone) {
-            throw new ParseException(AddCommand.MESSAGE_ALL_PARAMETERS_REQUIRED);
-        }
-        if (!hasRelationship) {
-            throw new ParseException(AddCommand.MESSAGE_RELATIONSHIP_REQUIRED);
-        }
-        if (!hasName) {
-            throw new ParseException(AddCommand.MESSAGE_NAME_REQUIRED);
-        }
-        if (!hasEmail) {
-            throw new ParseException(AddCommand.MESSAGE_EMAIL_REQUIRED);
-        }
-        if (!hasPhone) {
-            throw new ParseException(AddCommand.MESSAGE_PHONE_REQUIRED);
+        if (!hasRelationship || !hasName || !hasEmail || !hasPhone) {
+            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE));
         }
     }
 

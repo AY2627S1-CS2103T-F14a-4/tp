@@ -3,6 +3,7 @@ package seedu.address.model.person;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.AppUtil.checkArgument;
 
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 /**
@@ -28,9 +29,11 @@ public class Email {
             "The domain must contain at least one dot.";
     public static final String MESSAGE_DOMAIN_LABEL =
             "Each domain label must use letters, digits, or hyphens, and cannot start or end with a hyphen.";
+    public static final String MESSAGE_DOMAIN_LABEL_LENGTH = "Each domain label cannot exceed 63 characters.";
 
     private static final int MIN_EMAIL_LENGTH = 5;
     private static final int MAX_EMAIL_LENGTH = 254;
+    private static final int MAX_DOMAIN_LABEL_LENGTH = 63;
     private static final Pattern LOCAL_PART_PATTERN =
             Pattern.compile("[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+");
     private static final Pattern DOMAIN_LABEL_PATTERN =
@@ -101,6 +104,9 @@ public class Email {
             if (domainLabel.isEmpty()) {
                 return MESSAGE_DOMAIN_EMPTY_LABEL;
             }
+            if (domainLabel.length() > MAX_DOMAIN_LABEL_LENGTH) {
+                return MESSAGE_DOMAIN_LABEL_LENGTH;
+            }
             if (!DOMAIN_LABEL_PATTERN.matcher(domainLabel).matches()) {
                 return MESSAGE_DOMAIN_LABEL;
             }
@@ -124,12 +130,17 @@ public class Email {
             return false;
         }
 
-        return value.equals(otherEmail.value);
+        return getNormalizedValue().equals(otherEmail.getNormalizedValue());
     }
 
     @Override
     public int hashCode() {
-        return value.hashCode();
+        return getNormalizedValue().hashCode();
+    }
+
+    private String getNormalizedValue() {
+        int atSignIndex = value.indexOf('@');
+        return value.substring(0, atSignIndex + 1) + value.substring(atSignIndex + 1).toLowerCase(Locale.ROOT);
     }
 
 }

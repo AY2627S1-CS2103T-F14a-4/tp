@@ -13,14 +13,20 @@ public final class PreferredContactChannel {
     public PreferredContactChannel(String value) {
         requireNonNull(value);
         checkArgument(isValidPreferredContactChannel(value), MESSAGE_CONSTRAINTS);
-        this.value = value.strip();
+        this.value = stripWhitespace(value);
     }
 
-    /** Free text follows the same character policy as next-action descriptions. */
+    /** Free text must contain 1 to 200 characters after surrounding whitespace is removed. */
     public static boolean isValidPreferredContactChannel(String value) {
         requireNonNull(value);
-        String trimmed = value.strip();
+        String trimmed = stripWhitespace(value);
         return !trimmed.isEmpty() && trimmed.length() <= 200;
+    }
+
+    /** Removes surrounding Java whitespace and Unicode White_Space characters. */
+    private static String stripWhitespace(String value) {
+        return value.replaceAll(
+                "^[\\p{javaWhitespace}\\p{IsWhite_Space}]+|[\\p{javaWhitespace}\\p{IsWhite_Space}]+$", "");
     }
 
     @Override

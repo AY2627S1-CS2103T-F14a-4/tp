@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import seedu.address.commons.core.index.Index;
 import seedu.address.logic.Messages;
 import seedu.address.logic.parser.ClientBookParser;
+import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
@@ -38,6 +39,28 @@ public class ContactCommandTest {
                 .withAreaOfInterest("Insurance").withInteractionNotes(new InteractionNote(LocalDate.of(2000, 1, 1),
                         "Discussed plans")).withNextAction(new NextAction("Call", LocalDate.of(2000, 1, 1), false))
                 .withPreferredContactChannel("Email").withPreferredContactTiming("Weekends").build();
+    }
+
+    @Test
+    public void parse_whitespaceOnlyPreferences_noMutation() {
+        Person original = populatedPerson();
+        model.setPerson(model.getFilteredPersonList().getFirst(), original);
+        List<Person> expectedPersons = List.copyOf(model.getClientBook().getPersonList());
+        for (String value : List.of(" ", "\t", "\u2003", "\u00a0", "\u2007", "\u202f",
+                " \t\u2003\u00a0\u2007\u202f ")) {
+            for (String fields : List.of("ch/" + value, "ch/" + value + " tm/After 6 pm",
+                    "tm/After 6 pm ch/" + value)) {
+                assertThrows(ParseException.class, PreferredContactChannel.MESSAGE_CONSTRAINTS, () ->
+                        parser.parseCommand("contact 1 " + fields).execute(model, null));
+                assertEquals(expectedPersons, model.getClientBook().getPersonList());
+            }
+            for (String fields : List.of("tm/" + value, "ch/Phone tm/" + value,
+                    "tm/" + value + " ch/Phone")) {
+                assertThrows(ParseException.class, PreferredContactTiming.MESSAGE_CONSTRAINTS, () ->
+                        parser.parseCommand("contact 1 " + fields).execute(model, null));
+                assertEquals(expectedPersons, model.getClientBook().getPersonList());
+            }
+        }
     }
 
     @Test

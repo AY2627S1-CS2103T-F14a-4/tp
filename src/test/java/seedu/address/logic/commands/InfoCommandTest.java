@@ -3,6 +3,7 @@ package seedu.address.logic.commands;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.showPersonAtIndex;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import seedu.address.commons.core.index.Index;
 import seedu.address.logic.commands.InfoCommand.InfoDescriptor;
 import seedu.address.logic.parser.InfoCommandParser;
+import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
@@ -39,6 +41,18 @@ public class InfoCommandTest {
                 .withTags("friend").withFinancialNeed("Education").withPriority("Low").withAreaOfInterest("Savings")
                 .withInteractionNotes(new InteractionNote(LocalDate.of(2000, 1, 1), "Discussed plans"))
                 .withNextAction(new NextAction("Call", LocalDate.of(2000, 1, 2), true)).build();
+    }
+
+    @Test
+    public void execute_invalidFinancialFieldsWithUpdatesOrClears_noMutation() {
+        Person original = populatedPerson();
+        model.setPerson(model.getFilteredPersonList().getFirst(), original);
+        List<Person> expectedPersons = List.copyOf(model.getClientBook().getPersonList());
+        for (String args : new String[] {"1 /fn Retirement /pr /ai", "1 /fn - /pr /ai",
+            "1 /fn /pr High /ai -", "1 /fn /pr - /ai Insurance"}) {
+            assertThrows(ParseException.class, () -> parser.parse(args).execute(model, null));
+            assertEquals(expectedPersons, model.getClientBook().getPersonList());
+        }
     }
 
     @Test
@@ -179,6 +193,74 @@ public class InfoCommandTest {
                 "No client exists at index " + invalid + ".");
         showPersonAtIndex(model, INDEX_FIRST_PERSON);
         assertCommandFailure(parser.parse("2 /pr High"), model, "No client exists at index 2.");
+    }
+
+    @Test
+    public void hashCode_separatelyCreatedEqualIndices_equalHashes() {
+        InfoDescriptor descriptor = new InfoDescriptor();
+        descriptor.setFinancialNeed(new FinancialNeed("Retirement"));
+        InfoCommand first = new InfoCommand(Index.fromOneBased(1), descriptor);
+        InfoCommand second = new InfoCommand(Index.fromOneBased(1), new InfoDescriptor(descriptor));
+        assertEquals(first, second);
+        assertEquals(first.hashCode(), second.hashCode());
+    }
+
+    @Test
+    public void hashCode_differentIndexValues_distinguishesIndices() {
+        InfoDescriptor descriptor = new InfoDescriptor();
+        descriptor.setFinancialNeed(new FinancialNeed("Retirement"));
+        InfoCommand first = new InfoCommand(Index.fromOneBased(1), descriptor);
+        InfoCommand second = new InfoCommand(Index.fromOneBased(2), descriptor);
+        assertNotEquals(first, second);
+    }
+
+    @Test
+    public void hashCode_equivalentDescriptors_equalCommandsHaveEqualHashes() {
+        InfoDescriptor first = new InfoDescriptor();
+        first.setFinancialNeed(new FinancialNeed("Retirement"));
+        first.setPriority(null);
+        InfoDescriptor second = new InfoDescriptor();
+        second.setPriority(null);
+        second.setFinancialNeed(new FinancialNeed("Retirement"));
+        InfoCommand firstCommand = new InfoCommand(INDEX_FIRST_PERSON, first);
+        InfoCommand secondCommand = new InfoCommand(INDEX_FIRST_PERSON, second);
+        assertEquals(firstCommand, secondCommand);
+        assertEquals(firstCommand.hashCode(), secondCommand.hashCode());
+    }
+
+    @Test
+    public void hashCode_originalDescriptorMutated_commandRemainsUnchanged() {
+        InfoDescriptor descriptor = new InfoDescriptor();
+        descriptor.setFinancialNeed(new FinancialNeed("Retirement"));
+        descriptor.setPriority(null);
+        InfoCommand command = new InfoCommand(INDEX_FIRST_PERSON, descriptor);
+        InfoCommand equivalent = new InfoCommand(INDEX_FIRST_PERSON, new InfoDescriptor(descriptor));
+        int originalHashCode = command.hashCode();
+
+        descriptor.setFinancialNeed(new FinancialNeed("Education"));
+        descriptor.setPriority(new Priority("High"));
+        descriptor.setAreaOfInterest(new AreaOfInterest("Insurance"));
+
+        assertEquals(equivalent, command);
+        assertEquals(originalHashCode, command.hashCode());
+        assertEquals(equivalent.hashCode(), command.hashCode());
+        assertNotEquals(new InfoCommand(INDEX_FIRST_PERSON, descriptor), command);
+    }
+
+    @Test
+    public void equals_differentValuesOrSpecifiedStates_notEqual() throws Exception {
+        InfoCommand command = parser.parse("1 /fn Retirement /pr High /ai Insurance");
+        for (String args : List.of("1 /fn Education /pr High /ai Insurance",
+                "1 /fn Retirement /pr Low /ai Insurance", "1 /fn Retirement /pr High /ai Savings",
+                "1 /fn - /pr High /ai Insurance", "1 /fn Retirement /pr - /ai Insurance",
+                "1 /fn Retirement /pr High /ai -", "1 /pr High /ai Insurance",
+                "1 /fn Retirement /ai Insurance", "1 /fn Retirement /pr High")) {
+            assertNotEquals(command, parser.parse(args));
+        }
+        InfoCommand omitted = new InfoCommand(INDEX_FIRST_PERSON, new InfoDescriptor());
+        for (String args : List.of("1 /fn -", "1 /pr -", "1 /ai -")) {
+            assertNotEquals(omitted, parser.parse(args));
+        }
     }
 
     @Test

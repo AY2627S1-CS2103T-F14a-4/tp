@@ -5,7 +5,6 @@ import static seedu.address.logic.parser.CliSyntax.PREFIX_EMAIL;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_RELATIONSHIP;
-import static seedu.address.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -45,6 +44,7 @@ public class EditCommand extends Command {
     public static final String MESSAGE_EDIT_PERSON_SUCCESS = "Edited person: %1$s";
     public static final String MESSAGE_NOT_EDITED = "At least one field to edit must be provided.";
     public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in the client book.";
+    public static final String MESSAGE_DUPLICATE_NAME = "A contact with this name already exists.";
 
     private final Index index;
     private final EditPersonDescriptor editPersonDescriptor;
@@ -68,13 +68,25 @@ public class EditCommand extends Command {
                 Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
         Person editedPerson = createEditedPerson(personToEdit, editPersonDescriptor);
 
-        if (!personToEdit.isSamePerson(editedPerson) && model.hasPerson(editedPerson)) {
+        if (hasMatchingPhoneOrEmail(model, personToEdit, editedPerson)) {
             throw new CommandException(MESSAGE_DUPLICATE_PERSON);
+        }
+        if (hasMatchingName(model, personToEdit, editedPerson)) {
+            throw new CommandException(MESSAGE_DUPLICATE_NAME);
         }
 
         model.setPerson(personToEdit, editedPerson);
-        model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         return new CommandResult(String.format(MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)));
+    }
+
+    private static boolean hasMatchingPhoneOrEmail(Model model, Person personToEdit, Person editedPerson) {
+        return model.getClientBook().getPersonList().stream()
+                .anyMatch(person -> !person.equals(personToEdit) && person.isSamePerson(editedPerson));
+    }
+
+    private static boolean hasMatchingName(Model model, Person personToEdit, Person editedPerson) {
+        return model.getClientBook().getPersonList().stream()
+                .anyMatch(person -> !person.equals(personToEdit) && person.getName().equals(editedPerson.getName()));
     }
 
     /**
