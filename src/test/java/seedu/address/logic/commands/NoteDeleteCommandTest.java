@@ -56,7 +56,7 @@ public class NoteDeleteCommandTest {
                 model.getFilteredPersonList().get(0));
         assertEquals("Deleted interaction note 3 for " + original.getName().fullName + " (2000-02-29): Called",
                 result.getFeedbackToUser());
-        assertEquals(List.of(NOTE, OTHER_NOTE, NOTE, OTHER_NOTE), original.getInteractionNotes());
+        assertEquals(List.of(OTHER_NOTE, OTHER_NOTE, NOTE, NOTE), original.getInteractionNotes());
     }
 
     @Test
@@ -68,14 +68,14 @@ public class NoteDeleteCommandTest {
                     .withInteractionNotes(NOTE, target, OTHER_NOTE).build();
             model.setPerson(model.getFilteredPersonList().get(0), original);
 
-            String feedback = new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_SECOND_PERSON)
+            String feedback = new NoteDeleteCommand(INDEX_FIRST_PERSON, Index.fromOneBased(3))
                     .execute(model, null).getFeedbackToUser();
 
             String expectedExcerpt = length > 80 ? "😀".repeat(80) + "…" : text;
-            assertEquals("Deleted interaction note 2 for " + original.getName().fullName
+            assertEquals("Deleted interaction note 3 for " + original.getName().fullName
                     + " (2026-10-18): " + expectedExcerpt, feedback);
             assertEquals(text, target.getText());
-            assertEquals(List.of(NOTE, target, OTHER_NOTE), original.getInteractionNotes());
+            assertEquals(List.of(OTHER_NOTE, NOTE, target), original.getInteractionNotes());
             assertEquals(new PersonBuilder(original).withInteractionNotes(NOTE, OTHER_NOTE).build(),
                     model.getFilteredPersonList().get(0));
         }
@@ -102,7 +102,7 @@ public class NoteDeleteCommandTest {
         NoteDeleteCommand command = new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON);
 
         command.execute(model, null);
-        assertEquals(new PersonBuilder(original).withInteractionNotes(OTHER_NOTE).build(),
+        assertEquals(new PersonBuilder(original).withInteractionNotes(NOTE).build(),
                 model.getFilteredPersonList().get(0));
         command.execute(model, null);
         assertEquals(original, model.getFilteredPersonList().get(0));
@@ -119,7 +119,7 @@ public class NoteDeleteCommandTest {
         new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_SECOND_PERSON).execute(model, null);
 
         assertEquals(1, model.getFilteredPersonList().size());
-        assertEquals(new PersonBuilder(original).withInteractionNotes(NOTE).build(),
+        assertEquals(new PersonBuilder(original).withInteractionNotes(OTHER_NOTE).build(),
                 model.getFilteredPersonList().get(0));
         assertEquals(untouched, model.getClientBook().getPersonList().get(0));
         assertCommandFailure(new NoteDeleteCommand(INDEX_SECOND_PERSON, INDEX_FIRST_PERSON), model,
@@ -157,7 +157,7 @@ public class NoteDeleteCommandTest {
         LogicManager logic = new LogicManager(model, new StorageManager(storage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json"))));
 
-        logic.execute("notedelete 1 2");
+        logic.execute("notedelete 1 1");
 
         Model reopened = new ModelManager(storage.readClientBook().orElseThrow(), new UserPrefs());
         assertEquals(model.getClientBook(), reopened.getClientBook());

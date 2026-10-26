@@ -41,6 +41,23 @@ public class JsonAdaptedPersonTest {
             .collect(Collectors.toList());
 
     @Test
+    public void interactionNotes_unsortedStoredHistory_loadsChronologicallyAndPreservesTies() throws Exception {
+        InteractionNote newer = new InteractionNote(LocalDate.of(2026, 10, 20), "Newer");
+        InteractionNote older = new InteractionNote(LocalDate.of(2026, 10, 10), "Older");
+        InteractionNote sameDate = new InteractionNote(older.getDate(), "Same date, recorded later");
+        JsonAdaptedPerson stored = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_TAGS,
+                null, null, null, null, List.of(new JsonAdaptedInteractionNote(newer),
+                        new JsonAdaptedInteractionNote(older), new JsonAdaptedInteractionNote(sameDate)));
+
+        Person loaded = JsonUtil.fromJsonString(JsonUtil.toJsonString(stored), JsonAdaptedPerson.class).toModelType();
+        assertEquals(List.of(older, sameDate, newer), loaded.getInteractionNotes());
+        Person reloaded = JsonUtil.fromJsonString(JsonUtil.toJsonString(new JsonAdaptedPerson(loaded)),
+                JsonAdaptedPerson.class).toModelType();
+        assertEquals(List.of(older, sameDate, newer), reloaded.getInteractionNotes());
+        assertEquals(loaded, reloaded);
+    }
+
+    @Test
     public void contactPreferences_roundTrip_allPresenceCombinations() throws Exception {
         for (boolean channel : new boolean[] {false, true}) {
             for (boolean timing : new boolean[] {false, true}) {

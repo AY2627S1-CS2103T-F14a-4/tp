@@ -215,7 +215,7 @@ or `Phone/WhatsApp`, is preserved as part of the value.
 
 ### Adding a dated interaction note: `note`
 
-Appends a dated note to a client or prospect. Notes appear on the person's card in the order they were added.
+Adds a dated note to a client or prospect. Notes appear on the person's card in ascending date order (oldest first).
 
 Format: `note INDEX d/DATE n/NOTE`
 
@@ -243,7 +243,8 @@ Missing indices, dates or note prefixes produce an error. Dates such as `2026-02
 `Interaction note cannot be empty.` An index outside the displayed list produces
 `The person index provided is invalid.` These input errors leave the stored records unchanged.
 
-Notes are displayed in insertion order, including backdated entries; they are not sorted by date.
+Backdated notes are placed in chronological order. Notes with the same date retain their existing order;
+new notes with that date appear after them. Displayed note numbers update to match this order.
 Searching interaction notes is not currently supported.
 
 ### Editing a dated interaction note: `noteedit`
@@ -255,7 +256,7 @@ Format: `noteedit CONTACT_INDEX NOTE_INDEX n/NEW_NOTE_CONTENT`
 * Both indices must be positive integers. `CONTACT_INDEX` refers to the currently displayed contact list,
   including search results. The current search filter remains active after editing.
 * `NOTE_INDEX` is the number displayed beside the note under **Interaction notes:** on that contact's card.
-  Numbering starts at 1 and follows insertion order, rather than date order.
+  Numbering starts at 1 and follows chronological order (oldest first).
 * The original interaction date, other notes, and all other contact information are preserved.
 * New text cannot be blank. Surrounding whitespace is removed; case and internal text are preserved.
   Everything after `n/` is note text, including URLs and prefix-like strings. Enter it on one command line.
@@ -280,7 +281,7 @@ Format: `notedelete CONTACT_INDEX NOTE_INDEX`
 * Both indices must be positive integers. `CONTACT_INDEX` refers to the currently displayed contact list,
   including search results. The current filter remains active after deletion.
 * `NOTE_INDEX` is the number displayed beside the note under **Interaction notes:** on that contact's card.
-  Numbering starts at 1 and follows insertion order, rather than date order (e.g., `1. 2026-10-15: Called`).
+  Numbering starts at 1 and follows chronological order (oldest first), e.g., `1. 2026-10-15: Called`.
 * Only the specified note is removed, even if identical notes exist. Remaining notes retain their order,
   dates and text; subsequent displayed note numbers shift down by one automatically.
 * All other contact information is preserved, including financial information, tags, contact preferences
