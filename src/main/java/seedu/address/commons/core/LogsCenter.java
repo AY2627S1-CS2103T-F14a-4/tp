@@ -3,12 +3,16 @@ package seedu.address.commons.core;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+
+import seedu.address.commons.util.AppUtil;
 
 /**
  * Configures and manages loggers and handlers, including their logging level.
@@ -23,7 +27,7 @@ public class LogsCenter {
 
     private static final int MAX_FILE_COUNT = 5;
     private static final int MAX_FILE_SIZE_IN_BYTES = (int) (Math.pow(2, 20) * 5); // 5MB
-    private static final String LOG_FILE = "clientbook.log";
+    private static final String LOG_FILE_NAME = "clientbook.log";
     private static final Logger logger; // logger for this class
     private static Logger baseLogger; // to be used as the parent of all other loggers created by this class.
 
@@ -86,12 +90,14 @@ public class LogsCenter {
 
         // add a FileHandler to log to a file
         try {
-            FileHandler fileHandler = new FileHandler(LOG_FILE, MAX_FILE_SIZE_IN_BYTES, MAX_FILE_COUNT, true);
+            Path logFilePath = AppUtil.getApplicationDirectory().resolve(LOG_FILE_NAME);
+            FileHandler fileHandler = new FileHandler(
+                    logFilePath.toString(), MAX_FILE_SIZE_IN_BYTES, MAX_FILE_COUNT, true);
             fileHandler.setFormatter(new SimpleFormatter());
             fileHandler.setLevel(Level.ALL);
             baseLogger.addHandler(fileHandler);
-        } catch (IOException e) {
-            logger.warning("Error adding file handler for logger.");
+        } catch (IOException | URISyntaxException exception) {
+            Logger.getLogger(LogsCenter.class.getName()).warning("Error adding file handler for logger.");
         }
     }
 
