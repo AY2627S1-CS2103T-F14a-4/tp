@@ -97,6 +97,33 @@ public class ContactCommandParserTest {
     }
 
     @Test
+    public void parse_unicodeWhitespacePaddedHyphens_keepsNormalValue() {
+        ContactCommand channel = new ContactCommand(INDEX_FIRST_PERSON, new PreferredContactChannel("-"), null);
+        ContactCommand timing = new ContactCommand(INDEX_FIRST_PERSON, null, new PreferredContactTiming("-"));
+        for (String value : List.of("\u00a0-", "-\u2007", " \u202f- ", "-\u0085", "\u2003-\u00a0")) {
+            assertParseSuccess(parser, "1 ch/" + value, channel);
+            assertParseSuccess(parser, "1 tm/" + value, timing);
+        }
+    }
+
+    @Test
+    public void parse_unicodeValuesWithClear_success() {
+        String channel = "\u5ba2\u6237: Phone/WhatsApp\u00a0or Email!";
+        String timing = "Weekdays 6:30\u20138 pm\u202f(\u665a\u4e0a)";
+        ContactDescriptor descriptor = new ContactDescriptor();
+        descriptor.setChannel(new PreferredContactChannel(channel));
+        descriptor.setTiming(null);
+        for (String fields : List.of("ch/\u00a0" + channel + "\u2007 tm/-", "tm/- ch/\u202f" + channel)) {
+            assertParseSuccess(parser, "1 " + fields, new ContactCommand(INDEX_FIRST_PERSON, descriptor));
+        }
+        descriptor.setChannel(null);
+        descriptor.setTiming(new PreferredContactTiming(timing));
+        for (String fields : List.of("ch/- tm/\u202f" + timing + "\u00a0", "tm/" + timing + " ch/-")) {
+            assertParseSuccess(parser, "1 " + fields, new ContactCommand(INDEX_FIRST_PERSON, descriptor));
+        }
+    }
+
+    @Test
     public void parse_fieldsInEitherOrder_success() throws Exception {
         ContactCommand expected = new ContactCommand(INDEX_FIRST_PERSON,
                 new PreferredContactChannel("Phone  call"), new PreferredContactTiming("After 6:30 pm"));
@@ -131,17 +158,51 @@ public class ContactCommandParserTest {
             assertParseSuccess(parser, " 1 ch/ " + value + " tm/ " + value + " ",
                     new ContactCommand(INDEX_FIRST_PERSON,
                             new PreferredContactChannel(value), new PreferredContactTiming(value)));
+            assertParseSuccess(parser, "1 ch/\u0085\u00a0\t" + value + "\u2007 tm/\u202f" + value + "\u0085 ",
+                    new ContactCommand(INDEX_FIRST_PERSON,
+                            new PreferredContactChannel(value), new PreferredContactTiming(value)));
         }
     }
 
     @Test
+    public void parse_unicodeAndPunctuation_preservesInternalText() {
+        String channel = "\u5ba2\u6237: Phone/WhatsApp + Email\u00a0or\u2007phone!\u0085Call";
+        String timing = "Weekdays 6:30\u20138 pm\u202f(\u665a\u4e0a)\u0085Weekends";
+        ContactCommand expected = new ContactCommand(INDEX_FIRST_PERSON,
+                new PreferredContactChannel(channel), new PreferredContactTiming(timing));
+        assertParseSuccess(parser, "1 ch/\u00a0" + channel + "\u2007 tm/\u202f" + timing + "\u00a0", expected);
+        assertParseSuccess(parser, "1 tm/" + timing + " ch/" + channel, expected);
+    }
+
+    @Test
     public void parse_blankOrLongValues_failure() {
-        for (String value : List.of("", "  ", "\t", "\u2003", "a".repeat(201))) {
+        for (String value : List.of("", "  ", "\t", "\r\n", "\u2003", "a".repeat(201),
+                "\u00a0" + "a".repeat(201) + "\u202f")) {
             assertParseFailure(parser, " 1 ch/" + value, PreferredContactChannel.MESSAGE_CONSTRAINTS);
             assertParseFailure(parser, " 1 tm/" + value, PreferredContactTiming.MESSAGE_CONSTRAINTS);
             assertParseFailure(parser, " 1 ch/Email tm/" + value, PreferredContactTiming.MESSAGE_CONSTRAINTS);
             assertParseFailure(parser, " 1 ch/" + value + " tm/After 6 pm",
                     PreferredContactChannel.MESSAGE_CONSTRAINTS);
+        }
+    }
+
+    @Test
+    public void parse_nonBreakingWhitespaceOnlyValues_failure() {
+        for (String value : List.of("\u00a0", "\u2007", "\u202f", " \t\u2003\u00a0\u2007\u202f\n ")) {
+            assertParseFailure(parser, "1 ch/" + value, PreferredContactChannel.MESSAGE_CONSTRAINTS);
+            assertParseFailure(parser, "1 tm/" + value, PreferredContactTiming.MESSAGE_CONSTRAINTS);
+            assertParseFailure(parser, "1 ch/Email tm/" + value, PreferredContactTiming.MESSAGE_CONSTRAINTS);
+            assertParseFailure(parser, "1 tm/Weekends ch/" + value, PreferredContactChannel.MESSAGE_CONSTRAINTS);
+        }
+    }
+
+    @Test
+    public void parse_nextLineWhitespaceOnlyValues_failure() {
+        for (String value : List.of("\u0085", " \t\u00a0\u0085\u001c ")) {
+            assertParseFailure(parser, "1 ch/" + value, PreferredContactChannel.MESSAGE_CONSTRAINTS);
+            assertParseFailure(parser, "1 tm/" + value, PreferredContactTiming.MESSAGE_CONSTRAINTS);
+            assertParseFailure(parser, "1 ch/Email tm/" + value, PreferredContactTiming.MESSAGE_CONSTRAINTS);
+            assertParseFailure(parser, "1 tm/Weekends ch/" + value, PreferredContactChannel.MESSAGE_CONSTRAINTS);
         }
     }
 

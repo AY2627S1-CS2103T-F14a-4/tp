@@ -67,6 +67,28 @@ public class ContactCommandTest {
     }
 
     @Test
+    public void parse_whitespaceOnlyPreferences_noMutation() {
+        Person original = populatedPerson();
+        model.setPerson(model.getFilteredPersonList().getFirst(), original);
+        List<Person> expectedPersons = List.copyOf(model.getClientBook().getPersonList());
+        for (String value : List.of(" ", "\t", "\u2003", "\u00a0", "\u2007", "\u202f",
+                " \t\u2003\u00a0\u2007\u202f ")) {
+            for (String fields : List.of("ch/" + value, "ch/" + value + " tm/After 6 pm",
+                    "tm/After 6 pm ch/" + value)) {
+                assertThrows(ParseException.class, PreferredContactChannel.MESSAGE_CONSTRAINTS, () ->
+                        parser.parseCommand("contact 1 " + fields).execute(model, null));
+                assertEquals(expectedPersons, model.getClientBook().getPersonList());
+            }
+            for (String fields : List.of("tm/" + value, "ch/Phone tm/" + value,
+                    "tm/" + value + " ch/Phone")) {
+                assertThrows(ParseException.class, PreferredContactTiming.MESSAGE_CONSTRAINTS, () ->
+                        parser.parseCommand("contact 1 " + fields).execute(model, null));
+                assertEquals(expectedPersons, model.getClientBook().getPersonList());
+            }
+        }
+    }
+
+    @Test
     public void execute_mixedSetAndClear_preservesOtherFields() throws Exception {
         Person original = populatedPerson();
         String[] commands = {"ch/WhatsApp tm/-", "tm/- ch/WhatsApp", "ch/- tm/Weekends", "tm/Weekends ch/-"};
@@ -118,6 +140,7 @@ public class ContactCommandTest {
         model.setPerson(model.getFilteredPersonList().getFirst(), original);
         List<Person> expected = List.copyOf(model.getClientBook().getPersonList());
         for (String fields : List.of("", "ch/- tm/", "tm/- ch/", "ch/- tm/\t", "tm/- ch/\u2003",
+                "ch/- tm/\u00a0", "tm/- ch/\u2007", "ch/- tm/\u202f", "tm/- ch/\u0085",
                 "ch/- tm/" + "a".repeat(201), "tm/- ch/" + "a".repeat(201),
                 "ch/- ch/Phone", "tm/Weekends tm/-")) {
             assertThrows(ParseException.class, () -> parser.parseCommand("contact 1 " + fields).execute(model, null));
