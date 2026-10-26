@@ -133,9 +133,27 @@ public class EditCommandTest {
         String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
 
         Model expectedModel = new ModelManager(new ClientBook(model.getClientBook()), new UserPrefs());
-        expectedModel.setPerson(model.getFilteredPersonList().get(0), editedPerson);
+        showPersonAtIndex(expectedModel, INDEX_FIRST_PERSON);
+        expectedModel.setPerson(personInFilteredList, editedPerson);
 
         assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+    }
+
+    @Test
+    public void execute_filteredList_preservesFilter() {
+        showPersonAtIndex(model, INDEX_FIRST_PERSON);
+        Person personToEdit = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        Person editedPerson = new PersonBuilder(personToEdit).withPhone("93456789").build();
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON,
+                new EditPersonDescriptorBuilder().withPhone("93456789").build());
+        Model expectedModel = new ModelManager(new ClientBook(model.getClientBook()), new UserPrefs());
+        expectedModel.setPerson(personToEdit, editedPerson);
+        showPersonAtIndex(expectedModel, INDEX_FIRST_PERSON);
+
+        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+        assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+        assertEquals(1, model.getFilteredPersonList().size());
+        assertEquals(editedPerson, model.getFilteredPersonList().getFirst());
     }
 
     @Test
