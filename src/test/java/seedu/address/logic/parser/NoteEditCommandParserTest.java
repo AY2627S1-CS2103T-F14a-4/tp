@@ -7,6 +7,7 @@ import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSucces
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -26,10 +27,31 @@ public class NoteEditCommandParserTest {
 
     @Test
     public void parse_missingOrExtraFields_rejected() {
-        for (String args : List.of("", "1", "1 2", "1 n/Text", "1 2 3 n/Text", "1 2 d/2000-01-01 n/Text")) {
+        for (String args : List.of("", "1", "1 2", "1 n/Text", "1 2 3 n/Text", "1 2 x/Text")) {
             assertParseFailure(parser, args,
                     String.format(MESSAGE_INVALID_COMMAND_FORMAT, NoteEditCommand.MESSAGE_USAGE));
         }
+    }
+
+    @Test
+    public void parse_dateOnlyAndDateWithText_success() {
+        for (LocalDate date : List.of(LocalDate.of(2026, 10, 19), LocalDate.now(), LocalDate.now().plusDays(1))) {
+            assertParseSuccess(parser, "1 2 d/ " + date + "  ",
+                    new NoteEditCommand(INDEX_FIRST_PERSON, INDEX_SECOND_PERSON, date, null));
+            String text = "Corrected n/literal d/2099-01-01 https://example.com";
+            assertParseSuccess(parser, "1 2 d/" + date + " n/ " + text + "  ",
+                    new NoteEditCommand(INDEX_FIRST_PERSON, INDEX_SECOND_PERSON, date, text));
+        }
+    }
+
+    @Test
+    public void parse_invalidOrDuplicateDates_rejected() {
+        for (String date : List.of("", "2026-02-30", "2025-02-29", "2026-2-01", "tomorrow",
+                "2000-01-01 d/2000-01-02")) {
+            assertParseFailure(parser, "1 2 d/" + date, InteractionNote.MESSAGE_INVALID_DATE);
+            assertParseFailure(parser, "1 2 d/" + date + " n/Text", InteractionNote.MESSAGE_INVALID_DATE);
+        }
+        assertParseFailure(parser, "1 2 d/2000-01-01 n/  ", InteractionNote.MESSAGE_BLANK);
     }
 
     @Test
