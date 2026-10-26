@@ -37,7 +37,7 @@ public class AddCommandParserTest {
                 Relationship.CLIENT);
 
         assertParseSuccess(parser,
-                " r/Client n/John Doe e/john.doe@example.com p/91234567 t/priority t/referral t/PRIORITY",
+                " r/Client n/John Doe e/john.doe@example.com p/91234567 t/priority t/referral t/priority",
                 new AddCommand(expectedPerson));
     }
 
@@ -53,15 +53,17 @@ public class AddCommandParserTest {
 
     @Test
     public void parse_missingPrefix_failure() {
-        assertParseFailure(parser, "", AddCommand.MESSAGE_ALL_PARAMETERS_REQUIRED);
+        String expectedMessage = String.format(Messages.MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE);
+
+        assertParseFailure(parser, "", expectedMessage);
         assertParseFailure(parser, " n/John Doe e/john.doe@example.com p/91234567",
-                AddCommand.MESSAGE_RELATIONSHIP_REQUIRED);
+                expectedMessage);
         assertParseFailure(parser, " r/Client e/john.doe@example.com p/91234567",
-                AddCommand.MESSAGE_NAME_REQUIRED);
+                expectedMessage);
         assertParseFailure(parser, " r/Client n/John Doe p/91234567",
-                AddCommand.MESSAGE_EMAIL_REQUIRED);
+                expectedMessage);
         assertParseFailure(parser, " r/Client n/John Doe e/john.doe@example.com",
-                AddCommand.MESSAGE_PHONE_REQUIRED);
+                expectedMessage);
     }
 
     @Test
@@ -84,5 +86,13 @@ public class AddCommandParserTest {
     public void parse_invalidRelationship_failure() {
         assertParseFailure(parser, " r/Partner n/John Doe e/john.doe@example.com p/91234567",
                 Relationship.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
+    public void parse_domainLabelExceeds63Characters_failure() {
+        String email = "john@" + "a".repeat(64) + ".com";
+
+        assertParseFailure(parser, " r/Client n/John Doe e/" + email + " p/91234567",
+                Email.MESSAGE_DOMAIN_LABEL_LENGTH);
     }
 }

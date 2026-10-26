@@ -13,6 +13,7 @@ import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.ClientBookParser;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.Model;
+import seedu.address.model.ModelManager;
 import seedu.address.model.person.Person;
 import seedu.address.storage.Storage;
 
@@ -44,13 +45,14 @@ public class LogicManager implements Logic {
     public CommandResult execute(String commandText) throws CommandException, ParseException {
         logger.info("----------------[USER COMMAND][" + commandText + "]");
 
-        CommandResult commandResult;
         Command command = clientBookParser.parseCommand(commandText);
-        commandResult = command.execute(model, storage);
+        Model temporaryModel = new ModelManager(model.getClientBook(), model.getUserPrefs());
+        temporaryModel.updateFilteredPersonList(model.getFilteredPersonPredicate());
+        CommandResult commandResult = command.execute(temporaryModel, storage);
 
         if (!commandResult.isModelSaved()) {
             try {
-                storage.saveClientBook(model.getClientBook());
+                storage.saveClientBook(temporaryModel.getClientBook());
             } catch (AccessDeniedException e) {
                 throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
             } catch (IOException ioe) {
@@ -58,7 +60,14 @@ public class LogicManager implements Logic {
             }
         }
 
+        commitModel(temporaryModel);
         return commandResult;
+    }
+
+    /** Replaces the visible model with a command result that has been successfully persisted. */
+    private void commitModel(Model temporaryModel) {
+        model.setClientBook(temporaryModel.getClientBook());
+        model.updateFilteredPersonList(temporaryModel.getFilteredPersonPredicate());
     }
 
     @Override

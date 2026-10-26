@@ -21,30 +21,18 @@ public class AddCommand extends Command {
 
     public static final String COMMAND_WORD = "add";
 
-    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Adds a person to the client book. "
-            + "Parameters: "
+    public static final String MESSAGE_USAGE = "Parameters: "
             + PREFIX_RELATIONSHIP + "RELATIONSHIP "
             + PREFIX_NAME + "NAME "
             + PREFIX_EMAIL + "EMAIL "
             + PREFIX_PHONE + "PHONE_NUMBER "
-            + "[" + PREFIX_TAG + "TAG]...\n"
-            + "Example: " + COMMAND_WORD + " "
-            + PREFIX_RELATIONSHIP + "Client "
-            + PREFIX_NAME + "John Doe "
-            + PREFIX_EMAIL + "johnd@example.com "
-            + PREFIX_PHONE + "98765432 "
-            + PREFIX_TAG + "priority";
+            + "[" + PREFIX_TAG + "TAG]...";
 
     public static final String MESSAGE_SUCCESS = "New person added: %1$s";
     public static final String MESSAGE_DUPLICATE_PERSON = "This contact already exists.";
+    public static final String MESSAGE_DUPLICATE_NAME = "A contact with this name already exists.";
     public static final String MESSAGE_DUPLICATE_EMAIL = "A contact with this email address already exists.";
     public static final String MESSAGE_DUPLICATE_PHONE = "A contact with this phone number already exists.";
-    public static final String MESSAGE_RELATIONSHIP_REQUIRED = "Relationship is required.";
-    public static final String MESSAGE_NAME_REQUIRED = "Name is required.";
-    public static final String MESSAGE_EMAIL_REQUIRED = "Email is required.";
-    public static final String MESSAGE_PHONE_REQUIRED = "Phone number is required.";
-    public static final String MESSAGE_ALL_PARAMETERS_REQUIRED =
-            "Relationship, name, email and phone number are required.";
     private final Person toAdd;
 
     /**
@@ -62,13 +50,18 @@ public class AddCommand extends Command {
         boolean hasMatchingEmail = model.getClientBook().getPersonList().stream()
                 .anyMatch(person -> person.getEmail().equals(toAdd.getEmail()));
         boolean hasMatchingPhone = model.getClientBook().getPersonList().stream()
-                .anyMatch(person -> person.getPhone().equals(toAdd.getPhone()));
+                .anyMatch(person -> person.getPhone().hasSamePhoneNumber(toAdd.getPhone()));
         boolean hasMatchingEmailAndPhone = model.getClientBook().getPersonList().stream()
                 .anyMatch(person -> person.getEmail().equals(toAdd.getEmail())
-                        && person.getPhone().equals(toAdd.getPhone()));
+                        && person.getPhone().hasSamePhoneNumber(toAdd.getPhone()));
+        boolean hasMatchingName = model.getClientBook().getPersonList().stream()
+                .anyMatch(person -> person.getName().equals(toAdd.getName()));
 
         if (hasMatchingEmailAndPhone) {
             throw new CommandException(MESSAGE_DUPLICATE_PERSON);
+        }
+        if (hasMatchingName) {
+            throw new CommandException(MESSAGE_DUPLICATE_NAME);
         }
         if (hasMatchingEmail) {
             throw new CommandException(MESSAGE_DUPLICATE_EMAIL);
