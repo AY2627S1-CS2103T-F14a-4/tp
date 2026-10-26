@@ -1,7 +1,9 @@
 package seedu.address.logic.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.showPersonAtIndex;
 import static seedu.address.testutil.Assert.assertThrows;
@@ -16,7 +18,9 @@ import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.logic.Messages;
+import seedu.address.logic.commands.ContactCommand.ContactDescriptor;
 import seedu.address.logic.parser.ClientBookParser;
+import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
@@ -38,6 +42,131 @@ public class ContactCommandTest {
                 .withAreaOfInterest("Insurance").withInteractionNotes(new InteractionNote(LocalDate.of(2000, 1, 1),
                         "Discussed plans")).withNextAction(new NextAction("Call", LocalDate.of(2000, 1, 1), false))
                 .withPreferredContactChannel("Email").withPreferredContactTiming("Weekends").build();
+    }
+
+    @Test
+    public void execute_clearPreferences_preservesOtherFields() throws Exception {
+        Person original = populatedPerson();
+        for (int mask = 1; mask < 4; mask++) {
+            model.setPerson(model.getFilteredPersonList().getFirst(), original);
+            boolean clearChannel = (mask & 1) != 0;
+            boolean clearTiming = (mask & 2) != 0;
+            String command = "contact 1" + (clearChannel ? " ch/ - " : "") + (clearTiming ? " tm/ - " : "");
+            Person expected = new Person(original.getName(), original.getPhone(), original.getEmail(),
+                    original.getTags(), original.getRelationship(), original.getFinancialNeed().orElseThrow(),
+                    original.getPriority().orElseThrow(), original.getAreaOfInterest().orElseThrow(),
+                    original.getInteractionNotes(), original.getNextAction().orElseThrow(),
+                    clearChannel ? null : original.getPreferredContactChannel().orElseThrow(),
+                    clearTiming ? null : original.getPreferredContactTiming().orElseThrow());
+            for (int repeat = 0; repeat < 2; repeat++) {
+                assertEquals(String.format(ContactCommand.MESSAGE_SUCCESS, original.getName().fullName),
+                        parser.parseCommand(command).execute(model, null).getFeedbackToUser());
+                assertEquals(expected, model.getFilteredPersonList().getFirst());
+            }
+        }
+    }
+
+    @Test
+    public void execute_mixedSetAndClear_preservesOtherFields() throws Exception {
+        Person original = populatedPerson();
+        String[] commands = {"ch/WhatsApp tm/-", "tm/- ch/WhatsApp", "ch/- tm/Weekends", "tm/Weekends ch/-"};
+        for (int i = 0; i < commands.length; i++) {
+            model.setPerson(model.getFilteredPersonList().getFirst(), original);
+            parser.parseCommand("contact 1 " + commands[i]).execute(model, null);
+            Person expected = new Person(original.getName(), original.getPhone(), original.getEmail(),
+                    original.getTags(), original.getRelationship(), original.getFinancialNeed().orElseThrow(),
+                    original.getPriority().orElseThrow(), original.getAreaOfInterest().orElseThrow(),
+                    original.getInteractionNotes(), original.getNextAction().orElseThrow(),
+                    i < 2 ? new PreferredContactChannel("WhatsApp") : null,
+                    i < 2 ? null : new PreferredContactTiming("Weekends"));
+            assertEquals(expected, model.getFilteredPersonList().getFirst());
+        }
+    }
+
+    @Test
+    public void execute_clearAbsentPreferences_noChange() throws Exception {
+        Person original = model.getFilteredPersonList().getFirst();
+        assertTrue(original.getPreferredContactChannel().isEmpty());
+        assertTrue(original.getPreferredContactTiming().isEmpty());
+        for (String fields : List.of("ch/-", "tm/-", "ch/- tm/-", "tm/- ch/-")) {
+            parser.parseCommand("contact 1 " + fields).execute(model, null);
+            assertEquals(original, model.getFilteredPersonList().getFirst());
+        }
+    }
+
+    @Test
+    public void execute_clearInFilteredList_updatesDisplayedPerson() throws Exception {
+        Person first = model.getFilteredPersonList().getFirst();
+        Person second = model.getFilteredPersonList().get(1);
+        Person target = new PersonBuilder(second).withPreferredContactChannel("Phone")
+                .withPreferredContactTiming("Evenings").build();
+        model.setPerson(second, target);
+        showPersonAtIndex(model, INDEX_SECOND_PERSON);
+        parser.parseCommand("contact 1 tm/- ch/-").execute(model, null);
+        assertEquals(List.of(second), model.getFilteredPersonList());
+        assertEquals(first, model.getClientBook().getPersonList().getFirst());
+        assertCommandFailure(parser.parseCommand("contact 2 ch/-"), model,
+                Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+        model.updateFilteredPersonList(person -> false);
+        assertCommandFailure(parser.parseCommand("contact 1 tm/-"), model,
+                Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+    }
+
+    @Test
+    public void parse_invalidInputWithClear_noMutation() {
+        Person original = populatedPerson();
+        model.setPerson(model.getFilteredPersonList().getFirst(), original);
+        List<Person> expected = List.copyOf(model.getClientBook().getPersonList());
+        for (String fields : List.of("", "ch/- tm/", "tm/- ch/", "ch/- tm/\t", "tm/- ch/\u2003",
+                "ch/- tm/" + "a".repeat(201), "tm/- ch/" + "a".repeat(201),
+                "ch/- ch/Phone", "tm/Weekends tm/-")) {
+            assertThrows(ParseException.class, () -> parser.parseCommand("contact 1 " + fields).execute(model, null));
+            assertEquals(expected, model.getClientBook().getPersonList());
+        }
+        for (String index : List.of("0", "-1", "abc", "2147483648")) {
+            assertThrows(ParseException.class, () ->
+                    parser.parseCommand("contact " + index + " ch/- tm/-").execute(model, null));
+            assertEquals(expected, model.getClientBook().getPersonList());
+        }
+        assertCommandFailure(new ContactCommand(Index.fromOneBased(expected.size() + 1), clearBoth()), model,
+                Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+    }
+
+    @Test
+    public void descriptor_statesAndCopies_distinguishChanges() throws Exception {
+        ContactDescriptor omitted = new ContactDescriptor();
+        ContactDescriptor clear = clearBoth();
+        assertFalse(omitted.isChannelSpecified());
+        assertFalse(omitted.isTimingSpecified());
+        assertTrue(clear.isChannelSpecified());
+        assertTrue(clear.isTimingSpecified());
+        assertTrue(clear.getChannel().isEmpty());
+        assertTrue(clear.getTiming().isEmpty());
+        assertNotEquals(omitted, clear);
+        ContactDescriptor copy = new ContactDescriptor(clear);
+        assertEquals(clear, copy);
+        assertEquals(clear.hashCode(), copy.hashCode());
+        ContactCommand command = new ContactCommand(INDEX_FIRST_PERSON, clear);
+        clear.setChannel(new PreferredContactChannel("Phone"));
+        clear.setTiming(new PreferredContactTiming("Evenings"));
+        assertEquals(command, parser.parseCommand("contact 1 ch/- tm/-"));
+        assertEquals(copy, clearBoth());
+        assertNotEquals(copy, clear);
+        assertNotEquals(copy, null);
+        assertNotEquals(copy, "clear");
+        assertNotEquals(command, parser.parseCommand("contact 1 ch/-"));
+        assertNotEquals(command, parser.parseCommand("contact 1 tm/-"));
+        assertNotEquals(command, parser.parseCommand("contact 1 ch/Phone tm/Evenings"));
+        assertThrows(NullPointerException.class, () -> new ContactDescriptor(null));
+        assertThrows(NullPointerException.class, () -> new ContactCommand(INDEX_FIRST_PERSON, null));
+        assertThrows(IllegalArgumentException.class, () -> new ContactCommand(INDEX_FIRST_PERSON, omitted));
+    }
+
+    private ContactDescriptor clearBoth() {
+        ContactDescriptor descriptor = new ContactDescriptor();
+        descriptor.setChannel(null);
+        descriptor.setTiming(null);
+        return descriptor;
     }
 
     @Test
