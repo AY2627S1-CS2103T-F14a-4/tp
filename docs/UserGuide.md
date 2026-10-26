@@ -484,7 +484,9 @@ Format: `exit`
 
 ### Saving the data
 
-ClientBook automatically saves data after every command. You do not need to save manually.
+ClientBook automatically saves changes to your records. You do not need to save manually.
+
+If saving fails, check that the data folder and clientbook.json file are accessible and writable, then try again.
 
 ### Editing the data file
 
