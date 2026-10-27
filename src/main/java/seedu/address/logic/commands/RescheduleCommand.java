@@ -2,6 +2,7 @@ package seedu.address.logic.commands;
 
 import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.Objects;
 
@@ -20,17 +21,25 @@ public class RescheduleCommand extends Command {
     public static final String MESSAGE_USAGE = "reschedule INDEX d/yyyy-MM-dd [a/ACTION]";
     public static final String MESSAGE_SUCCESS = "Follow-up for %s has been rescheduled successfully.";
     public static final String MESSAGE_NO_NEXT_ACTION = "%s has no follow-up to reschedule. Use next to create one.";
+    public static final String MESSAGE_PAST_DATE = "Follow-up date cannot be before today.";
 
     private final Index index;
     private final LocalDate dueDate;
     private final String action;
+    private final Clock clock;
 
     /** Creates a command; a null action keeps the existing description. */
     public RescheduleCommand(Index index, LocalDate dueDate, String action) {
-        requireAllNonNull(index, dueDate);
+        this(index, dueDate, action, Clock.systemDefaultZone());
+    }
+
+    /** Creates a command with a clock for determining today's local date at execution. */
+    public RescheduleCommand(Index index, LocalDate dueDate, String action, Clock clock) {
+        requireAllNonNull(index, dueDate, clock);
         this.index = index;
         this.dueDate = dueDate;
         this.action = action;
+        this.clock = clock;
     }
 
     @Override
@@ -43,6 +52,9 @@ public class RescheduleCommand extends Command {
         if (original.getNextAction().isEmpty()) {
             throw new CommandException(String.format(MESSAGE_NO_NEXT_ACTION, original.getName().fullName));
         }
+        if (dueDate.isBefore(LocalDate.now(clock))) {
+            throw new CommandException(MESSAGE_PAST_DATE);
+        }
         NextAction updated = original.getNextAction().orElseThrow().reschedule(dueDate, action);
         model.setPerson(original, original.withNextAction(updated));
         return new CommandResult(String.format(MESSAGE_SUCCESS, original.getName().fullName));
@@ -52,16 +64,17 @@ public class RescheduleCommand extends Command {
     public boolean equals(Object other) {
         return other == this || other instanceof RescheduleCommand command
                 && index.equals(command.index) && dueDate.equals(command.dueDate)
-                && Objects.equals(action, command.action);
+                && Objects.equals(action, command.action) && clock.equals(command.clock);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(index.getZeroBased(), dueDate, action);
+        return Objects.hash(index.getZeroBased(), dueDate, action, clock);
     }
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this).add("index", index).add("dueDate", dueDate).add("action", action).toString();
+        return new ToStringBuilder(this).add("index", index).add("dueDate", dueDate)
+                .add("action", action).add("clock", clock).toString();
     }
 }

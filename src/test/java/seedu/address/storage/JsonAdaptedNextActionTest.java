@@ -30,7 +30,7 @@ public class JsonAdaptedNextActionTest {
     }
 
     @Test
-    public void toModelType_rescheduledAction_preservesOtherFieldsAndCompletion() throws Exception {
+    public void toModelType_rescheduledAction_preservesOtherFieldsAndPendingStatus() throws Exception {
         for (boolean completed : new boolean[] {false, true}) {
             Person original = new PersonBuilder().withFinancialNeed("Retirement").withPriority("High")
                     .withAreaOfInterest("Insurance").withPreferredContactChannel("WhatsApp")
@@ -41,7 +41,7 @@ public class JsonAdaptedNextActionTest {
             String json = JsonUtil.toJsonString(new JsonAdaptedPerson(updated));
             Person loaded = JsonUtil.fromJsonString(json, JsonAdaptedPerson.class).toModelType();
             assertEquals(updated, loaded);
-            assertEquals(new NextAction("Email", LocalDate.of(2026, 10, 30), completed),
+            assertEquals(new NextAction("Email", LocalDate.of(2026, 10, 30), false),
                     loaded.getNextAction().orElseThrow());
         }
     }

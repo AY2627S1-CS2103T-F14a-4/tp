@@ -30,13 +30,13 @@ public class NextActionTest {
     }
 
     @Test
-    public void reschedule_returnsCopyPreservingDescriptionAndCompletion() {
+    public void reschedule_returnsPendingCopyPreservingDescription() {
         for (boolean completed : new boolean[] {false, true}) {
             NextAction original = new NextAction("Call", DATE, completed);
             NextAction dateOnly = original.reschedule(DATE.plusDays(1), null);
-            assertEquals(new NextAction("Call", DATE.plusDays(1), completed), dateOnly);
+            assertEquals(new NextAction("Call", DATE.plusDays(1), false), dateOnly);
             assertNotSame(original, dateOnly);
-            assertEquals(new NextAction("Email", DATE.minusDays(1), completed),
+            assertEquals(new NextAction("Email", DATE.minusDays(1), false),
                     original.reschedule(DATE.minusDays(1), "  Email  "));
             assertEquals(new NextAction("Call", DATE, completed), original);
         }

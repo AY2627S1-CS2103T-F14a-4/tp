@@ -456,21 +456,27 @@ string representation, parser validation and routing through `ClientBookParser`.
 
 `ClientBookParser` routes `reschedule INDEX d/yyyy-MM-dd [a/ACTION]` to
 `RescheduleCommandParser`. It reuses the existing `a/` and `d/` prefixes, index parsing,
-`NextAction.parseDate` and description validation. Valid past dates remain supported, consistently
-with `next`. Duplicate prefixes, missing dates and invalid inputs fail before model mutation.
+`NextAction.parseDate` and description validation. The parser validates calendar dates and format;
+`RescheduleCommand` additionally rejects dates before today at execution with
+`Follow-up date cannot be before today.`. Its default clock uses the system's local zone, with an
+injectable `Clock` for deterministic tests. Duplicate prefixes, missing dates, invalid inputs and
+past replacement dates fail before model mutation. The general `next` command remains unchanged
+and continues to accept historical dates.
 
 A separate minimal command keeps `next` creation/replacement semantics unchanged while permitting
 an omitted description and requiring an existing follow-up. `RescheduleCommand` resolves the displayed
 index, rejects a person without a follow-up, then calls `NextAction.reschedule` and
-`Person.withNextAction` before `Model#setPerson`. The immutable copy preserves completion status;
-`next` remains the way to replace completed work with a pending action. All other person fields and
-the active filter are preserved. An incomplete action moved past the date captured by `due` is
-therefore automatically removed from that filtered view.
+`Person.withNextAction` before `Model#setPerson`. The immutable copy always resets `completed`
+to `false`, so rescheduling completed work reopens it. A follow-up rescheduled for today is included
+when `due` is run again; a future follow-up remains pending and is excluded until its due date.
+All other person fields and the active filter are preserved. A due action moved into the future
+is therefore automatically removed from that filtered view.
 
 `LogicManager` persists the updated person through the existing `JsonAdaptedNextAction`; no JSON
 schema change or migration is required. Parser/command tests cover invalid inputs, displayed indices,
-missing follow-ups, date-only and description changes, completed actions and due-filter updates.
-Model and JSON round-trip tests verify immutable rescheduling and preservation of optional fields.
+missing follow-ups, date-only and description changes, reopening completed actions, rejection of
+past dates without mutation, local-zone date boundaries and due-filter updates. Model and JSON
+round-trip tests verify immutable rescheduling, pending status and preservation of optional fields.
 
 #### Viewing due actions (US19)
 

@@ -60,9 +60,9 @@ public class NextAction {
         return new NextAction(action, dueDate, true);
     }
 
-    /** Returns a copy with a new date, preserving completion and an omitted description. */
+    /** Returns a pending copy with a new date, preserving an omitted description. */
     public NextAction reschedule(LocalDate dueDate, String action) {
-        return new NextAction(action == null ? this.action : action, dueDate, completed);
+        return new NextAction(action == null ? this.action : action, dueDate, false);
     }
 
     @Override

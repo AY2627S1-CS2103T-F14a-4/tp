@@ -451,16 +451,18 @@ Changes the date of an existing follow-up without requiring you to retype its de
 Format: `reschedule INDEX d/yyyy-MM-dd [a/ACTION]`
 
 * `INDEX` is the positive index in the currently displayed list.
-* `d/` is required. Date validation is identical to `next`: a real date in years `0001`–`9999`,
-  written with exactly four year digits and two month/day digits. Valid past dates are accepted;
-  an incomplete follow-up with a past date remains overdue.
+* `d/` is required. Use a real date in years `0001`–`9999`, written with exactly four year digits
+  and two month/day digits, as for `next`. The replacement date must be today or later, using
+  your computer's local date when the command executes. Past dates report
+  `Follow-up date cannot be before today.` without changing any record.
 * Omit `a/` to keep the existing description, or supply it to replace the description.
   A supplied description must contain 1–200 characters after trimming surrounding whitespace.
   Duplicate `a/` or `d/` prefixes are rejected.
 * The person must already have a follow-up. Otherwise, the command reports
   `NAME has no follow-up to reschedule. Use next to create one.` without changing any record.
-* Completion status is preserved. Rescheduling completed work keeps it completed; use `next`
-  to replace it with a new pending action. Other contact information is preserved.
+* Rescheduling resets completion status to pending, including for previously completed work.
+  A follow-up rescheduled for today appears in `due` again; one moved to a future date remains
+  pending until it becomes due. Other contact information is preserved.
 * The current filter remains active. If a follow-up is moved into the future while viewing `due`,
   its person disappears from that view and the remaining displayed indices update.
 
@@ -470,7 +472,7 @@ Examples:
 * `reschedule 1 d/2026-11-02 a/Send revised proposal` — change the date and description.
 
 The success message is `Follow-up for NAME has been rescheduled successfully.`.
-Invalid indices, dates and descriptions report the same validation messages as `next`.
+Invalid indices, date formats and descriptions report the same validation messages as `next`.
 Changes are saved automatically using the existing follow-up storage format.
 
 ### Completing a follow-up: `done`
