@@ -846,7 +846,59 @@ testers are expected to do more *exploratory* testing.
 
       Expected: The most recent window size and location are retained.
 
-3. _{ more test cases … }_
+### Adding a client/prospect
+
+Use a separate test folder with fictional records.
+
+1. Adding valid records
+
+    1. Prerequisites: Start with an empty client book, or run `clear`.
+
+    2. Test case: `add r/Client n/John Doe e/john@example.com p/91234567 t/referral`<br>
+       Expected: A confirmation beginning with `New person added:` appears. A Client record for John Doe is shown
+       with the supplied email, phone number, and `referral` tag.
+
+    3. Test case: `add r/Prospect n/Jane Tan e/jane@example.com p/98765432`<br>
+       Expected: A confirmation beginning with `New person added:` appears. A Prospect record for Jane Tan is
+       added at index 2.
+
+2. Rejecting duplicate records
+
+    1. Prerequisites: John Doe has been added as above.
+
+    2. Test case: `add r/Client n/John Doe e/john@example.com p/91234567`<br>
+       Expected: `This contact already exists.` is shown and no additional record is created.
+
+3. Rejecting invalid input
+
+    1. Test case: `add r/Client n/John Doe e/john@example.com p/123`<br>
+       Expected: An error message is shown for the invalid phone number and no record is created.
+
+### Editing a client/prospect
+
+Use a separate test folder with fictional records. Add John Doe and Jane Tan as described in the preceding section.
+
+1. Editing a displayed record
+
+    1. Prerequisites: Run `list` so that John Doe is at index 1 and Jane Tan is at index 2.
+
+    2. Test case: `edit 1 r/Prospect e/john.new@example.com p/91234568`<br>
+       Expected: A confirmation beginning with `Edited person:` appears. John Doe is now a Prospect with the new
+       email address and phone number; the existing `referral` tag remains.
+
+2. Editing one field
+
+    1. Test case: `edit 2 r/Client`<br>
+       Expected: A confirmation beginning with `Edited person:` appears. Jane Tan is now a Client and her other
+       details are unchanged.
+
+3. Rejecting invalid edits
+
+    1. Test case: `edit 3 n/Alex Tan`<br>
+       Expected: `The person index provided is invalid.` is shown and neither record changes.
+
+    2. Test case: `edit 1`<br>
+       Expected: `At least one field to edit must be provided.` is shown and John Doe's record does not change.
 
 ### Deleting a client/prospect
 
