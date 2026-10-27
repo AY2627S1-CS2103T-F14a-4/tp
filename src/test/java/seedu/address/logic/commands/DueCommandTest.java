@@ -3,7 +3,6 @@ package seedu.address.logic.commands;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -13,6 +12,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import seedu.address.commons.core.index.Index;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
@@ -48,12 +48,12 @@ public class DueCommandTest {
             .withPerson(DUE_YESTERDAY).withPerson(NO_ACTION).build(), new UserPrefs());
 
     @Test
-    public void execute_mixedActions_showsOnlyDuePeopleInOriginalOrder() throws Exception {
+    public void execute_mixedActions_sortsDuePeopleWithoutReorderingStoredContacts() throws Exception {
         List<Person> originalPeople = List.copyOf(model.getClientBook().getPersonList());
 
         CommandResult result = command.execute(model, null);
 
-        assertEquals(List.of(DUE_TODAY, DUE_YESTERDAY), model.getFilteredPersonList());
+        assertEquals(List.of(DUE_YESTERDAY, DUE_TODAY), model.getFilteredPersonList());
         assertEquals("2 follow-up(s) due today or earlier.", result.getFeedbackToUser());
         assertEquals(originalPeople, model.getClientBook().getPersonList());
     }
@@ -83,18 +83,18 @@ public class DueCommandTest {
 
         command.execute(model, null);
 
-        assertEquals(List.of(DUE_TODAY, DUE_YESTERDAY), model.getFilteredPersonList());
+        assertEquals(List.of(DUE_YESTERDAY, DUE_TODAY), model.getFilteredPersonList());
     }
 
     @Test
     public void execute_doneAfterDue_removesCompletedPersonFromDisplayedList() throws Exception {
         command.execute(model, null);
 
-        new DoneCommand(INDEX_FIRST_PERSON).execute(model, null);
+        new DoneCommand(Index.fromOneBased(4)).execute(model, null);
 
-        assertEquals(List.of(DUE_YESTERDAY), model.getFilteredPersonList());
-        Person completedPerson = model.getClientBook().getPersonList().getFirst();
-        assertEquals(DUE_TODAY.withNextAction(DUE_TODAY.getNextAction().orElseThrow().markCompleted()),
+        assertEquals(List.of(DUE_TODAY), model.getFilteredPersonList());
+        Person completedPerson = model.getClientBook().getPersonList().get(3);
+        assertEquals(DUE_YESTERDAY.withNextAction(DUE_YESTERDAY.getNextAction().orElseThrow().markCompleted()),
                 completedPerson);
         assertEquals(5, model.getClientBook().getPersonList().size());
     }
@@ -105,7 +105,30 @@ public class DueCommandTest {
                 CLOCK.getZone()));
 
         assertEquals("3 follow-up(s) due today or earlier.", laterCommand.execute(model, null).getFeedbackToUser());
-        assertEquals(List.of(DUE_TODAY, DUE_TOMORROW, DUE_YESTERDAY), model.getFilteredPersonList());
+        assertEquals(List.of(DUE_YESTERDAY, DUE_TODAY, DUE_TOMORROW), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_equalDates_sortsNamesIgnoringCase() throws Exception {
+        Person zulu = new PersonBuilder(DUE_TODAY).withName("Zulu").build();
+        Person alice = new PersonBuilder(DUE_YESTERDAY).withName("alice")
+                .withNextAction(new NextAction("Call", TODAY, false)).build();
+        Model tied = new ModelManager(new ClientBookBuilder().withPerson(zulu).withPerson(alice).build(),
+                new UserPrefs());
+        command.execute(tied, null);
+        assertEquals(List.of(alice, zulu), tied.getFilteredPersonList());
+        assertEquals(List.of(zulu, alice), tied.getClientBook().getPersonList());
+    }
+
+    @Test
+    public void execute_equalNamesIgnoringCase_usesExactSpelling() throws Exception {
+        Person lower = new PersonBuilder(DUE_TODAY).withName("alice").build();
+        Person upper = new PersonBuilder(DUE_YESTERDAY).withName("Alice")
+                .withNextAction(new NextAction("Call", TODAY, false)).build();
+        Model tied = new ModelManager(new ClientBookBuilder().withPerson(lower).withPerson(upper).build(),
+                new UserPrefs());
+        command.execute(tied, null);
+        assertEquals(List.of(upper, lower), tied.getFilteredPersonList());
     }
 
     @Test

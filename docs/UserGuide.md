@@ -530,10 +530,12 @@ Format: `due`
 
 * Includes actions due today and overdue actions, using your computer's local date.
 * Excludes completed actions, future actions and people without a next action.
-* Replaces any previous `find` filter. Results keep their existing order and are not sorted by due date.
-* Use the displayed index for subsequent commands. After `done INDEX`, the completed person disappears
-  from the due list; the indexes of the remaining persons do not change.
-* Use `list` to see everyone again. Run `due` again to refresh the date after midnight.
+* Replaces any previous `find` filter. Results are sorted by due date ascending (most overdue first).
+  Equal dates are ordered alphabetically by name, ignoring case; exact spelling breaks case-only ties.
+* Use the displayed client index for subsequent commands. Sorting does not change those indices.
+  After `done INDEX`, the completed person disappears from the due list; remaining indices stay the same.
+* Sorting changes only the displayed view, not saved contact order. `list` and `find` return to the
+  original contact order. Run `due` again to refresh the date after midnight.
 
 For example, if today is `2026-10-20`, `due` includes incomplete actions dated `2026-10-19`
 and `2026-10-20`, but excludes an action dated `2026-10-21`.
