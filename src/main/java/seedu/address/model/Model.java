@@ -63,6 +63,11 @@ public interface Model {
     /** Returns an unmodifiable view of the filtered person list */
     ObservableList<Person> getFilteredPersonList();
 
+    /** Returns the predicate currently applied to the filtered person list. */
+    default Predicate<? super Person> getFilteredPersonListPredicate() {
+        return PREDICATE_SHOW_ALL_PERSONS;
+    }
+
     /**
      * Returns the predicate currently applied to the filtered person list.
      */

@@ -84,6 +84,7 @@ The `UI` component uses the JavaFX UI framework. The layouts of these UI parts a
 The `UI` component,
 
 * executes user commands using the `Logic` component.
+* displays the exact command submitted by the user above its success or error feedback in the `ResultDisplay`.
 * listens for changes to `Model` data so that the UI can be updated with the modified data.
 * keeps a reference to the `Logic` component, because the `UI` relies on the `Logic` to execute commands.
 * depends on some classes in the `Model` component because it displays `Person` objects from the model.
@@ -114,6 +115,11 @@ How the `Logic` component works:
    Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
 4. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
+`LogicManager` saves the client book only when a command changes its records. Read-only commands, such as `list`,
+`find`, and `due`, update the displayed view from memory without writing to storage. Before saving a changed client
+book, `LogicManager` keeps a copy of the previous records and filtered view. If saving fails, it restores both so the
+application does not display a change that will be lost after restart.
+
 The sequence diagram below shows the corresponding flow for an `edit` command.
 
 <puml src="diagrams/EditSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the edit command" />
@@ -136,6 +142,8 @@ The `Model` component,
 
 * stores the client book data i.e., all `Person` objects (which are contained in a `UniquePersonList` object).
 * stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list. It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
+* retains the complete list as the source of displayed indexes. Filtering and editing do not change a person's index;
+  deleting a person removes it from the source list and renumbers the persons after it.
 * stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
 
@@ -172,9 +180,13 @@ This section describes some noteworthy details on how certain features are imple
 ### Find by name, relationship and tags
 
 The `find` command supports three independently optional filters: name keywords, one relationship, and tag keywords.
-`FindCommandParser` tokenizes the `r/` and `t/` prefixes, rejects duplicate filter prefixes, and delegates value
-validation to `ParserUtil`. At least one filter must be present. Name keywords precede the prefixed filters; multiple
-tag keywords follow one `t/` prefix and are separated by whitespace.
+`FindCommandParser` tokenizes the `r/` and `t/` prefixes, rejects duplicate filter prefixes, and delegates prefixed
+value validation to `ParserUtil`. At least one filter must be present. Name keywords precede the prefixed filters;
+multiple tag keywords follow one `t/` prefix and are separated by whitespace. The parser splits the name preamble
+into independent keywords and validates each one against the search-keyword grammar. Ordinary keywords contain
+letters with optional internal hyphens or apostrophes, while `s/o`, `d/o`, and `w/o` are also valid standalone
+keywords. Digits, other symbols, and arbitrary slash forms are rejected. This differs from full-name validation,
+which requires relationship markers to appear between name components.
 
 The parser creates a `PersonMatchesFiltersPredicate`. Name keywords use the existing full-word, case-insensitive
 matching and are joined with `OR`. Tag keywords use exact, case-insensitive tag matching and are also joined with
@@ -184,7 +196,9 @@ contain `priority` or `referral`.
 
 `FindCommand` passes the predicate to `Model#updateFilteredPersonList(Predicate<Person>)`, which updates the
 `FilteredList<Person>` observed by the UI. Filtering does not reorder the source list, so matching persons retain the
-same order as in the `list` command.
+same order and indexes as in the `list` command. `PersonListPanel` looks up each filtered person in the complete list
+when rendering its index. Index-based commands use `Command#getVisiblePersonAtIndex` to resolve that complete-list
+index and reject it if the corresponding person is not in the current filter.
 
 The following sequence shows a combined search. The `FilteredList` applies the predicate to each source person;
 omitted filter types evaluate as matched, while the supplied filter types must all match.
@@ -195,11 +209,12 @@ omitted filter types evaluate as matched, while the supplied filter types must a
 
 `TagCommandParser` reads the first whitespace-separated argument as the displayed-list index and validates each
 remaining argument with `ParserUtil#parseTags(Collection<String>)`. Tag names use the existing alphanumeric-only
-`Tag` validation. `TagCommand` resolves the person against `Model#getFilteredPersonList()`, unions the supplied tags
-with the person's existing tag set, and replaces the immutable `Person` through `Model#setPerson`. The replacement
-preserves every non-tag field and the active list filter. `Tag#equals` and `Tag#hashCode` compare normalized casing,
-so the `Set<Tag>` treats case variants as duplicates while preserving the spelling of the existing tag. Repeated
-existing or supplied tags therefore remain idempotent. The existing JSON adapter persists the updated set.
+`Tag` validation. `TagCommand` resolves the visible person against its index in the complete list using
+`Command#getVisiblePersonAtIndex`. It then intersects the supplied and existing tag sets. Tag equality is
+case-insensitive, so a non-empty intersection raises a `CommandException` listing the duplicate tags and leaves the
+contact unchanged. Otherwise, the command unions the supplied and existing tags and replaces the immutable `Person`
+through `Model#setPerson`, preserving every non-tag field and the active list filter. The existing JSON adapter
+persists a successfully updated set.
 
 `AddCommandParser` uses the same validation and accepts zero or more `t/TAG` fields. Unlike the required name,
 relationship, email and phone prefixes, `t/` is deliberately repeatable so a new person can be created with several
@@ -214,6 +229,27 @@ validation complete before the immutable `Person` is replaced and the updated cl
 
 <puml src="diagrams/TagSequenceDiagram.puml" alt="Tagging a person sequence" />
 
+### Deleting tags from a person
+
+`TagDeleteCommandParser` reads the displayed-list index and an optional set of tag names. An empty set means all
+tags; otherwise, `TagDeleteCommand` requires every supplied tag to exist on the person. Matching uses the same
+case-insensitive `Tag` equality as tag addition. Missing tags, a person with no tags, or an invalid displayed index
+raises a `CommandException` before confirmation or mutation.
+
+Tag deletion uses a two-phase Logic flow. The initial `Logic#execute(String)` call parses and validates the command,
+stores the pending `TagDeleteCommand`, and returns a `CommandResult` containing `Are you sure you want to delete
+this?`, the contact name, the exact stored tags that will be removed, and the accepted responses. `MainWindow`
+displays the result through the existing result box below the command box.
+
+While a deletion is pending, `LogicManager` interprets the next command-box input as a confirmation response instead
+of parsing it as a new command. `y` and `yes` execute the stored command; `n` and `no` discard it. Matching is
+case-insensitive and ignores surrounding whitespace. Any other response raises a `CommandException` and leaves the
+command pending. A confirmed command copies the person's tag set, clears it or removes the selected tags, replaces
+the immutable `Person` through `Model#setPerson`, and saves the updated client book.
+
+The following sequence shows the confirmation gate before selected tags are deleted.
+
+<puml src="diagrams/TagDeleteSequenceDiagram.puml" alt="Deleting tags with confirmation sequence" />
 
 ### Contact preferences (US12)
 
@@ -228,8 +264,10 @@ normal text, not a clear operation. Free text, Unicode, punctuation and the 1-20
 
 `ContactDescriptor` holds a specified flag and nullable value for each preference: omitted means preserve,
 specified non-null means replace, and specified null means clear. `ContactCommand` defensively copies the descriptor
-and rejects an empty descriptor. It checks the displayed index before constructing a replacement `Person` with the
-resolved preferences and calling `Model#setPerson`. `Person#withContactPreferences` retains its original null-means-keep
+and rejects an empty descriptor. It calls `Command#getVisiblePersonAtIndex` to resolve the original full-list index
+and verify that the person is visible in the current filtered results. Search results retain their original indices,
+matching the numbers shown by the UI. It then constructs a replacement `Person` with the resolved preferences and
+calls `Model#setPerson`. `Person#withContactPreferences` retains its original null-means-keep
 contract for other callers. All unrelated fields and the active filter are preserved. `edit`, `info`, `note`, `withNextAction` and
 `PersonBuilder` also copy both preferences. `PersonCard` hides absent values and wraps recorded values.
 `JsonAdaptedPerson` persists optional `preferredContactChannel` and `preferredContactTiming` strings; missing or
@@ -256,7 +294,7 @@ duplicate or unknown parameters. It recognizes an exact `-` surrounded only by o
 and nullable value per field: omitted means unchanged, specified non-null means replace, and specified null
 means explicitly clear. `InfoCommand` defensively copies this descriptor, including its flags.
 
-`InfoCommand#execute` resolves the index against `Model#getFilteredPersonList` and checks its range before mutation.
+`InfoCommand#execute` resolves the visible person against its index in the complete list before mutation.
 It constructs a replacement `Person` using the resolved financial fields and calls `Model#setPerson`.
 Name, phone, email, relationship, tags, interaction notes, next action, preferred contact channel and preferred
 contact timing are copied unchanged; the active filter is preserved. Clearing an absent field is idempotent.
@@ -381,7 +419,7 @@ missing action/date fields. `NextAction` strips surrounding description whitespa
 and strict calendar validation. Both parsing and model construction restrict the year to 1–9999;
 year zero is rejected, including when loading JSON. Backdated follow-ups within this range are valid.
 
-`NextCommand` resolves the index against `Model#getFilteredPersonList`, rejects out-of-range indices,
+`NextCommand` resolves the visible person against its index in the complete list, rejects invalid indices,
 then passes the replacement person to `Model#setPerson`. Both new and replacement actions have
 `completed = false`. The observable list updates the card. `LogicManager` then saves through the existing
 storage pipeline; the command itself does not write files.
@@ -398,7 +436,7 @@ save failures follow the existing `LogicManager` error handling.
 `Person index is required.`; otherwise `ParserUtil#parseIndex` validates the entire argument string,
 rejecting zero, negative, non-integer and multiple indices.
 
-`DoneCommand` first checks the index against `Model#getFilteredPersonList`, then checks that the selected
+`DoneCommand` first resolves the visible person against its index in the complete list, then checks that the selected
 person has a next action. These checks occur before any model mutation and report, respectively,
 `Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX` and `NAME has no next action to complete.`.
 If the action is already completed, the command returns a normal `CommandResult` with
@@ -934,8 +972,8 @@ note 2 d/2026-10-06 n/Discussed next steps.
 
     1. Prerequisites: Recreate the test records above, then run `find Jane`.
 
-    2. Test case: `delete 1`<br>
-       Expected: Jane is deleted, although she was second in the full list. The search results become empty.
+    2. Test case: `delete 2`<br>
+       Expected: Jane is deleted using her unchanged full-list index. The search results become empty.
 
     3. Test case: `list`<br>
        Expected: John is still present. Repeat this test using `find r/prospect` to check relationship-filtered deletion.
@@ -957,8 +995,9 @@ note 2 d/2026-10-06 n/Discussed next steps.
     5. Test case: `delete 3`<br>
        Expected: `No client exists at index 3.`
 
-    6. Test case: `find Jane`, then `delete 2`<br>
-       Expected: `No client exists at index 2.` Jane remains visible, and John is still present in the full list.
+    6. Test case: `find Jane`, then `delete 1`<br>
+       Expected: `No client exists at index 1.` Jane remains visible at index 2, and John is still present in the full
+       list.
 
     7. Test case: `find Nobody`, then `delete 1`<br>
        Expected: `No client exists at index 1.` The empty search stays active. Use `list` and restart the app

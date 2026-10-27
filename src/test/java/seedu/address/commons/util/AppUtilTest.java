@@ -1,11 +1,19 @@
 package seedu.address.commons.util;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static seedu.address.testutil.Assert.assertThrows;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class AppUtilTest {
+
+    @TempDir
+    public Path temporaryFolder;
 
     @Test
     public void getImage_exitingImage() {
@@ -32,5 +40,12 @@ public class AppUtilTest {
     public void checkArgument_falseWithErrorMessage_throwsIllegalArgumentException() {
         String errorMessage = "error message";
         assertThrows(IllegalArgumentException.class, errorMessage, () -> AppUtil.checkArgument(false, errorMessage));
+    }
+
+    @Test
+    public void getApplicationDirectory_applicationJar_returnsJarParentDirectory() throws Exception {
+        Path applicationJar = Files.createFile(temporaryFolder.resolve("clientbook.jar"));
+
+        assertEquals(temporaryFolder, AppUtil.getApplicationDirectory(applicationJar));
     }
 }

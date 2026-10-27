@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalPersons.ALICE;
+import static seedu.address.testutil.TypicalPersons.BENSON;
 import static seedu.address.testutil.TypicalPersons.getTypicalClientBook;
 
 import java.time.LocalDate;
@@ -34,9 +35,43 @@ import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.InteractionNote;
 import seedu.address.model.person.NextAction;
+import seedu.address.model.person.Person;
 import seedu.address.testutil.PersonBuilder;
 
 public class PersonCardTest {
+    @Test
+    public void filteredList_displaysOriginalIndexUntilPersonDeleted() throws Exception {
+        CompletableFuture<Void> checked = new CompletableFuture<>();
+        Platform.runLater(() -> {
+            try {
+                Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
+                model.updateFilteredPersonList(person -> person.getName().equals(BENSON.getName()));
+                PersonListPanel panel = new PersonListPanel(model.getFilteredPersonList(),
+                        model.getClientBook().getPersonList());
+                StackPane root = new StackPane(panel.getRoot());
+                new Scene(root, 600, 600);
+                root.applyCss();
+                root.layout();
+                ListView<?> list = (ListView<?>) root.lookup("#personListView");
+
+                assertEquals("2. ", ((Label) displayedCell(list, 0).getGraphic().lookup("#id")).getText());
+
+                Person editedBenson = new PersonBuilder(BENSON).withPhone("81234567").build();
+                model.setPerson(BENSON, editedBenson);
+                root.layout();
+                assertEquals("2. ", ((Label) displayedCell(list, 0).getGraphic().lookup("#id")).getText());
+
+                model.deletePerson(ALICE);
+                root.layout();
+                assertEquals("1. ", ((Label) displayedCell(list, 0).getGraphic().lookup("#id")).getText());
+                checked.complete(null);
+            } catch (Throwable error) {
+                checked.completeExceptionally(error);
+            }
+        });
+        checked.get(10, TimeUnit.SECONDS);
+    }
+
     @Test
     public void tags_allDisplayedInSortedOrder() throws Exception {
         CompletableFuture<Void> checked = new CompletableFuture<>();
@@ -177,10 +212,7 @@ public class PersonCardTest {
     /** Starts the real toolkit; headless Linux runs need a virtual display such as Xvfb. */
     @BeforeAll
     public static void startToolkit() throws Exception {
-        CompletableFuture<Void> started = new CompletableFuture<>();
-        Platform.startup(() -> started.complete(null));
-        started.get(10, TimeUnit.SECONDS);
-        Platform.setImplicitExit(false);
+        JavaFxTestUtil.startToolkit();
     }
 
     @Test

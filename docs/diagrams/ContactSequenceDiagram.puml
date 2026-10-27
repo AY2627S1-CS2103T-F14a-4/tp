@@ -38,9 +38,14 @@ Parser --> Logic : command
 deactivate Parser
 Logic -> Command : execute(model)
 activate Command
+Command -> Model : getClientBook()
+Model --> Command : clientBook
 Command -> Model : getFilteredPersonList()
 Model --> Command : displayedPersons
-note right of Command : Reject an out-of-range index before changing data.
+note right of Command
+getVisiblePersonAtIndex resolves the original full-list index.
+Reject out-of-range indices and hidden persons before changing data.
+end note
 create Person
 Command -> Person : new Person(..., resolvedChannel, resolvedTiming)
 note right of Person

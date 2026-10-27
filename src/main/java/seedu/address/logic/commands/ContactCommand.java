@@ -3,7 +3,6 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.AppUtil.checkArgument;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -16,7 +15,7 @@ import seedu.address.model.person.PreferredContactChannel;
 import seedu.address.model.person.PreferredContactTiming;
 import seedu.address.storage.Storage;
 
-/** Updates contact preferences for a person in the currently displayed list. */
+/** Updates contact preferences for a visible person using their index in the complete client book. */
 public class ContactCommand extends Command {
     public static final String COMMAND_WORD = "contact";
     public static final String MESSAGE_USAGE = "contact INDEX [ch/CHANNEL|-] [tm/TIMING|-]";
@@ -55,11 +54,8 @@ public class ContactCommand extends Command {
     @Override
     public CommandResult execute(Model model, Storage storage) throws CommandException {
         requireNonNull(model);
-        List<Person> persons = model.getFilteredPersonList();
-        if (index.getZeroBased() >= persons.size()) {
-            throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
-        }
-        Person original = persons.get(index.getZeroBased());
+        Person original = getVisiblePersonAtIndex(model, index,
+                Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
         Person updated = new Person(original.getName(), original.getPhone(), original.getEmail(), original.getTags(),
                 original.getRelationship(), original.getFinancialNeed().orElse(null),
                 original.getPriority().orElse(null), original.getAreaOfInterest().orElse(null),

@@ -15,7 +15,6 @@ import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -37,7 +36,6 @@ import seedu.address.model.person.InteractionNote;
 import seedu.address.model.person.NextAction;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Relationship;
-import seedu.address.model.tag.Tag;
 import seedu.address.storage.JsonClientBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
@@ -200,6 +198,24 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_readOnlyCommand_doesNotSaveClientBook() throws Exception {
+        AtomicInteger saveAttempts = new AtomicInteger();
+        JsonClientBookStorage clientBookStorage = new JsonClientBookStorage(
+                temporaryFolder.resolve("ExceptionClientBook.json")) {
+            @Override
+            public void saveClientBook(ReadOnlyClientBook clientBook) throws IOException {
+                saveAttempts.incrementAndGet();
+                throw DUMMY_IO_EXCEPTION;
+            }
+        };
+        logic = new LogicManager(model, new StorageManager(clientBookStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("ExceptionUserPrefs.json"))));
+
+        assertEquals(new CommandResult(ListCommand.MESSAGE_SUCCESS), logic.execute(ListCommand.COMMAND_WORD));
+        assertEquals(0, saveAttempts.get());
+    }
+
+    @Test
     public void execute_storageFailure_preservesFilteredList() throws Exception {
         model.addPerson(AMY);
         model.addPerson(BOB);
@@ -223,17 +239,17 @@ public class LogicManagerTest {
     }
 
     @Test
-    public void execute_storageFailureThenSuccessfulTag_preservesOriginalFilter() throws Exception {
+    public void execute_storageFailureThenSuccessfulRetry_preservesFilterPredicate() throws Exception {
         model.addPerson(AMY);
         model.addPerson(BOB);
         logic.execute("find Amy");
 
-        AtomicBoolean shouldFail = new AtomicBoolean(true);
+        AtomicInteger saveAttempts = new AtomicInteger();
         JsonClientBookStorage clientBookStorage = new JsonClientBookStorage(
                 temporaryFolder.resolve("ExceptionClientBook.json")) {
             @Override
             public void saveClientBook(ReadOnlyClientBook clientBook) throws IOException {
-                if (shouldFail.getAndSet(false)) {
+                if (saveAttempts.getAndIncrement() == 0) {
                     throw DUMMY_IO_EXCEPTION;
                 }
                 super.saveClientBook(clientBook);
@@ -245,8 +261,9 @@ public class LogicManagerTest {
         assertThrows(CommandException.class, () -> logic.execute("tag 1 priority"));
         logic.execute("tag 1 priority");
 
+        assertEquals(2, saveAttempts.get());
         assertEquals(1, logic.getFilteredPersonList().size());
-        assertTrue(logic.getFilteredPersonList().getFirst().getTags().contains(new Tag("priority")));
+        assertEquals(AMY.getName(), logic.getFilteredPersonList().getFirst().getName());
     }
 
     @Test

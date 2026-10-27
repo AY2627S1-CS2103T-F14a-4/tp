@@ -3,7 +3,6 @@ package seedu.address.logic.commands;
 import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import seedu.address.commons.core.index.Index;
@@ -23,6 +22,7 @@ public class TagCommand extends Command {
             + "Parameters: INDEX TAG [MORE_TAGS...]\n"
             + "Example: " + COMMAND_WORD + " 1 priority referral";
     public static final String MESSAGE_SUCCESS = "Added tags to %s: %s";
+    public static final String MESSAGE_DUPLICATE_TAGS = "This contact already has the following tag(s): %s";
 
     private final Index index;
     private final Set<Tag> tags;
@@ -37,12 +37,14 @@ public class TagCommand extends Command {
     @Override
     public CommandResult execute(Model model, Storage storage) throws CommandException {
         requireAllNonNull(model);
-        List<Person> lastShownList = model.getFilteredPersonList();
-        if (index.getZeroBased() >= lastShownList.size()) {
-            throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+        Person personToTag = getVisiblePersonAtIndex(model, index,
+                Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+        Set<Tag> duplicateTags = new HashSet<>(tags);
+        duplicateTags.retainAll(personToTag.getTags());
+        if (!duplicateTags.isEmpty()) {
+            throw new CommandException(String.format(MESSAGE_DUPLICATE_TAGS, formatTags(duplicateTags)));
         }
 
-        Person personToTag = lastShownList.get(index.getZeroBased());
         Set<Tag> updatedTags = new HashSet<>(personToTag.getTags());
         updatedTags.addAll(tags);
         model.setPerson(personToTag, personToTag.withTags(updatedTags));

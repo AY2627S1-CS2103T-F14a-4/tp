@@ -9,6 +9,8 @@ import static seedu.address.logic.commands.CommandTestUtil.showPersonAtIndex;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
+import static seedu.address.testutil.TypicalPersons.ALICE;
+import static seedu.address.testutil.TypicalPersons.BOB;
 import static seedu.address.testutil.TypicalPersons.getTypicalClientBook;
 
 import java.time.LocalDate;
@@ -21,6 +23,7 @@ import seedu.address.logic.Messages;
 import seedu.address.logic.commands.ContactCommand.ContactDescriptor;
 import seedu.address.logic.parser.ClientBookParser;
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.ClientBook;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
@@ -124,10 +127,10 @@ public class ContactCommandTest {
                 .withPreferredContactTiming("Evenings").build();
         model.setPerson(second, target);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
-        parser.parseCommand("contact 1 tm/- ch/-").execute(model, null);
+        parser.parseCommand("contact 2 tm/- ch/-").execute(model, null);
         assertEquals(List.of(second), model.getFilteredPersonList());
         assertEquals(first, model.getClientBook().getPersonList().getFirst());
-        assertCommandFailure(parser.parseCommand("contact 2 ch/-"), model,
+        assertCommandFailure(parser.parseCommand("contact 1 ch/-"), model,
                 Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
         model.updateFilteredPersonList(person -> false);
         assertCommandFailure(parser.parseCommand("contact 1 tm/-"), model,
@@ -234,13 +237,32 @@ public class ContactCommandTest {
     }
 
     @Test
-    public void execute_filteredList_usesDisplayedIndexAndKeepsFilter() throws Exception {
+    public void execute_afterFindingBob_usesOriginalIndex() throws Exception {
+        ClientBook clientBook = new ClientBook();
+        clientBook.setPersons(List.of(ALICE, BOB));
+        Model filteredModel = new ModelManager(clientBook, new UserPrefs());
+        parser.parseCommand("find Bob").execute(filteredModel, null);
+        assertEquals(List.of(BOB), filteredModel.getFilteredPersonList());
+        assertEquals(List.of(ALICE, BOB), filteredModel.getClientBook().getPersonList());
+        assertCommandFailure(parser.parseCommand("contact 1 ch/WhatsApp"), filteredModel,
+                Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+
+        CommandResult result = parser.parseCommand("contact 2 ch/WhatsApp").execute(filteredModel, null);
+
+        Person updatedBob = new PersonBuilder(BOB).withPreferredContactChannel("WhatsApp").build();
+        assertEquals(String.format(ContactCommand.MESSAGE_SUCCESS, BOB.getName().fullName), result.getFeedbackToUser());
+        assertEquals(List.of(updatedBob), filteredModel.getFilteredPersonList());
+        assertEquals(List.of(ALICE, updatedBob), filteredModel.getClientBook().getPersonList());
+    }
+
+    @Test
+    public void execute_filteredList_usesOriginalIndexAndKeepsFilter() throws Exception {
         Person second = model.getFilteredPersonList().get(1);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
-        parser.parseCommand("contact 1 ch/Email").execute(model, null);
+        parser.parseCommand("contact 2 ch/Email").execute(model, null);
         assertEquals(List.of(new PersonBuilder(second).withPreferredContactChannel("Email").build()),
                 model.getFilteredPersonList());
-        assertCommandFailure(new ContactCommand(INDEX_SECOND_PERSON, new PreferredContactChannel("Phone"), null),
+        assertCommandFailure(new ContactCommand(INDEX_FIRST_PERSON, new PreferredContactChannel("Phone"), null),
                 model, Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
     }
 

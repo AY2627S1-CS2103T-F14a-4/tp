@@ -57,6 +57,16 @@ public class NameContainsKeywordsPredicateTest {
     }
 
     @Test
+    public void test_nameContainsPunctuatedKeyword_returnsTrue() {
+        assertTrue(new NameContainsKeywordsPredicate(List.of("Anne-Marie"))
+                .test(new PersonBuilder().withName("Anne-Marie Tan").build()));
+        assertTrue(new NameContainsKeywordsPredicate(List.of("O'Connor"))
+                .test(new PersonBuilder().withName("Alice O'Connor").build()));
+        assertTrue(new NameContainsKeywordsPredicate(List.of("s/o"))
+                .test(new PersonBuilder().withName("Jack s/o David").build()));
+    }
+
+    @Test
     public void test_nameDoesNotContainKeywords_returnsFalse() {
         // Zero keywords
         NameContainsKeywordsPredicate predicate = new NameContainsKeywordsPredicate(List.of());

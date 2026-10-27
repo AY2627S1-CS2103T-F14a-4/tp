@@ -3,7 +3,6 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -36,11 +35,8 @@ public class InfoCommand extends Command {
     @Override
     public CommandResult execute(Model model, Storage storage) throws CommandException {
         requireNonNull(model);
-        List<Person> persons = model.getFilteredPersonList();
-        if (index.getZeroBased() >= persons.size()) {
-            throw new CommandException(String.format(MESSAGE_INVALID_INDEX, index.getOneBased()));
-        }
-        Person original = persons.get(index.getZeroBased());
+        String invalidIndexMessage = String.format(MESSAGE_INVALID_INDEX, index.getOneBased());
+        Person original = getVisiblePersonAtIndex(model, index, invalidIndexMessage);
         Person updated = new Person(original.getName(), original.getPhone(), original.getEmail(), original.getTags(),
                 original.getRelationship(),
                 descriptor.isFinancialNeedSpecified() ? descriptor.getFinancialNeed().orElse(null)
@@ -63,6 +59,11 @@ public class InfoCommand extends Command {
         }
         return other instanceof InfoCommand command
                 && index.equals(command.index) && descriptor.equals(command.descriptor);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(index.getZeroBased(), descriptor);
     }
 
     /**
