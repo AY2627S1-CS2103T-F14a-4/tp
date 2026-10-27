@@ -124,14 +124,14 @@ public class NoteCommandTest {
         Person first = model.getFilteredPersonList().get(0);
         Person target = model.getFilteredPersonList().get(1);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
-        parser.parseCommand("note 1 d/2000-01-01 n/Called").execute(model, null);
+        parser.parseCommand("note 2 d/2000-01-01 n/Called").execute(model, null);
         assertEquals(first, model.getClientBook().getPersonList().get(0));
         assertEquals(target.getName(), model.getFilteredPersonList().get(0).getName());
         assertEquals(1, model.getFilteredPersonList().size());
         assertEquals(1, model.getFilteredPersonList().get(0).getInteractionNotes().size());
-        assertCommandFailure(parser.parseCommand("note 1 d/2000-01-01 n/Called"), model,
+        assertCommandFailure(parser.parseCommand("note 2 d/2000-01-01 n/Called"), model,
                 NoteCommand.MESSAGE_DUPLICATE_NOTE);
-        assertCommandFailure(new NoteCommand(INDEX_SECOND_PERSON,
+        assertCommandFailure(new NoteCommand(INDEX_FIRST_PERSON,
                 new InteractionNote(LocalDate.of(2000, 1, 1), "Called")), model,
                 Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
     }

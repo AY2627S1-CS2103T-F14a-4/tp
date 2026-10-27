@@ -33,10 +33,8 @@ public class NoteCommand extends Command {
     @Override
     public CommandResult execute(Model model, Storage storage) throws CommandException {
         requireAllNonNull(model);
-        if (index.getZeroBased() >= model.getFilteredPersonList().size()) {
-            throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
-        }
-        Person original = model.getFilteredPersonList().get(index.getZeroBased());
+        Person original = getVisiblePersonAtIndex(model, index,
+                Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
         if (original.getInteractionNotes().contains(note)) {
             throw new CommandException(MESSAGE_DUPLICATE_NOTE);
         }
