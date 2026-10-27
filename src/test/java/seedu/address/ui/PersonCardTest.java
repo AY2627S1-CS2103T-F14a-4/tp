@@ -296,15 +296,15 @@ public class PersonCardTest {
                 root.layout();
                 ListView<?> list = (ListView<?>) root.lookup("#personListView");
                 VBox notes = (VBox) displayedCell(list, 0).getGraphic().lookup("#interactionNotes");
-                assertEquals("1. " + duplicate, ((Label) notes.getChildren().get(1)).getText());
-                assertEquals("2. " + backdated, ((Label) notes.getChildren().get(2)).getText());
+                assertEquals("1. " + backdated, ((Label) notes.getChildren().get(1)).getText());
+                assertEquals("2. " + duplicate, ((Label) notes.getChildren().get(2)).getText());
                 assertEquals("3. " + duplicate, ((Label) notes.getChildren().get(3)).getText());
 
                 new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON).execute(model, null);
                 root.layout();
                 notes = (VBox) displayedCell(list, 0).getGraphic().lookup("#interactionNotes");
                 assertEquals(3, notes.getChildren().size());
-                assertEquals("1. " + backdated, ((Label) notes.getChildren().get(1)).getText());
+                assertEquals("1. " + duplicate, ((Label) notes.getChildren().get(1)).getText());
                 assertEquals("2. " + duplicate, ((Label) notes.getChildren().get(2)).getText());
 
                 new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON).execute(model, null);

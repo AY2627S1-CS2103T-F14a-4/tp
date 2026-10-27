@@ -137,7 +137,7 @@ public class LogicManagerTest {
     public void execute_notesThenUpdates_savedHistorySurvivesReopening() throws Exception {
         model.addPerson(new Person(AMY.getName(), AMY.getPhone(), AMY.getEmail(), Relationship.CLIENT));
         logic.execute("note 1 d/2000-02-29 n/Discussed retirement; https://example.com/a/b n/text d/text");
-        logic.execute("note 1 d/2000-02-29 n/Discussed retirement; https://example.com/a/b n/text d/text");
+        logic.execute("note 1 d/2000-03-01 n/Discussed retirement; https://example.com/a/b n/text d/text");
         assertEquals(2, model.getFilteredPersonList().get(0).getInteractionNotes().size());
         logic.execute("edit 1 p/81234567");
         logic.execute("info 1 /fn Retirement");
@@ -148,7 +148,11 @@ public class LogicManagerTest {
         assertEquals(model.getClientBook(), reopened.getClientBook());
         Person restored = reopened.getFilteredPersonList().get(0);
         assertEquals(2, restored.getInteractionNotes().size());
-        assertEquals(restored.getInteractionNotes().get(0), restored.getInteractionNotes().get(1));
+        assertEquals(List.of(new InteractionNote(LocalDate.of(2000, 2, 29),
+                "Discussed retirement; https://example.com/a/b n/text d/text"),
+                new InteractionNote(LocalDate.of(2000, 3, 1),
+                        "Discussed retirement; https://example.com/a/b n/text d/text")),
+                restored.getInteractionNotes());
         assertEquals("81234567", restored.getPhone().value);
         assertEquals("Retirement", restored.getFinancialNeed().orElseThrow().value);
         assertEquals(Relationship.CLIENT, restored.getRelationship());
