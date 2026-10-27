@@ -463,6 +463,39 @@ Repeated `a/` or `d/` prefixes produce the standard duplicate-prefix error. Spac
 are reserved delimiters and cannot appear literally within the description. URLs such as `https://example.com`
 and other text are accepted. Rejected commands leave the person's data unchanged.
 
+### Rescheduling a follow-up: `reschedule`
+
+Changes the date of an existing follow-up without requiring you to retype its description.
+
+Format: `reschedule INDEX d/yyyy-MM-dd [a/ACTION]`
+
+* `INDEX` is the positive client index shown beside the person. After `find`, indices keep their
+  positions in the complete client list: if the results show 1 and 3, use 3 for the second result.
+  An index not currently displayed is rejected.
+* `d/` is required. Use a real date in years `0001`–`9999`, written with exactly four year digits
+  and two month/day digits, as for `next`. The replacement date must be today or later, using
+  your computer's local date when the command executes. Past dates report
+  `Follow-up date cannot be before today.` without changing any record.
+* Omit `a/` to keep the existing description, or supply it to replace the description.
+  A supplied description must contain 1–200 characters after trimming surrounding whitespace.
+  Duplicate `a/` or `d/` prefixes are rejected.
+* The person must already have a follow-up. Otherwise, the command reports
+  `NAME has no follow-up to reschedule. Use next to create one.` without changing any record.
+* Rescheduling resets completion status to pending, including for previously completed work.
+  A follow-up rescheduled for today appears in `due` again; one moved to a future date remains
+  pending until it becomes due. Other contact information is preserved.
+* The current filter remains active. If a follow-up is moved into the future while viewing `due`,
+  its person disappears from that view; the remaining client indices do not change.
+
+Examples:
+
+* `reschedule 1 d/2026-11-02` — change only the follow-up date.
+* `reschedule 1 d/2026-11-02 a/Send revised proposal` — change the date and description.
+
+The success message is `Follow-up for NAME has been rescheduled successfully.`.
+Invalid indices, date formats and descriptions report the same validation messages as `next`.
+Changes are saved automatically using the existing follow-up storage format.
+
 ### Completing a follow-up: `done`
 
 Marks the next action of a client or prospect in the currently displayed list as completed.
@@ -604,6 +637,7 @@ Action     | Format, Examples
 **Tag**    | `tag INDEX TAG [MORE_TAGS...]`<br> e.g., `tag 1 priority referral`
 **Tag delete** | `tagdelete INDEX [TAG...]`<br> e.g., `tagdelete 1 friend referral`
 **Next**   | `next INDEX a/ACTION d/yyyy-MM-dd`<br> e.g., `next 1 a/Call d/2026-10-20`
+**Reschedule** | `reschedule INDEX d/yyyy-MM-dd [a/ACTION]`<br> e.g., `reschedule 1 d/2026-11-02`
 **Done**   | `done INDEX`<br> e.g., `done 1`
 **Due**    | `due`
 **List**   | `list`

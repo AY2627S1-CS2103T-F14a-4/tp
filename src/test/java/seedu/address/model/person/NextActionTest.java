@@ -30,6 +30,29 @@ public class NextActionTest {
     }
 
     @Test
+    public void reschedule_returnsPendingCopyPreservingDescription() {
+        for (boolean completed : new boolean[] {false, true}) {
+            NextAction original = new NextAction("Call", DATE, completed);
+            NextAction dateOnly = original.reschedule(DATE.plusDays(1), null);
+            assertEquals(new NextAction("Call", DATE.plusDays(1), false), dateOnly);
+            assertNotSame(original, dateOnly);
+            assertEquals(new NextAction("Email", DATE.minusDays(1), false),
+                    original.reschedule(DATE.minusDays(1), "  Email  "));
+            assertEquals(new NextAction("Call", DATE, completed), original);
+        }
+    }
+
+    @Test
+    public void reschedule_invalidReplacement_rejectsWithoutChangingOriginal() {
+        NextAction original = new NextAction("Call", DATE, false);
+        assertThrows(NullPointerException.class, () -> original.reschedule(null, null));
+        assertThrows(IllegalArgumentException.class, () -> original.reschedule(DATE.withYear(0), null));
+        assertThrows(IllegalArgumentException.class, () -> original.reschedule(DATE, " "));
+        assertThrows(IllegalArgumentException.class, () -> original.reschedule(DATE, "a".repeat(201)));
+        assertEquals(new NextAction("Call", DATE, false), original);
+    }
+
+    @Test
     public void constructor_stripsWhitespaceAndAcceptsMaximumLength() {
         assertEquals("Call", new NextAction("  Call  ", DATE, false).getAction());
         assertEquals(200, new NextAction(" " + "a".repeat(200) + " ", DATE, false).getAction().length());

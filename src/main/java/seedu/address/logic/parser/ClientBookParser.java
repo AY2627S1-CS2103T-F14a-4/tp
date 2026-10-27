@@ -26,6 +26,7 @@ import seedu.address.logic.commands.NextCommand;
 import seedu.address.logic.commands.NoteCommand;
 import seedu.address.logic.commands.NoteDeleteCommand;
 import seedu.address.logic.commands.NoteEditCommand;
+import seedu.address.logic.commands.RescheduleCommand;
 import seedu.address.logic.commands.RestoreCommand;
 import seedu.address.logic.commands.TagCommand;
 import seedu.address.logic.commands.TagDeleteCommand;
@@ -97,6 +98,7 @@ public class ClientBookParser {
             case NoteCommand.COMMAND_WORD -> new NoteCommandParser().parse(arguments);
             case NoteDeleteCommand.COMMAND_WORD -> new NoteDeleteCommandParser().parse(arguments);
             case NoteEditCommand.COMMAND_WORD -> new NoteEditCommandParser().parse(arguments);
+            case RescheduleCommand.COMMAND_WORD -> new RescheduleCommandParser().parse(arguments);
             case RestoreCommand.COMMAND_WORD -> {
                 if (!arguments.isBlank()) {
                     throw new ParseException("The restore command takes no arguments.");
