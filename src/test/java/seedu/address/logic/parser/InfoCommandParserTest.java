@@ -16,6 +16,59 @@ public class InfoCommandParserTest {
     private final InfoCommandParser parser = new InfoCommandParser();
 
     @Test
+    public void parse_reversedPrefixesAfterValidIndex_helpfulParameterError() {
+        for (String fields : new String[] {"fn/Retirement", "pr/High", "ai/Insurance",
+            "fn/", "pr/ -", "ai/Insurance pr/High"}) {
+            for (String index : new String[] {"1", "2", "2147483647"}) {
+                assertParseFailure(parser, index + " " + fields, InfoCommandParser.MESSAGE_REVERSED_PARAMETER);
+                assertParseFailure(parser, index + " " + fields + " /fn Retirement",
+                        InfoCommandParser.MESSAGE_REVERSED_PARAMETER);
+            }
+        }
+    }
+
+    @Test
+    public void parse_reversedPrefixesWithInvalidIndex_preservesIndexError() {
+        for (String index : new String[] {"", "0", "-1", "abc", "1.5", "2147483648", "1 2", "2 extra"}) {
+            for (String fields : new String[] {"fn/Retirement", "pr/High", "ai/Insurance"}) {
+                assertParseFailure(parser, index + " " + fields, InfoCommandParser.MESSAGE_INVALID_INDEX);
+                assertParseFailure(parser, index + " " + fields + " /pr -",
+                        InfoCommandParser.MESSAGE_INVALID_INDEX);
+            }
+        }
+        for (String fields : new String[] {"fnn/Retirement", "xpr/High", "AI/Insurance"}) {
+            assertParseFailure(parser, "2 " + fields, InfoCommandParser.MESSAGE_INVALID_INDEX);
+        }
+    }
+
+    @Test
+    public void parse_reversedPrefixesWithOtherErrors_preservesPrefixErrorPrecedence() {
+        for (String index : new String[] {"2", "0", "abc"}) {
+            assertParseFailure(parser, index + " pr/High /fnn Retirement",
+                    InfoCommandParser.MESSAGE_INVALID_PARAMETER);
+            assertParseFailure(parser, index + " pr/High /pr - /pr High",
+                    String.format(InfoCommandParser.MESSAGE_DUPLICATE_PARAMETER, "/pr"));
+        }
+        assertParseFailure(parser, "2 pr/High /fn /ai Bad!", InfoCommandParser.MESSAGE_REVERSED_PARAMETER);
+    }
+
+    @Test
+    public void parse_reversedPrefixTextInsideRecognizedValues_preservesText() {
+        for (String value : new String[] {"pr/High", "fn/Retirement", "ai/Insurance",
+            "Review pr/High options", "e\u0301pargne $3000 + CPF/SRS 4%"}) {
+            InfoDescriptor descriptor = new InfoDescriptor();
+            descriptor.setFinancialNeed(new FinancialNeed(value));
+            descriptor.setPriority(new Priority(value));
+            descriptor.setAreaOfInterest(new AreaOfInterest(value));
+            assertParseSuccess(parser, "1 /fn " + value + " /pr " + value + " /ai " + value,
+                    new InfoCommand(INDEX_FIRST_PERSON, descriptor));
+            descriptor.setPriority(null);
+            assertParseSuccess(parser, "1 /ai " + value + " /pr - /fn " + value,
+                    new InfoCommand(INDEX_FIRST_PERSON, descriptor));
+        }
+    }
+
+    @Test
     public void parse_financialNotationInEachField_success() {
         for (String value : new String[] {"Retire on $3000 monthly", "Target 4% return", "CPF + SRS",
             "Life/Health insurance", "Target 6% return", "CPF/SRS planning", "\u00e9pargne", "e\u0301pargne",

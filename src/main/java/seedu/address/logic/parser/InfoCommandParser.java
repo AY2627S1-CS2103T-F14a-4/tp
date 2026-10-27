@@ -25,8 +25,11 @@ public class InfoCommandParser implements Parser<InfoCommand> {
     public static final String MESSAGE_DUPLICATE_PARAMETER = "%s can only be specified once.";
     public static final String MESSAGE_INVALID_PARAMETER =
             "Invalid parameter. Valid parameters are /fn, /pr and /ai.";
+    public static final String MESSAGE_REVERSED_PARAMETER =
+            "Invalid info parameter. Use /fn VALUE, /pr VALUE or /ai VALUE.";
 
     private static final Pattern PARAMETER = Pattern.compile("(?<!\\S)/\\S*");
+    private static final Pattern REVERSED_PARAMETER = Pattern.compile("(?<!\\S)(?:fn|pr|ai)/");
 
     @Override
     public InfoCommand parse(String args) throws ParseException {
@@ -64,11 +67,18 @@ public class InfoCommandParser implements Parser<InfoCommand> {
         if (indexText.isEmpty()) {
             throw new ParseException(MESSAGE_INDEX_REQUIRED);
         }
+        // Diagnose reversed prefixes only in the preamble, never inside recognized field values.
+        Matcher reversedParameter = REVERSED_PARAMETER.matcher(indexText);
+        boolean hasReversedParameter = reversedParameter.find();
         Index index;
         try {
-            index = ParserUtil.parseIndex(indexText);
+            index = ParserUtil.parseIndex(hasReversedParameter
+                    ? indexText.substring(0, reversedParameter.start()) : indexText);
         } catch (ParseException e) {
             throw new ParseException(MESSAGE_INVALID_INDEX, e);
+        }
+        if (hasReversedParameter) {
+            throw new ParseException(MESSAGE_REVERSED_PARAMETER);
         }
         if (values.isEmpty()) {
             throw new ParseException(MESSAGE_NO_PARAMETERS);
