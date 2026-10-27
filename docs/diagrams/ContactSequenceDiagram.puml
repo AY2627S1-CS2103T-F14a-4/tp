@@ -11,36 +11,47 @@ end box
 
 box Model MODEL_COLOR_T1
 participant "model:Model" as Model MODEL_COLOR
-participant "original:Person" as Person MODEL_COLOR
+participant "updated:Person" as Person MODEL_COLOR
 end box
 
 box Storage STORAGE_COLOR_T1
 participant ":Storage" as Storage STORAGE_COLOR
 end box
 
-[-> Logic : execute("contact 1 ch/WhatsApp tm/After 6 pm")
+[-> Logic : execute("contact 1 ch/WhatsApp tm/-")
 activate Logic
 Logic -> Parser : parseCommand(commandText)
 activate Parser
-Parser -> ContactParser : parse(arguments)
+Parser -> ContactParser : parse(rawArguments)
 activate ContactParser
 note right of ContactParser
 Validate index syntax, supplied fields and duplicate prefixes.
-Create validated channel and timing values.
+Recognize exact raw clearing markers before trimming normal values.
+Build ContactDescriptor: channel supplied, timing explicitly cleared.
 end note
 create Command
-ContactParser -> Command : new ContactCommand(index, channel, timing)
+ContactParser -> Command : new ContactCommand(index, descriptor)
+note right of Command : Defensively copy descriptor, including specified flags.
 ContactParser --> Parser : command
 deactivate ContactParser
 Parser --> Logic : command
 deactivate Parser
 Logic -> Command : execute(model)
 activate Command
+Command -> Model : getClientBook()
+Model --> Command : clientBook
 Command -> Model : getFilteredPersonList()
 Model --> Command : displayedPersons
-note right of Command : Reject an out-of-range index before changing data.
-Command -> Person : withContactPreferences(channel, timing)
-Person --> Command : updatedPerson
+note right of Command
+getVisiblePersonAtIndex resolves the original full-list index.
+Reject out-of-range indices and hidden persons before changing data.
+end note
+create Person
+Command -> Person : new Person(..., resolvedChannel, resolvedTiming)
+note right of Person
+Omitted preferences retain their original values.
+Explicit clears become absent; all unrelated fields are preserved.
+end note
 Command -> Model : setPerson(original, updatedPerson)
 note right of Model : Observable list updates the PersonCard.
 Command --> Logic : CommandResult

@@ -51,9 +51,9 @@ public class NoteEditCommandTest {
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
         LocalDate future = LocalDate.now().plusDays(1);
 
-        assertCommandFailure(new NoteEditCommand(INDEX_FIRST_PERSON, INDEX_SECOND_PERSON, future, null),
+        assertCommandFailure(new NoteEditCommand(INDEX_SECOND_PERSON, INDEX_SECOND_PERSON, future, null),
                 model, NoteEditCommand.MESSAGE_FUTURE_DATE);
-        assertCommandFailure(new NoteEditCommand(INDEX_FIRST_PERSON, INDEX_SECOND_PERSON, future, "Changed text"),
+        assertCommandFailure(new NoteEditCommand(INDEX_SECOND_PERSON, INDEX_SECOND_PERSON, future, "Changed text"),
                 model, NoteEditCommand.MESSAGE_FUTURE_DATE);
     }
 
@@ -99,13 +99,13 @@ public class NoteEditCommandTest {
         model.setPerson(model.getFilteredPersonList().get(1), original);
         Person untouched = model.getFilteredPersonList().get(0);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
-        LocalDate replacement = LocalDate.of(2026, 10, 19);
+        LocalDate replacement = NOTE.getDate().plusDays(1);
 
-        new NoteEditCommand(INDEX_FIRST_PERSON, INDEX_SECOND_PERSON, replacement, null).execute(model, null);
+        new NoteEditCommand(INDEX_SECOND_PERSON, INDEX_SECOND_PERSON, replacement, null).execute(model, null);
         assertEquals(new PersonBuilder(original).withInteractionNotes(NOTE,
                 new InteractionNote(replacement, NOTE.getText()), NOTE).build(), model.getFilteredPersonList().get(0));
 
-        new NoteEditCommand(INDEX_FIRST_PERSON, INDEX_SECOND_PERSON, replacement, "Corrected").execute(model, null);
+        new NoteEditCommand(INDEX_SECOND_PERSON, INDEX_SECOND_PERSON, replacement, "Corrected").execute(model, null);
         assertEquals(new PersonBuilder(original).withInteractionNotes(NOTE,
                 new InteractionNote(replacement, "Corrected"), NOTE).build(), model.getFilteredPersonList().get(0));
         assertEquals(1, model.getFilteredPersonList().size());
@@ -120,9 +120,9 @@ public class NoteEditCommandTest {
         LogicManager logic = new LogicManager(model, new StorageManager(storage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json"))));
 
-        logic.execute("noteedit 1 2 d/2026-10-19");
+        logic.execute("noteedit 1 2 d/2000-03-01");
         assertEquals(new PersonBuilder(original).withInteractionNotes(NOTE,
-                new InteractionNote(LocalDate.of(2026, 10, 19), NOTE.getText()), NOTE).build(),
+                new InteractionNote(LocalDate.of(2000, 3, 1), NOTE.getText()), NOTE).build(),
                 storage.readClientBook().orElseThrow().getPersonList().get(0));
         logic.execute("noteedit 1 2 d/2000-01-01 n/Corrected");
         assertEquals(new PersonBuilder(original).withInteractionNotes(NOTE,
@@ -178,13 +178,13 @@ public class NoteEditCommandTest {
         model.setPerson(model.getFilteredPersonList().get(1), original);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
 
-        new NoteEditCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON, "Updated").execute(model, null);
+        new NoteEditCommand(INDEX_SECOND_PERSON, INDEX_FIRST_PERSON, "Updated").execute(model, null);
 
         assertEquals(1, model.getFilteredPersonList().size());
         assertEquals(new PersonBuilder(original).withInteractionNotes(
                 new InteractionNote(NOTE.getDate(), "Updated")).build(), model.getFilteredPersonList().get(0));
         assertEquals(untouched, model.getClientBook().getPersonList().get(0));
-        assertCommandFailure(new NoteEditCommand(INDEX_SECOND_PERSON, INDEX_FIRST_PERSON, "Updated"), model,
+        assertCommandFailure(new NoteEditCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON, "Updated"), model,
                 Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
     }
 

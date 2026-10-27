@@ -13,6 +13,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.commands.FindCommand;
+import seedu.address.model.person.Name;
 import seedu.address.model.person.PersonMatchesFiltersPredicate;
 import seedu.address.model.person.Relationship;
 import seedu.address.model.tag.Tag;
@@ -36,6 +37,28 @@ public class FindCommandParserTest {
 
         // multiple whitespaces between keywords
         assertParseSuccess(parser, " \n Alice \n \t Bob  \t", expectedFindCommand);
+    }
+
+    @Test
+    public void parse_validPunctuatedNameKeywords_returnsFindCommand() {
+        assertParseSuccess(parser, "Anne-Marie", findCommandWithNameKeywords("Anne-Marie"));
+        assertParseSuccess(parser, "O'Connor", findCommandWithNameKeywords("O'Connor"));
+        assertParseSuccess(parser, "Jack s/o David", findCommandWithNameKeywords("Jack", "s/o", "David"));
+        assertParseSuccess(parser, "s/o", findCommandWithNameKeywords("s/o"));
+        assertParseSuccess(parser, "Jack s/o", findCommandWithNameKeywords("Jack", "s/o"));
+        assertParseSuccess(parser, "s/o David", findCommandWithNameKeywords("s/o", "David"));
+        assertParseSuccess(parser, "D/O w/O", findCommandWithNameKeywords("D/O", "w/O"));
+    }
+
+    @Test
+    public void parse_invalidNameKeywords_throwsParseException() {
+        assertParseFailure(parser, "1", Name.MESSAGE_INVALID_CHARACTERS);
+        assertParseFailure(parser, "Alice1", Name.MESSAGE_INVALID_CHARACTERS);
+        assertParseFailure(parser, "Alice Bob2 r/client", Name.MESSAGE_INVALID_CHARACTERS);
+        assertParseFailure(parser, "Alice@", Name.MESSAGE_INVALID_CHARACTERS);
+        assertParseFailure(parser, "John/Smith", Name.MESSAGE_INVALID_CHARACTERS);
+        assertParseFailure(parser, "s/x", Name.MESSAGE_INVALID_CHARACTERS);
+        assertParseFailure(parser, "Anne-", Name.MESSAGE_INVALID_CHARACTERS);
     }
 
     @Test
@@ -100,6 +123,10 @@ public class FindCommandParserTest {
                         List.of("friends", "priority")));
 
         assertParseSuccess(parser, "Alice Bob r/client t/priority friends", expectedFindCommand);
+    }
+
+    private FindCommand findCommandWithNameKeywords(String... nameKeywords) {
+        return new FindCommand(new PersonMatchesFiltersPredicate(List.of(nameKeywords), Optional.empty(), List.of()));
     }
 
 }
