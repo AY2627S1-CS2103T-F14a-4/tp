@@ -7,9 +7,11 @@ import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.person.Name;
 import seedu.address.model.person.PersonMatchesFiltersPredicate;
 import seedu.address.model.person.Relationship;
 import seedu.address.model.tag.Tag;
@@ -18,6 +20,9 @@ import seedu.address.model.tag.Tag;
  * Parses input arguments and creates a new FindCommand object
  */
 public class FindCommandParser implements Parser<FindCommand> {
+
+    private static final Pattern VALID_NAME_KEYWORD_PATTERN = Pattern.compile(
+            "(?:[\\p{L}]+(?:[-'][\\p{L}]+)*|s/o|d/o|w/o)", Pattern.CASE_INSENSITIVE);
 
     /**
      * Parses the given {@code String} of arguments in the context of the FindCommand
@@ -38,10 +43,23 @@ public class FindCommandParser implements Parser<FindCommand> {
         Optional<Relationship> relationship = relationshipValue.isEmpty()
                 ? Optional.empty() : Optional.of(ParserUtil.parseRelationship(relationshipValue.get()));
         String nameKeywordsValue = argumentMultimap.getPreamble();
-        List<String> nameKeywords = nameKeywordsValue.isEmpty()
-                ? List.of() : List.of(nameKeywordsValue.split("\\s+"));
+        List<String> nameKeywords = parseNameKeywords(nameKeywordsValue);
         List<String> tagKeywords = parseTagKeywords(argumentMultimap.getValue(PREFIX_TAG));
         return new FindCommand(new PersonMatchesFiltersPredicate(nameKeywords, relationship, tagKeywords));
+    }
+
+    private static List<String> parseNameKeywords(String nameKeywordsValue) throws ParseException {
+        String normalizedNameKeywords = nameKeywordsValue.trim();
+        if (normalizedNameKeywords.isEmpty()) {
+            return List.of();
+        }
+        List<String> nameKeywords = List.of(normalizedNameKeywords.split("\\s+"));
+        boolean hasInvalidKeyword = nameKeywords.stream()
+                .anyMatch(keyword -> !VALID_NAME_KEYWORD_PATTERN.matcher(keyword).matches());
+        if (hasInvalidKeyword) {
+            throw new ParseException(Name.MESSAGE_INVALID_CHARACTERS);
+        }
+        return nameKeywords;
     }
 
     private static List<String> parseTagKeywords(Optional<String> tagValue) throws ParseException {
