@@ -188,9 +188,10 @@ letters with optional internal hyphens or apostrophes, while `s/o`, `d/o`, and `
 keywords. Digits, other symbols, and arbitrary slash forms are rejected. This differs from full-name validation,
 which requires relationship markers to appear between name components.
 
-The parser creates a `PersonMatchesFiltersPredicate`. Name keywords use the existing full-word, case-insensitive
-matching and are joined with `OR`. Tag keywords use exact, case-insensitive tag matching and are also joined with
-`OR`. The predicate joins the name, relationship and tag filter results with `AND`. For example,
+The parser creates a `PersonMatchesFiltersPredicate`. Name keywords use case-insensitive contiguous substring
+matching and are joined with `OR`. Thus, `Alex` matches `Alexander`, while either `Anne` or `Marie` matches
+`Anne-Marie Tan`. Tag keywords use exact, case-insensitive tag matching and are also joined with `OR`. The predicate
+joins the name, relationship and tag filter results with `AND`. For example,
 `find Alex David r/client t/priority referral` returns clients whose name contains `Alex` or `David` and whose tags
 contain `priority` or `referral`.
 
@@ -1037,7 +1038,8 @@ These cases are covered in `DeleteIntegrationTest`. Parser whitespace and intege
 3. Combined name and relationship filtering
 
    1. Test case: `find Alex r/client`.<br>
-      Expected: Only clients whose names contain the full word `Alex` are displayed. Matching is case-insensitive.
+      Expected: Only clients whose names contain the contiguous text `Alex` are displayed. This includes names such
+      as `Alexander`, and matching is case-insensitive.
 
 ### Saving data
 

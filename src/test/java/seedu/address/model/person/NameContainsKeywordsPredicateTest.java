@@ -57,6 +57,18 @@ public class NameContainsKeywordsPredicateTest {
     }
 
     @Test
+    public void test_nameContainsPartialContiguousKeyword_returnsTrue() {
+        assertTrue(new NameContainsKeywordsPredicate(List.of("Alex"))
+                .test(new PersonBuilder().withName("Alexander Lim").build()));
+        assertTrue(new NameContainsKeywordsPredicate(List.of("Anne"))
+                .test(new PersonBuilder().withName("Anne-Marie Tan").build()));
+        assertTrue(new NameContainsKeywordsPredicate(List.of("Marie"))
+                .test(new PersonBuilder().withName("Anne-Marie Tan").build()));
+        assertTrue(new NameContainsKeywordsPredicate(List.of("mARie"))
+                .test(new PersonBuilder().withName("Anne-Marie Tan").build()));
+    }
+
+    @Test
     public void test_nameContainsPunctuatedKeyword_returnsTrue() {
         assertTrue(new NameContainsKeywordsPredicate(List.of("Anne-Marie"))
                 .test(new PersonBuilder().withName("Anne-Marie Tan").build()));
@@ -75,6 +87,10 @@ public class NameContainsKeywordsPredicateTest {
         // Non-matching keyword
         predicate = new NameContainsKeywordsPredicate(List.of("Carol"));
         assertFalse(predicate.test(new PersonBuilder().withName("Alice Bob").build()));
+
+        // Non-contiguous keyword
+        predicate = new NameContainsKeywordsPredicate(List.of("Aex"));
+        assertFalse(predicate.test(new PersonBuilder().withName("Alexander Lim").build()));
 
         // Keywords match phone, email and address, but do not match name
         predicate = new NameContainsKeywordsPredicate(List.of("12345678", "alice@email.com", "Main", "Street"));

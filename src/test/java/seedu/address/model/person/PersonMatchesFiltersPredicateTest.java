@@ -32,6 +32,14 @@ public class PersonMatchesFiltersPredicateTest {
     }
 
     @Test
+    public void test_partialNameKeyword_matches() {
+        assertTrue(new PersonMatchesFiltersPredicate(List.of("lic"), Optional.empty(), List.of())
+                .test(clientAlice));
+        assertFalse(new PersonMatchesFiltersPredicate(List.of("Ace"), Optional.empty(), List.of())
+                .test(clientAlice));
+    }
+
+    @Test
     public void test_differentFilters_useAnd() {
         assertTrue(new PersonMatchesFiltersPredicate(List.of("Alice"), Optional.of(Relationship.CLIENT),
                 List.of("FRIENDS")).test(clientAlice));

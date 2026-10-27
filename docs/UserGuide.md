@@ -355,7 +355,8 @@ Format: `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...
   matches `Client`.
 * Keyword order does not matter; for example, `Hans Bo` matches `Bo Hans`.
 * Keyword searches consider only names.
-* Only full words match; for example, `Han` does not match `Hans`.
+* Each name keyword matches any contiguous part of a name. For example, `Alex` matches `Alexander`, while `Aex`
+  does not. A keyword can also match part of a hyphenated name, so either `Anne` or `Marie` matches `Anne-Marie Tan`.
 * Persons matching at least one keyword are returned (an `OR` search); for example, `Hans Bo` returns `Hans Gruber` and `Bo Yang`.
 * `RELATIONSHIP` must be either `client` or `prospect` and is case-insensitive.
 * Each `TAG` must be alphanumeric. A person with at least one of the supplied tags matches the tag filter.
@@ -366,11 +367,13 @@ Format: `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...
 
 Examples:
 * `find John` returns `john` and `John Doe`
+* `find Alex` returns `Alex` and `Alexander`.
+* `find Anne` and `find Marie` both return `Anne-Marie Tan`.
 * `find alex david` returns `Alex Yeoh`, `David Li`<br>
   ![result for 'find alex david'](images/findAlexDavidResult.png)
 * `find r/client` returns all clients.
 * `find r/Prospect` returns all prospects.
-* `find alex david r/prospect` returns prospects whose names contain the full word `alex` or `david`.
+* `find alex david r/prospect` returns prospects whose names contain `alex` or `david` as contiguous text.
 * `find s/o` returns persons whose names contain `s/o` as a standalone component.
 * `find Jack s/o` returns persons whose names contain either `Jack` or `s/o`.
 * `find t/referral priority` returns persons tagged `referral` or `priority`.
