@@ -167,10 +167,7 @@ public class PersonCardTest {
     /** Starts the real toolkit; headless Linux runs need a virtual display such as Xvfb. */
     @BeforeAll
     public static void startToolkit() throws Exception {
-        CompletableFuture<Void> started = new CompletableFuture<>();
-        Platform.startup(() -> started.complete(null));
-        started.get(10, TimeUnit.SECONDS);
-        Platform.setImplicitExit(false);
+        JavaFxTestUtil.startToolkit();
     }
 
     @Test

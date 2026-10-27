@@ -28,7 +28,8 @@ and stores records locally.
    A GUI similar to the one below should appear in a few seconds. Your client book starts empty.<br>
    ![Ui](images/Ui.png)
 
-5. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
+5. Type a command in the command box and press Enter to execute it. The result box below the command box shows
+   the command you entered followed by its result. For example, type **`help`** and press Enter to open the help window.<br>
    Some example commands you can try:
 
    * `list` : Lists all contacts.
