@@ -297,25 +297,37 @@ Searching interaction notes is not currently supported.
 
 ### Editing a dated interaction note: `noteedit`
 
-Updates the text of one existing interaction note belonging to a client or prospect.
+Updates the date, text, or both fields of one existing interaction note belonging to a client or prospect.
 
-Format: `noteedit CONTACT_INDEX NOTE_INDEX n/NEW_NOTE_CONTENT`
+Format: `noteedit CONTACT_INDEX NOTE_INDEX [d/DATE] [n/NEW_NOTE_CONTENT]`
 
 * Both indices must be positive integers. `CONTACT_INDEX` refers to the currently displayed contact list,
   including search results. The current search filter remains active after editing.
 * `NOTE_INDEX` is the number displayed beside the note under **Interaction notes:** on that contact's card.
   Numbering starts at 1 and follows chronological order (oldest first).
-* The original interaction date, other notes, and all other contact information are preserved.
+* Supply at least one of `d/` or `n/`. Omitted fields retain their existing values.
+* A replacement date must be a real calendar date in `yyyy-MM-dd` format, following the same rules as `note`.
+  An explicitly supplied future date is rejected with `Interaction date cannot be in the future.` using the computer's
+  local date. Today's date and past dates are accepted. Omitting `d/` preserves the existing date, even for legacy
+  future-dated notes.
+  Put `d/DATE` before `n/` when editing both fields.
+* Changing a date reorders the notes chronologically and updates their displayed numbers.
+  Notes with identical dates retain their relative order. Other notes and all other contact information are preserved.
 * New text cannot be blank. Surrounding whitespace is removed; case and internal text are preserved.
   Everything after `n/` is note text, including URLs and prefix-like strings. Enter it on one command line.
 * Changes are saved automatically.
 
 Example: `noteedit 1 2 n/Discussed insurance renewal`
 
+Other examples:
+* `noteedit 1 1 d/2026-10-19` changes only the date, preserving the text.
+* `noteedit 1 1 d/2026-10-19 n/Corrected meeting description` changes both fields.
+
 This updates the second note of the first displayed contact. Success message:
 `Updated interaction note 2 for PERSON_NAME.`
 
-Missing arguments or the `n/` prefix, invalid indices, and blank text produce an error without changing records.
+Missing arguments, missing both editable fields, invalid indices, invalid dates, and blank supplied text produce an error
+without changing records. Invalid dates produce `Interaction date must be a valid date in yyyy-MM-dd format.`
 An out-of-range contact index produces `The person index provided is invalid.` An out-of-range note index,
 including when the contact has no notes, produces `The interaction note index provided is invalid.`
 Blank text produces `Interaction note cannot be empty.`
@@ -586,7 +598,7 @@ Action     | Format, Examples
 **Contact** | `contact INDEX [ch/CHANNEL\|-] [tm/TIMING\|-]`<br> e.g., `contact 1 ch/WhatsApp tm/-`
 **Info**   | `info INDEX [/fn VALUE\|-] [/pr VALUE\|-] [/ai VALUE\|-]`<br> e.g., `info 1 /fn retirement planning`
 **Note**   | `note INDEX d/DATE n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
-**Note edit** | `noteedit CONTACT_INDEX NOTE_INDEX n/NEW_NOTE_CONTENT`<br> e.g., `noteedit 1 2 n/Discussed insurance renewal`
+**Note edit** | `noteedit CONTACT_INDEX NOTE_INDEX [d/DATE] [n/NEW_NOTE_CONTENT]`<br> e.g., `noteedit 1 2 d/2026-10-19 n/Discussed insurance renewal`
 **Note delete** | `notedelete CONTACT_INDEX NOTE_INDEX`<br> e.g., `notedelete 1 2`
 **Restore** | `restore`<br> e.g., `restore`
 **Tag**    | `tag INDEX TAG [MORE_TAGS...]`<br> e.g., `tag 1 priority referral`
