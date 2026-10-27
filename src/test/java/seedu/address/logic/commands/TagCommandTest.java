@@ -41,7 +41,7 @@ public class TagCommandTest {
         Person target = model.getFilteredPersonList().get(1);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
 
-        new TagCommand(INDEX_FIRST_PERSON, Set.of(new Tag("priority"))).execute(model, null);
+        new TagCommand(INDEX_SECOND_PERSON, Set.of(new Tag("priority"))).execute(model, null);
 
         assertEquals(first, model.getClientBook().getPersonList().get(0));
         assertEquals(new PersonBuilder(target).withTags("owesMoney", "friends", "priority").build(),

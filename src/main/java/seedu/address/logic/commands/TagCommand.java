@@ -3,7 +3,6 @@ package seedu.address.logic.commands;
 import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import seedu.address.commons.core.index.Index;
@@ -37,12 +36,8 @@ public class TagCommand extends Command {
     @Override
     public CommandResult execute(Model model, Storage storage) throws CommandException {
         requireAllNonNull(model);
-        List<Person> lastShownList = model.getFilteredPersonList();
-        if (index.getZeroBased() >= lastShownList.size()) {
-            throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
-        }
-
-        Person personToTag = lastShownList.get(index.getZeroBased());
+        Person personToTag = getVisiblePersonAtIndex(model, index,
+                Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
         Set<Tag> updatedTags = new HashSet<>(personToTag.getTags());
         updatedTags.addAll(tags);
         model.setPerson(personToTag, personToTag.withTags(updatedTags));
