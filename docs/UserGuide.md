@@ -285,7 +285,7 @@ Missing indices, dates or note prefixes produce an error. Dates such as `2026-02
 `The person index provided is invalid.` These input errors leave the stored records unchanged.
 
 Notes are displayed in insertion order, including backdated entries; they are not sorted by date.
-Searching interaction notes is not currently supported.
+Use `find k/KEYWORD` to search interaction note dates and text together with other remembered details.
 
 ### Editing a dated interaction note: `noteedit`
 
@@ -341,13 +341,13 @@ Missing or extra arguments and invalid indices produce an error without changing
 An out-of-range contact index produces `The person index provided is invalid.` An out-of-range note index,
 including when the contact has no notes, produces `The interaction note index provided is invalid.`
 
-### Locating persons by name, relationship or tags: `find`
+### Locating persons by name, relationship, tags or remembered details: `find`
 
-Finds persons using any combination of name keywords, relationship and tags.
+Finds persons using any combination of name keywords, relationship, tags and remembered-detail keywords.
 
-Format: `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...]]`
+Format: `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...]] [k/DETAIL_KEYWORD [MORE_KEYWORDS...]]`
 
-* Every filter is optional, but at least one name keyword, relationship or tag must be provided.
+* Every filter is optional, but at least one name keyword, relationship, tag or detail keyword must be provided.
 * Each whitespace-separated name keyword is validated independently. A keyword may contain letters with internal
   hyphens (`-`) or apostrophes (`'`), or it may be the standalone relationship marker `s/o`, `d/o`, or `w/o`.
   Digits, other symbols, and arbitrary slash forms are not allowed.
@@ -362,9 +362,18 @@ Format: `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...
 * Each `TAG` keyword must be alphanumeric and matches any contiguous part of a tag. For example, `t/friend`
   matches `friend`, `friends`, and `bestfriend`. A person with at least one matching tag keyword matches the tag
   filter.
+* Each whitespace-separated `DETAIL_KEYWORD` after `k/` performs a case-insensitive contiguous search across the
+  preferred contact channel, preferred contact timing, financial need, priority, area of interest, and every
+  interaction note's date and text, plus the follow-up action text and due date. Follow-up completion status is not
+  searched. Names, phone numbers, email addresses, relationships and tags are also not searched by `k/` because they
+  have their own filters or identifying fields.
+* Detail keywords may contain punctuation and digits, such as `6:30`, `A/B`, or `2026-10-06`. A person matching at
+  least one supplied detail keyword matches the detail filter (an `OR` search).
 * When filter types are combined, a result must match every supplied filter type. For example, a search with names,
-  a relationship and tags must match at least one name keyword **and** the relationship **and** at least one tag.
-* Put name keywords before `r/` and `t/`. Tags follow a single `t/` and are separated by spaces.
+  a relationship, tags and details must match at least one name keyword **and** the relationship **and** at least
+  one tag **and** at least one detail keyword.
+* Put name keywords before any prefixed filter. Tags follow a single `t/`, and detail keywords follow a single
+  `k/`; values within each filter are separated by spaces. The `r/`, `t/`, and `k/` filters may appear in any order.
 * Filtered persons retain the same order and indexes as in the `list` command.
 
 Examples:
@@ -380,7 +389,16 @@ Examples:
 * `find Jack s/o` returns persons whose names contain either `Jack` or `s/o`.
 * `find t/friend` returns persons with tags such as `friend`, `friends`, or `bestfriend`.
 * `find t/referral priority` returns persons tagged `referral` or `priority`.
-* `find alex r/client t/priority referral` returns clients named `alex` who have a `priority` or `referral` tag.
+* `find k/retirement` returns persons whose preferences, financial information, or interaction notes contain
+  `retirement`.
+* `find k/WhatsApp 2026-10-06` returns persons whose remembered details contain `WhatsApp` or whose interaction notes
+  contain the date `2026-10-06`.
+* `find k/investment` returns persons whose follow-up action text contains `investment`, as well as matches in the
+  other remembered-detail fields.
+* `find k/2026-12-15` returns persons with an interaction note dated `2026-12-15` or a follow-up due on that date.
+  Partial date searches such as `find k/2026-12` work because date matching is contiguous.
+* `find alex r/client t/priority referral k/retirement WhatsApp` returns clients named `alex` who have a `priority`
+  or `referral` tag and whose remembered details contain `retirement` or `WhatsApp`.
 
 ### Deleting a client/prospect: `delete`
 
@@ -580,7 +598,7 @@ Action     | Format, Examples
 **Clear**  | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit**   | `edit INDEX [r/RELATIONSHIP] [n/NAME] [p/PHONE_NUMBER] [e/EMAIL]`<br> e.g.,`edit 2 r/Client n/James Lee e/jameslee@example.com`
-**Find**   | `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...]]`<br> e.g., `find James r/client t/priority referral`
+**Find**   | `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...]] [k/DETAIL_KEYWORD [MORE_KEYWORDS...]]`<br> e.g., `find James r/client t/priority referral k/retirement`
 **Contact** | `contact INDEX [ch/CHANNEL\|-] [tm/TIMING\|-]`<br> e.g., `contact 1 ch/WhatsApp tm/-`
 **Info**   | `info INDEX [/fn VALUE\|-] [/pr VALUE\|-] [/ai VALUE\|-]`<br> e.g., `info 1 /fn retirement planning`
 **Note**   | `note INDEX d/DATE n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`

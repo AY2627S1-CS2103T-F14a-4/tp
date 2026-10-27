@@ -2,6 +2,7 @@ package seedu.address.logic.parser;
 
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.Messages.getErrorMessageForDuplicatePrefixes;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_DETAIL_KEYWORD;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_RELATIONSHIP;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
@@ -32,7 +33,7 @@ public class FindCommandParserTest {
         // no leading and trailing whitespaces
         FindCommand expectedFindCommand =
                 new FindCommand(new PersonMatchesFiltersPredicate(List.of("Alice", "Bob"), Optional.empty(),
-                        List.of()));
+                        List.of(), List.of()));
         assertParseSuccess(parser, "Alice Bob", expectedFindCommand);
 
         // multiple whitespaces between keywords
@@ -65,10 +66,10 @@ public class FindCommandParserTest {
     public void parse_validRelationship_returnsFindCommand() {
         FindCommand expectedClientFindCommand =
                 new FindCommand(new PersonMatchesFiltersPredicate(List.of(), Optional.of(Relationship.CLIENT),
-                        List.of()));
+                        List.of(), List.of()));
         FindCommand expectedProspectFindCommand =
                 new FindCommand(new PersonMatchesFiltersPredicate(List.of(), Optional.of(Relationship.PROSPECT),
-                        List.of()));
+                        List.of(), List.of()));
 
         assertParseSuccess(parser, "r/client", expectedClientFindCommand);
         assertParseSuccess(parser, " r/Client ", expectedClientFindCommand);
@@ -93,7 +94,8 @@ public class FindCommandParserTest {
     @Test
     public void parse_tags_returnsFindCommand() {
         FindCommand expectedFindCommand = new FindCommand(
-                new PersonMatchesFiltersPredicate(List.of(), Optional.empty(), List.of("friends", "priority")));
+                new PersonMatchesFiltersPredicate(List.of(), Optional.empty(), List.of("friends", "priority"),
+                        List.of()));
 
         assertParseSuccess(parser, "t/priority friends priority", expectedFindCommand);
         assertParseSuccess(parser, " t/friends priority ", expectedFindCommand);
@@ -107,10 +109,28 @@ public class FindCommandParserTest {
     }
 
     @Test
+    public void parse_detailKeywords_returnsFindCommand() {
+        FindCommand expectedFindCommand = new FindCommand(
+                new PersonMatchesFiltersPredicate(List.of(), Optional.empty(), List.of(),
+                        List.of("retirement", "WhatsApp", "2026-10-06", "A/B")));
+
+        assertParseSuccess(parser, "k/retirement WhatsApp 2026-10-06 A/B", expectedFindCommand);
+        assertParseSuccess(parser, " k/retirement   WhatsApp  2026-10-06 A/B ", expectedFindCommand);
+    }
+
+    @Test
+    public void parse_emptyOrRepeatedDetailFilter_throwsParseException() {
+        assertParseFailure(parser, "k/",
+                String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE));
+        assertParseFailure(parser, "k/retirement k/WhatsApp",
+                getErrorMessageForDuplicatePrefixes(PREFIX_DETAIL_KEYWORD));
+    }
+
+    @Test
     public void parse_nameAndRelationship_returnsFindCommand() {
         FindCommand expectedFindCommand = new FindCommand(
                 new PersonMatchesFiltersPredicate(List.of("Alice", "Bob"), Optional.of(Relationship.CLIENT),
-                        List.of()));
+                        List.of(), List.of()));
 
         assertParseSuccess(parser, "Alice Bob r/client", expectedFindCommand);
         assertParseSuccess(parser, " \n Alice \t Bob  r/CLIENT ", expectedFindCommand);
@@ -120,13 +140,17 @@ public class FindCommandParserTest {
     public void parse_allFilters_returnsFindCommand() {
         FindCommand expectedFindCommand = new FindCommand(
                 new PersonMatchesFiltersPredicate(List.of("Alice", "Bob"), Optional.of(Relationship.CLIENT),
-                        List.of("friends", "priority")));
+                        List.of("friends", "priority"), List.of("retirement", "WhatsApp")));
 
-        assertParseSuccess(parser, "Alice Bob r/client t/priority friends", expectedFindCommand);
+        assertParseSuccess(parser, "Alice Bob r/client t/priority friends k/retirement WhatsApp",
+                expectedFindCommand);
+        assertParseSuccess(parser, "Alice Bob k/retirement WhatsApp t/friends priority r/client",
+                expectedFindCommand);
     }
 
     private FindCommand findCommandWithNameKeywords(String... nameKeywords) {
-        return new FindCommand(new PersonMatchesFiltersPredicate(List.of(nameKeywords), Optional.empty(), List.of()));
+        return new FindCommand(new PersonMatchesFiltersPredicate(List.of(nameKeywords), Optional.empty(), List.of(),
+                List.of()));
     }
 
 }

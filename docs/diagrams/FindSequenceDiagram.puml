@@ -15,19 +15,19 @@ participant "model:Model" as Model MODEL_COLOR
 participant "filteredPersons:FilteredList<Person>" as FilteredList MODEL_COLOR
 end box
 
-[-> Logic : execute("find Alex David r/client t/priority referral")
+[-> Logic : execute("find Alex r/client t/priority k/retirement")
 activate Logic
 Logic -> Parser : parseCommand(commandText)
 activate Parser
 Parser -> FindParser : parse(arguments)
 activate FindParser
 note right of FindParser
-Tokenize the optional r/ and t/ filters.
+Tokenize the optional r/, t/ and k/ filters.
 Reject duplicate prefixes and validate supplied values.
-Require at least one name, relationship or tag filter.
+Require at least one name, relationship, tag or detail filter.
 end note
 create Predicate
-FindParser -> Predicate : new PersonMatchesFiltersPredicate(\nnameKeywords, relationship, tagKeywords)
+FindParser -> Predicate : new PersonMatchesFiltersPredicate(\nnameKeywords, relationship, tagKeywords, detailKeywords)
 create Command
 FindParser -> Command : new FindCommand(predicate)
 FindParser --> Parser : command
@@ -45,6 +45,8 @@ loop for each source person
     Names: any keyword (OR)
     Relationship: exact match
     Tags: any keyword (OR)
+    Details: any keyword across preferences, financial
+    information, notes, and follow-up text/date (OR)
     Supplied filter types: all must match (AND)
     end note
     Predicate --> FilteredList : matches

@@ -177,24 +177,28 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
-### Find by name, relationship and tags
+### Find by name, relationship, tags and remembered details
 
-The `find` command supports three independently optional filters: name keywords, one relationship, and tag keywords.
-`FindCommandParser` tokenizes the `r/` and `t/` prefixes, rejects duplicate filter prefixes, and delegates prefixed
-value validation to `ParserUtil`. At least one filter must be present. Name keywords precede the prefixed filters;
-multiple tag keywords follow one `t/` prefix and are separated by whitespace. The parser splits the name preamble
-into independent keywords and validates each one against the search-keyword grammar. Ordinary keywords contain
-letters with optional internal hyphens or apostrophes, while `s/o`, `d/o`, and `w/o` are also valid standalone
-keywords. Digits, other symbols, and arbitrary slash forms are rejected. This differs from full-name validation,
-which requires relationship markers to appear between name components.
+The `find` command supports four independently optional filters: name keywords, one relationship, tag keywords, and
+remembered-detail keywords. `FindCommandParser` tokenizes the `r/`, `t/`, and `k/` prefixes, rejects duplicate filter
+prefixes, and delegates relationship and tag validation to `ParserUtil`. At least one filter must be present. Name
+keywords precede the prefixed filters; multiple tag or detail keywords follow one corresponding prefix and are
+separated by whitespace. The parser splits the name preamble into independent keywords and validates each one
+against the search-keyword grammar. Ordinary name keywords contain letters with optional internal hyphens or
+apostrophes, while `s/o`, `d/o`, and `w/o` are also valid standalone keywords. Digits, other symbols, and arbitrary
+slash forms are rejected for names. Detail keywords accept any non-whitespace text so users can search remembered
+values such as times, dates, and punctuation.
 
 The parser creates a `PersonMatchesFiltersPredicate`. Name keywords use case-insensitive contiguous substring
 matching and are joined with `OR`. Thus, `Alex` matches `Alexander`, while either `Anne` or `Marie` matches
 `Anne-Marie Tan`. Tag keywords use the same case-insensitive contiguous substring matching and are also joined with
-`OR`; for example, `friend` matches both `friend` and `friends`. The predicate joins the name, relationship and tag
-filter results with `AND`. For example,
-`find Alex David r/client t/priority referral` returns clients whose name contains `Alex` or `David` and whose tags
-contain `priority` or `referral`.
+`OR`; for example, `friend` matches both `friend` and `friends`. Detail keywords search the two contact preferences,
+the three financial-information fields, each interaction note's date and text, and the follow-up action text and due
+date. Dates use their ISO `yyyy-MM-dd` representation, so both full dates and contiguous fragments match. Follow-up
+completion status is excluded. Detail keywords are joined with `OR`. The predicate joins the name, relationship,
+tag, and detail filter results with `AND`. For example,
+`find Alex David r/client t/priority referral k/retirement WhatsApp` returns clients whose name contains `Alex` or
+`David`, whose tags contain `priority` or `referral`, and whose remembered details contain `retirement` or `WhatsApp`.
 
 `FindCommand` passes the predicate to `Model#updateFilteredPersonList(Predicate<Person>)`, which updates the
 `FilteredList<Person>` observed by the UI. Filtering does not reorder the source list, so matching persons retain the
@@ -205,7 +209,7 @@ index and reject it if the corresponding person is not in the current filter.
 The following sequence shows a combined search. The `FilteredList` applies the predicate to each source person;
 omitted filter types evaluate as matched, while the supplied filter types must all match.
 
-<puml src="diagrams/FindSequenceDiagram.puml" alt="Find by name, relationship and tags sequence" />
+<puml src="diagrams/FindSequenceDiagram.puml" alt="Find by name, relationship, tags and details sequence" />
 
 ### Tagging a person
 
@@ -841,11 +845,12 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case ends.
 
-**Use case: Find clients or prospects by name or relationship**
+**Use case: Find clients or prospects**
 
 **MSS**
 
-1.  User requests to find clients or prospects using one or more name keywords, or a client/prospect relationship.
+1.  User requests to find clients or prospects using one or more name, relationship, tag, or remembered-detail
+    filters.
 2.  ClientBook searches the stored records using the supplied criterion.
 3.  ClientBook displays all matching clients and prospects.
 
@@ -865,11 +870,11 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case resumes at step 1.
 
-* 1c. The user combines name keywords with a relationship filter.
+* 1c. The user combines two or more filter types.
 
-    * 1c1. ClientBook displays an error message explaining the valid command formats.
+    * 1c1. ClientBook requires each result to match every supplied filter type.
 
-      Use case resumes at step 1.
+      Use case resumes at step 2.
 
 * 3a. No record matches the supplied criterion.
 
@@ -1049,6 +1054,20 @@ These cases are covered in `DeleteIntegrationTest`. Parser whitespace and intege
    2. Test case: `find t/friend`.<br>
       Expected: The persons tagged `friend`, `friends`, and `bestfriend` are displayed. The person tagged `family`
       is not displayed.
+
+5. Remembered-detail filtering
+
+   1. Prerequisites: Add a client named Alex with preferred channel `WhatsApp`, financial need `Retirement planning`,
+      an interaction note dated `2026-10-06` containing `Discussed university fund`, and follow-up text
+      `Call about investment review` due on `2026-12-15`. Add another client without those details.
+
+   2. Test cases: `find k/WhatsApp`, `find k/retire`, `find k/university`, `find k/2026-10-06`, and
+      `find k/investment`, `find k/2026-12-15`, and `find k/2026-12`.<br>
+      Expected: Alex is displayed for every search. Matching is case-insensitive and accepts contiguous partial text.
+
+   3. Test case: `find Alex r/client t/priority k/retirement`.<br>
+      Expected: Alex is displayed only if the record also has the `priority` tag, demonstrating `AND` across filter
+      types.
 
 ### Saving data
 
