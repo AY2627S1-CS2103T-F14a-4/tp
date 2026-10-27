@@ -1,30 +1,70 @@
 package seedu.address.logic.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.showPersonAtIndex;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
 import static seedu.address.testutil.TypicalPersons.getTypicalClientBook;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import seedu.address.logic.LogicManager;
 import seedu.address.logic.Messages;
 import seedu.address.logic.parser.ClientBookParser;
+import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
+import seedu.address.model.ReadOnlyClientBook;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.InteractionNote;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Relationship;
+import seedu.address.storage.JsonClientBookStorage;
+import seedu.address.storage.JsonUserPrefsStorage;
+import seedu.address.storage.StorageManager;
 import seedu.address.testutil.PersonBuilder;
 
 public class NoteCommandTest {
+    @TempDir
+    public Path temporaryFolder;
+
     private final Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
     private final ClientBookParser parser = new ClientBookParser();
+
+    @Test
+    public void execute_throughLogic_boundaryYearsPersistAndInvalidDatesPreserveRecords() throws Exception {
+        JsonClientBookStorage storage = new JsonClientBookStorage(temporaryFolder.resolve("clientbook.json"));
+        LogicManager logic = new LogicManager(model, new StorageManager(storage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json"))));
+        InteractionNote earliest = new InteractionNote(LocalDate.of(1, 1, 1), "Earliest date");
+        InteractionNote latest = new InteractionNote(LocalDate.of(9999, 12, 31), "Latest date");
+        logic.execute("note 1 d/0001-01-01 n/Earliest date");
+        logic.execute("note 1 d/9999-12-31 n/Latest date");
+        assertEquals(List.of(earliest, latest), model.getFilteredPersonList().get(0).getInteractionNotes());
+        ReadOnlyClientBook saved = storage.readClientBook().orElseThrow();
+        assertEquals(model.getClientBook(), saved);
+        showPersonAtIndex(model, INDEX_FIRST_PERSON);
+        List<Person> displayed = List.copyOf(model.getFilteredPersonList());
+        String savedJson = Files.readString(storage.getClientBookFilePath());
+
+        for (String date : List.of("0000-01-01", "0000-02-29", "10000-01-01", "2026-02-30")) {
+            ParseException error = assertThrows(ParseException.class, () ->
+                    logic.execute("note 1 d/" + date + " n/Test invalid date"));
+            assertEquals(InteractionNote.MESSAGE_INVALID_DATE, error.getMessage());
+            assertEquals(saved, model.getClientBook());
+            assertEquals(displayed, model.getFilteredPersonList());
+            assertEquals(savedJson, Files.readString(storage.getClientBookFilePath()));
+            assertEquals(saved, storage.readClientBook().orElseThrow());
+        }
+    }
 
     @Test
     public void execute_firstAndRepeatedNotes_appendAndPreserveOtherFields() throws Exception {
