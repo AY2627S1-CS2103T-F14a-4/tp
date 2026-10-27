@@ -31,18 +31,18 @@ public class NoteCommand extends Command {
         this.note = note;
     }
 
-@Override
-public CommandResult execute(Model model, Storage storage) throws CommandException {
-    requireAllNonNull(model);
+    @Override
+    public CommandResult execute(Model model, Storage storage) throws CommandException {
+        requireAllNonNull(model);
 
-    if (note.getDate().isAfter(LocalDate.now())) {
-        throw new CommandException(MESSAGE_FUTURE_DATE);
-    }
+        if (note.getDate().isAfter(LocalDate.now())) {
+            throw new CommandException(MESSAGE_FUTURE_DATE);
+        }
 
-    Person original = getVisiblePersonAtIndex(model, index,
-            Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+        Person original = getVisiblePersonAtIndex(model, index,
+                Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
 
-    List<InteractionNote> notes = new ArrayList<>(original.getInteractionNotes());
+        List<InteractionNote> notes = new ArrayList<>(original.getInteractionNotes());
         notes.add(note);
         Person updated = new Person(original.getName(), original.getPhone(), original.getEmail(), original.getTags(),
                 original.getRelationship(), original.getFinancialNeed().orElse(null),
