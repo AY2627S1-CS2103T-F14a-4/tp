@@ -208,11 +208,12 @@ omitted filter types evaluate as matched, while the supplied filter types must a
 
 `TagCommandParser` reads the first whitespace-separated argument as the displayed-list index and validates each
 remaining argument with `ParserUtil#parseTags(Collection<String>)`. Tag names use the existing alphanumeric-only
-`Tag` validation. `TagCommand` resolves the visible person against its index in the complete list, unions the supplied tags
-with the person's existing tag set, and replaces the immutable `Person` through `Model#setPerson`. The replacement
-preserves every non-tag field and the active list filter. `Tag#equals` and `Tag#hashCode` compare normalized casing,
-so the `Set<Tag>` treats case variants as duplicates while preserving the spelling of the existing tag. Repeated
-existing or supplied tags therefore remain idempotent. The existing JSON adapter persists the updated set.
+`Tag` validation. `TagCommand` resolves the visible person against its index in the complete list using
+`Command#getVisiblePersonAtIndex`. It then intersects the supplied and existing tag sets. Tag equality is
+case-insensitive, so a non-empty intersection raises a `CommandException` listing the duplicate tags and leaves the
+contact unchanged. Otherwise, the command unions the supplied and existing tags and replaces the immutable `Person`
+through `Model#setPerson`, preserving every non-tag field and the active list filter. The existing JSON adapter
+persists a successfully updated set.
 
 `AddCommandParser` uses the same validation and accepts zero or more `t/TAG` fields. Unlike the required name,
 relationship, email and phone prefixes, `t/` is deliberately repeatable so a new person can be created with several
@@ -227,6 +228,27 @@ validation complete before the immutable `Person` is replaced and the updated cl
 
 <puml src="diagrams/TagSequenceDiagram.puml" alt="Tagging a person sequence" />
 
+### Deleting tags from a person
+
+`TagDeleteCommandParser` reads the displayed-list index and an optional set of tag names. An empty set means all
+tags; otherwise, `TagDeleteCommand` requires every supplied tag to exist on the person. Matching uses the same
+case-insensitive `Tag` equality as tag addition. Missing tags, a person with no tags, or an invalid displayed index
+raises a `CommandException` before confirmation or mutation.
+
+Tag deletion uses a two-phase Logic flow. The initial `Logic#execute(String)` call parses and validates the command,
+stores the pending `TagDeleteCommand`, and returns a `CommandResult` containing `Are you sure you want to delete
+this?`, the contact name, the exact stored tags that will be removed, and the accepted responses. `MainWindow`
+displays the result through the existing result box below the command box.
+
+While a deletion is pending, `LogicManager` interprets the next command-box input as a confirmation response instead
+of parsing it as a new command. `y` and `yes` execute the stored command; `n` and `no` discard it. Matching is
+case-insensitive and ignores surrounding whitespace. Any other response raises a `CommandException` and leaves the
+command pending. A confirmed command copies the person's tag set, clears it or removes the selected tags, replaces
+the immutable `Person` through `Model#setPerson`, and saves the updated client book.
+
+The following sequence shows the confirmation gate before selected tags are deleted.
+
+<puml src="diagrams/TagDeleteSequenceDiagram.puml" alt="Deleting tags with confirmation sequence" />
 
 ### Contact preferences (US12)
 

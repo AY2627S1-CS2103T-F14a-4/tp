@@ -28,6 +28,7 @@ import seedu.address.logic.commands.NoteDeleteCommand;
 import seedu.address.logic.commands.NoteEditCommand;
 import seedu.address.logic.commands.RestoreCommand;
 import seedu.address.logic.commands.TagCommand;
+import seedu.address.logic.commands.TagDeleteCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 
 /**
@@ -101,6 +102,7 @@ public class ClientBookParser {
                 yield new RestoreCommand();
             }
             case TagCommand.COMMAND_WORD -> new TagCommandParser().parse(arguments);
+            case TagDeleteCommand.COMMAND_WORD -> new TagDeleteCommandParser().parse(arguments);
             case ExitCommand.COMMAND_WORD -> new ExitCommand();
             case HelpCommand.COMMAND_WORD -> new HelpCommand();
             default -> {

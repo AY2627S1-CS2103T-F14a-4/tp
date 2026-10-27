@@ -22,6 +22,7 @@ public class TagCommand extends Command {
             + "Parameters: INDEX TAG [MORE_TAGS...]\n"
             + "Example: " + COMMAND_WORD + " 1 priority referral";
     public static final String MESSAGE_SUCCESS = "Added tags to %s: %s";
+    public static final String MESSAGE_DUPLICATE_TAGS = "This contact already has the following tag(s): %s";
 
     private final Index index;
     private final Set<Tag> tags;
@@ -38,6 +39,12 @@ public class TagCommand extends Command {
         requireAllNonNull(model);
         Person personToTag = getVisiblePersonAtIndex(model, index,
                 Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+        Set<Tag> duplicateTags = new HashSet<>(tags);
+        duplicateTags.retainAll(personToTag.getTags());
+        if (!duplicateTags.isEmpty()) {
+            throw new CommandException(String.format(MESSAGE_DUPLICATE_TAGS, formatTags(duplicateTags)));
+        }
+
         Set<Tag> updatedTags = new HashSet<>(personToTag.getTags());
         updatedTags.addAll(tags);
         model.setPerson(personToTag, personToTag.withTags(updatedTags));

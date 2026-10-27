@@ -17,7 +17,7 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 [[github](https://github.com/PhuXien)]
 
-* Role: Team Member 
+* Role: Team Member
 * Responsibilities: Code quality
 
 ### Nicholas Goh
