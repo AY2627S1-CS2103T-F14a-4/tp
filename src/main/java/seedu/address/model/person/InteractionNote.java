@@ -24,13 +24,15 @@ public class InteractionNote {
         this.text = text.strip();
     }
 
-    /** Parses a real calendar date in the documented four-digit-year format. */
+    /** Parses a real calendar date in years 0001 to 9999 in the documented four-digit-year format. */
     public static LocalDate parseDate(String value) {
         if (value == null || !value.matches("[0-9]{4}-[0-9]{2}-[0-9]{2}")) {
             throw new IllegalArgumentException(MESSAGE_INVALID_DATE);
         }
         try {
-            return LocalDate.parse(value, DateTimeFormatter.ISO_LOCAL_DATE);
+            LocalDate date = LocalDate.parse(value, DateTimeFormatter.ISO_LOCAL_DATE);
+            checkArgument(date.getYear() >= 1, MESSAGE_INVALID_DATE);
+            return date;
         } catch (DateTimeParseException e) {
             throw new IllegalArgumentException(MESSAGE_INVALID_DATE, e);
         }

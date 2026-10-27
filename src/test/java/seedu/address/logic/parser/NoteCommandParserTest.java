@@ -16,6 +16,14 @@ public class NoteCommandParserTest {
     private final NoteCommandParser parser = new NoteCommandParser();
 
     @Test
+    public void parse_boundaryYears_success() {
+        for (String date : List.of("0001-01-01", "9999-12-31")) {
+            assertParseSuccess(parser, "1 d/" + date + " n/Text", new NoteCommand(INDEX_FIRST_PERSON,
+                    new InteractionNote(LocalDate.parse(date), "Text")));
+        }
+    }
+
+    @Test
     public void parse_pastDateAndRealisticText_success() {
         String text = "客户's plan — https://example.com/a/b; n/text d/2000-01-01 " + "A".repeat(1000);
         assertParseSuccess(parser, " 1 d/2000-02-29 n/" + text + "  ",
@@ -36,7 +44,8 @@ public class NoteCommandParserTest {
 
     @Test
     public void parse_invalidDates_clearError() {
-        for (String date : List.of("2026-02-30", "2025-02-29", "2026-00-01", "2026-2-01", "tomorrow")) {
+        for (String date : List.of("0000-01-01", "0000-02-29", "10000-01-01", "2026-02-30",
+                "2025-02-29", "2026-00-01", "2026-2-01", "tomorrow")) {
             assertParseFailure(parser, "1 d/" + date + " n/Text", InteractionNote.MESSAGE_INVALID_DATE);
         }
     }

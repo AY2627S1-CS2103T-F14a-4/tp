@@ -20,6 +20,7 @@ import seedu.address.logic.LogicManager;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.ClientBookParser;
+import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyClientBook;
@@ -38,6 +39,33 @@ public class NoteCommandTest {
 
     private final Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
     private final ClientBookParser parser = new ClientBookParser();
+
+    @Test
+    public void execute_throughLogic_validDatesPersistAndInvalidDatesPreserveRecords() throws Exception {
+        JsonClientBookStorage storage = new JsonClientBookStorage(temporaryFolder.resolve("clientbook.json"));
+        LogicManager logic = new LogicManager(model, new StorageManager(storage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json"))));
+        InteractionNote earliest = new InteractionNote(LocalDate.of(1, 1, 1), "Earliest date");
+        InteractionNote past = new InteractionNote(LocalDate.of(2000, 2, 29), "Past date");
+        logic.execute("note 1 d/0001-01-01 n/Earliest date");
+        logic.execute("note 1 d/2000-02-29 n/Past date");
+        assertEquals(List.of(earliest, past), model.getFilteredPersonList().get(0).getInteractionNotes());
+        ReadOnlyClientBook saved = storage.readClientBook().orElseThrow();
+        assertEquals(model.getClientBook(), saved);
+        showPersonAtIndex(model, INDEX_FIRST_PERSON);
+        List<Person> displayed = List.copyOf(model.getFilteredPersonList());
+        String savedJson = Files.readString(storage.getClientBookFilePath());
+
+        for (String date : List.of("0000-01-01", "0000-02-29", "10000-01-01", "2026-02-30")) {
+            ParseException error = assertThrows(ParseException.class, () ->
+                    logic.execute("note 1 d/" + date + " n/Test invalid date"));
+            assertEquals(InteractionNote.MESSAGE_INVALID_DATE, error.getMessage());
+            assertEquals(saved, model.getClientBook());
+            assertEquals(displayed, model.getFilteredPersonList());
+            assertEquals(savedJson, Files.readString(storage.getClientBookFilePath()));
+            assertEquals(saved, storage.readClientBook().orElseThrow());
+        }
+    }
 
     @Test
     public void execute_todayAndPastDates_appendNotes() throws Exception {

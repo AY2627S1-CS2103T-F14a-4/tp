@@ -15,6 +15,22 @@ import seedu.address.testutil.PersonBuilder;
 
 public class InteractionNoteTest {
     @Test
+    public void parseDate_boundaryYears_accepted() {
+        assertEquals(LocalDate.of(1, 1, 1), InteractionNote.parseDate("0001-01-01"));
+        assertEquals(LocalDate.of(9999, 12, 31), InteractionNote.parseDate("9999-12-31"));
+    }
+
+    @Test
+    public void parseDate_unsupportedYears_rejected() {
+        for (String date : List.of("0000-01-01", "0000-02-29", "0000-12-31", "-0001-01-01",
+                "10000-01-01", "+10000-01-01")) {
+            IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () ->
+                    InteractionNote.parseDate(date));
+            assertEquals(InteractionNote.MESSAGE_INVALID_DATE, error.getMessage());
+        }
+    }
+
+    @Test
     public void person_historySortedByDate_preservesTiesAndDoesNotModifyInput() {
         InteractionNote newer = new InteractionNote(LocalDate.of(2026, 10, 20), "Newer");
         InteractionNote older = new InteractionNote(LocalDate.of(2026, 10, 10), "Older");
