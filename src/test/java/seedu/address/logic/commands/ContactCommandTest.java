@@ -221,7 +221,7 @@ public class ContactCommandTest {
         parser.parseCommand("edit 1 p/81234567").execute(model, null);
         assertEquals(expected, model.getFilteredPersonList().getFirst());
         expected = new PersonBuilder(expected).withFinancialNeed("Protection").build();
-        parser.parseCommand("info 1 /fn Protection").execute(model, null);
+        parser.parseCommand("info 1 fn/Protection").execute(model, null);
         assertEquals(expected, model.getFilteredPersonList().getFirst());
         expected = new PersonBuilder(expected).withInteractionNotes(original.getInteractionNotes().getFirst(),
                 new InteractionNote(LocalDate.of(2000, 1, 2), "Followed up")).build();

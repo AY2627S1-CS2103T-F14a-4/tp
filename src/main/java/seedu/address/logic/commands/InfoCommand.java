@@ -18,7 +18,7 @@ import seedu.address.storage.Storage;
 /** Updates financial information for a person in the displayed list. */
 public class InfoCommand extends Command {
     public static final String COMMAND_WORD = "info";
-    public static final String MESSAGE_USAGE = "info INDEX [/fn VALUE|-] [/pr VALUE|-] [/ai VALUE|-]";
+    public static final String MESSAGE_USAGE = "info INDEX [fn/VALUE|-] [pr/VALUE|-] [ai/VALUE|-]";
     public static final String MESSAGE_SUCCESS = "Client information for %s has been updated successfully.";
     public static final String MESSAGE_INVALID_INDEX = "No client exists at index %d.";
 

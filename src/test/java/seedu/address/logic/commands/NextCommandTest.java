@@ -81,7 +81,7 @@ public class NextCommandTest {
             NextAction action = new NextAction("Call", ACTION.getDueDate(), completed);
             Person original = model.getFilteredPersonList().getFirst();
             model.setPerson(original, original.withNextAction(action));
-            for (String command : new String[] {"edit 1 p/81234567", "info 1 /fn Retirement",
+            for (String command : new String[] {"edit 1 p/81234567", "info 1 fn/Retirement",
                 "note 1 d/2000-01-01 n/Discussed plans"}) {
                 parser.parseCommand(command).execute(model, null);
                 assertEquals(action, model.getFilteredPersonList().getFirst().getNextAction().orElseThrow());

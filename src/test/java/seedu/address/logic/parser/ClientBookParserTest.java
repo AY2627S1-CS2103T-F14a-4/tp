@@ -170,15 +170,15 @@ public class ClientBookParserTest {
     }
     @Test
     public void parseCommand_info() throws Exception {
-        InfoCommand expected = new InfoCommandParser().parse("1 /fn Retirement /pr High /ai Insurance");
-        assertEquals(expected, parser.parseCommand("info 1 /fn Retirement /pr High /ai Insurance"));
+        InfoCommand expected = new InfoCommandParser().parse("1 fn/Retirement pr/High ai/Insurance");
+        assertEquals(expected, parser.parseCommand("info 1 fn/Retirement pr/High ai/Insurance"));
     }
 
     @Test
     public void parseCommand_info_preservesInvalidEdgeControlCharacters() {
         for (String control : new String[] {"\t", "\n", "\r"}) {
             assertThrows(ParseException.class, "Financial need contains invalid characters", () ->
-                    parser.parseCommand("info 1 /fn Retirement" + control));
+                    parser.parseCommand("info 1 fn/Retirement" + control));
         }
     }
 

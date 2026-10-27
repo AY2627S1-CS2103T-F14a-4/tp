@@ -12,6 +12,7 @@ import static seedu.address.testutil.TypicalPersons.BOB;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
@@ -66,7 +67,7 @@ public class LogicManagerTest {
                 .withFinancialNeed("Retirement").withPriority("High").withAreaOfInterest("Insurance").build());
         logic.execute("contact 1 ch/WhatsApp tm/Weekdays after 6 pm");
         logic.execute("edit 1 p/81234567");
-        logic.execute("info 1 /pr Protection");
+        logic.execute("info 1 pr/Protection");
         logic.execute("note 1 d/2000-01-01 n/Discussed plans");
         logic.execute("next 1 a/Call d/2000-01-02");
         logic.execute("done 1");
@@ -99,13 +100,38 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_newInfoSyntax_persistsNotationAndRejectsInvalidUpdatesAtomically() throws Exception {
+        model.addPerson(new PersonBuilder(AMY).withFinancialNeed("Old need").withPriority("Low")
+                .withAreaOfInterest("Savings").build());
+        logic.execute("info 1 ai/Planning Life/Health insurance fn/e\u0301pargne $3000/month + CPF/SRS 4% pr/High");
+        Path savedFile = temporaryFolder.resolve("clientBook.json");
+        String saved = Files.readString(savedFile);
+        Person expected = model.getFilteredPersonList().getFirst();
+        assertEquals("e\u0301pargne $3000/month + CPF/SRS 4%", expected.getFinancialNeed().orElseThrow().value);
+        assertEquals("Planning Life/Health insurance", expected.getAreaOfInterest().orElseThrow().value);
+        for (String fields : new String[] {"fn/- /pr High", "fn/- fnn/Value", "fn/- prr/High", "fn/- aii/Insurance",
+            "fn/- pr/High pr/Low", "fn/- ai/", "fn/- ai/Insurance\t"}) {
+            assertThrows(ParseException.class, () -> logic.execute("info 1 " + fields));
+            assertEquals(expected, model.getFilteredPersonList().getFirst());
+            assertEquals(saved, Files.readString(savedFile));
+        }
+        JsonClientBookStorage reopened = new JsonClientBookStorage(savedFile);
+        assertEquals(model.getClientBook(), reopened.readClientBook().orElseThrow());
+        logic.execute("info 1 fn/- ai/-");
+        Person restored = reopened.readClientBook().orElseThrow().getPersonList().getFirst();
+        assertTrue(restored.getFinancialNeed().isEmpty());
+        assertTrue(restored.getAreaOfInterest().isEmpty());
+        assertEquals("High", restored.getPriority().orElseThrow().value);
+    }
+
+    @Test
     public void execute_clearFinancialFields_savedAbsenceSurvivesReopening() throws Exception {
         Person original = new PersonBuilder(AMY).withRelationship(Relationship.CLIENT).withTags("friend")
                 .withFinancialNeed("Retirement").withPriority("High").withAreaOfInterest("Insurance")
                 .withInteractionNotes(new InteractionNote(LocalDate.of(2000, 1, 1), "Discussed plans"))
                 .withNextAction(new NextAction("Call", LocalDate.of(2000, 1, 2), false)).build();
         model.addPerson(original);
-        logic.execute("info 1 /pr -");
+        logic.execute("info 1 pr/-");
         Person expected = new Person(original.getName(), original.getPhone(), original.getEmail(), original.getTags(),
                 original.getRelationship(), original.getFinancialNeed().orElseThrow(), null,
                 original.getAreaOfInterest().orElseThrow(), original.getInteractionNotes(),
@@ -115,10 +141,10 @@ public class LogicManagerTest {
         assertEquals(expected, model.getFilteredPersonList().getFirst());
 
         // A requested clear followed by an invalid field must change neither the model nor the saved file.
-        assertThrows(ParseException.class, () -> logic.execute("info 1 /fn - /ai"));
+        assertThrows(ParseException.class, () -> logic.execute("info 1 fn/- ai/"));
         assertEquals(expected, model.getFilteredPersonList().getFirst());
         assertEquals(expected, reopened.readClientBook().orElseThrow().getPersonList().getFirst());
-        logic.execute("info 1 /ai - /fn - /pr High-priority");
+        logic.execute("info 1 ai/- fn/- pr/High-priority");
         Person restored = reopened.readClientBook().orElseThrow().getPersonList().getFirst();
         assertEquals(model.getFilteredPersonList().getFirst(), restored);
         assertTrue(restored.getFinancialNeed().isEmpty());
@@ -140,7 +166,7 @@ public class LogicManagerTest {
         logic.execute("note 1 d/2000-02-29 n/Discussed retirement; https://example.com/a/b n/text d/text");
         assertEquals(2, model.getFilteredPersonList().get(0).getInteractionNotes().size());
         logic.execute("edit 1 p/81234567");
-        logic.execute("info 1 /fn Retirement");
+        logic.execute("info 1 fn/Retirement");
 
         JsonClientBookStorage reopenedStorage =
                 new JsonClientBookStorage(temporaryFolder.resolve("clientBook.json"));
