@@ -19,6 +19,7 @@ public class NoteCommand extends Command {
     public static final String COMMAND_WORD = "note";
     public static final String MESSAGE_USAGE = "note INDEX d/yyyy-MM-dd n/NOTE";
     public static final String MESSAGE_SUCCESS = "Added interaction note for %s.";
+    public static final String MESSAGE_DUPLICATE_NOTE = "This interaction note already exists for this contact.";
     public static final String MESSAGE_FUTURE_DATE = "Interaction date cannot be in the future.";
 
     private final Index index;
@@ -41,7 +42,9 @@ public class NoteCommand extends Command {
 
         Person original = getVisiblePersonAtIndex(model, index,
                 Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
-
+        if (original.getInteractionNotes().contains(note)) {
+            throw new CommandException(MESSAGE_DUPLICATE_NOTE);
+        }
         List<InteractionNote> notes = new ArrayList<>(original.getInteractionNotes());
         notes.add(note);
         Person updated = new Person(original.getName(), original.getPhone(), original.getEmail(), original.getTags(),

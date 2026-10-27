@@ -265,7 +265,11 @@ Format: `note INDEX d/DATE n/NOTE`
   Future dates are rejected with `Interaction date cannot be in the future.` using the computer's local date.
 * Put the date before `n/`. Everything after `n/` is note text, including URLs, punctuation and prefix-like text.
 * Note text cannot be blank. Surrounding whitespace is removed; case and internal text are preserved.
-* Adding a note keeps all previous notes. Same-date and identical notes are allowed.
+* Adding a note keeps all previous notes. An exact duplicate (same date and text) for the same contact is rejected
+  with `This interaction note already exists for this contact.` Existing records remain unchanged.
+* Notes with the same date but different text, or the same text but different dates, are allowed.
+  Text comparison is case-sensitive and preserves internal spaces; surrounding whitespace is removed as usual.
+  Identical notes for different contacts are allowed.
 * Notes are saved automatically and preserved when using `edit` or `info`.
 * Each entry shows its date and text under **Interaction notes:** on the person's card. Long text wraps, and the
   card grows to fit its contents immediately. Scroll the client list to read longer histories.
