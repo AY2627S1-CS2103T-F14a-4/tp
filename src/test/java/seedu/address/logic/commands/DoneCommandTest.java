@@ -56,12 +56,12 @@ public class DoneCommandTest {
         model.setPerson(model.getFilteredPersonList().get(1), second);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
 
-        new DoneCommand(INDEX_FIRST_PERSON).execute(model, null);
+        new DoneCommand(INDEX_SECOND_PERSON).execute(model, null);
 
         assertEquals(first, model.getClientBook().getPersonList().getFirst());
         assertEquals(second.withNextAction(ACTION.markCompleted()), model.getFilteredPersonList().getFirst());
         assertEquals(1, model.getFilteredPersonList().size());
-        assertCommandFailure(new DoneCommand(INDEX_SECOND_PERSON), model,
+        assertCommandFailure(new DoneCommand(INDEX_FIRST_PERSON), model,
                 Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
     }
 
@@ -115,7 +115,7 @@ public class DoneCommandTest {
         showPersonAtIndex(readOnlyModel, INDEX_SECOND_PERSON);
         showPersonAtIndex(expectedModel, INDEX_SECOND_PERSON);
 
-        assertCommandSuccess(new DoneCommand(INDEX_FIRST_PERSON), readOnlyModel,
+        assertCommandSuccess(new DoneCommand(INDEX_SECOND_PERSON), readOnlyModel,
                 String.format(DoneCommand.MESSAGE_ALREADY_COMPLETED, completed.getName().fullName), expectedModel);
         assertSame(completed, readOnlyModel.getFilteredPersonList().getFirst());
     }

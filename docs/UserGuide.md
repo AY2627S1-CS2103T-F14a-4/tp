@@ -119,6 +119,10 @@ Format: `list`
 
 Each person's tags are shown with their contact and relationship details.
 
+Each person keeps the same index when the list is filtered or their details are edited. Search and due results show
+the person's original `list` index, so use the number shown beside the person for subsequent commands. Indexes are
+renumbered only after a person is deleted.
+
 ### Adding tags to a person: `tag`
 
 Adds one or more tags to a person in the currently displayed list.
@@ -328,6 +332,9 @@ Finds persons using any combination of name keywords, relationship and tags.
 Format: `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...]]`
 
 * Every filter is optional, but at least one name keyword, relationship or tag must be provided.
+* Each whitespace-separated name keyword is validated independently. A keyword may contain letters with internal
+  hyphens (`-`) or apostrophes (`'`), or it may be the standalone relationship marker `s/o`, `d/o`, or `w/o`.
+  Digits, other symbols, and arbitrary slash forms are not allowed.
 * Name keywords, relationship values and tags are case-insensitive; for example, `hans` matches `Hans`, and `client`
   matches `Client`.
 * Keyword order does not matter; for example, `Hans Bo` matches `Bo Hans`.
@@ -339,7 +346,7 @@ Format: `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...
 * When filter types are combined, a result must match every supplied filter type. For example, a search with names,
   a relationship and tags must match at least one name keyword **and** the relationship **and** at least one tag.
 * Put name keywords before `r/` and `t/`. Tags follow a single `t/` and are separated by spaces.
-* Filtered persons retain the same order as in the `list` command.
+* Filtered persons retain the same order and indexes as in the `list` command.
 
 Examples:
 * `find John` returns `john` and `John Doe`
@@ -348,6 +355,8 @@ Examples:
 * `find r/client` returns all clients.
 * `find r/Prospect` returns all prospects.
 * `find alex david r/prospect` returns prospects whose names contain the full word `alex` or `david`.
+* `find s/o` returns persons whose names contain `s/o` as a standalone component.
+* `find Jack s/o` returns persons whose names contain either `Jack` or `s/o`.
 * `find t/referral priority` returns persons tagged `referral` or `priority`.
 * `find alex r/client t/priority referral` returns clients named `alex` who have a `priority` or `referral` tag.
 
@@ -361,8 +370,8 @@ Use the positive index number shown beside the person you want to delete. Only o
 spaces before and after it are ignored. The remaining records are renumbered after deletion.
 
 For example, `list` followed by `delete 2` deletes the second person in the full list.
-After `find Jane`, `delete 1` deletes the first search result, even if that person had a different index
-in the full list. The search stays active; use `list` to see everyone who remains.
+After `find Jane`, use Jane's unchanged index shown in the search results; for example, use `delete 2` if Jane was
+index 2 in the full list. The search stays active; use `list` to see everyone who remains.
 
 The success message includes the person's relationship and name: `Client John Doe has been deleted successfully.`
 or `Prospect Jane Tan has been deleted successfully.`
@@ -377,7 +386,7 @@ Input | Error message
 `delete` | `Client index is required.`
 `delete 1 2` or `delete 1 abc` | `Delete command only accepts a client index.`
 `delete 0`, `delete -1`, `delete abc`, or `delete 1.5` | `Client index must be a positive integer.`
-`delete 3` when fewer than three records are displayed | `No client exists at index 3.`
+`delete 3` when index 3 is not displayed | `No client exists at index 3.`
 
 ### Recording the next action: `next`
 
@@ -453,8 +462,8 @@ Format: `due`
 * Includes actions due today and overdue actions, using your computer's local date.
 * Excludes completed actions, future actions and people without a next action.
 * Replaces any previous `find` filter. Results keep their existing order and are not sorted by due date.
-* Use the displayed index for subsequent commands. After `done 1`, the completed person disappears
-  from the due list and the remaining displayed indices update.
+* Use the displayed index for subsequent commands. After `done INDEX`, the completed person disappears
+  from the due list; the indexes of the remaining persons do not change.
 * Use `list` to see everyone again. Run `due` again to refresh the date after midnight.
 
 For example, if today is `2026-10-20`, `due` includes incomplete actions dated `2026-10-19`
