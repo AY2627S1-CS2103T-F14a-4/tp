@@ -76,11 +76,11 @@ public class DeleteIntegrationTest {
     }
 
     @Test
-    public void execute_deleteAfterNameSearch_usesDisplayedIndex() throws Exception {
+    public void execute_deleteAfterNameSearch_usesOriginalIndex() throws Exception {
         logic.execute("find Jane");
         assertEquals(List.of(prospect), logic.getFilteredPersonList());
         assertEquals("Prospect Jane Tan has been deleted successfully.",
-                logic.execute("delete 1").getFeedbackToUser());
+                logic.execute("delete 2").getFeedbackToUser());
         assertEquals(List.of(), logic.getFilteredPersonList());
         logic.execute("list");
         assertEquals(List.of(client), logic.getFilteredPersonList());
@@ -92,7 +92,7 @@ public class DeleteIntegrationTest {
         logic.execute("find r/prospect");
         assertEquals(List.of(prospect), logic.getFilteredPersonList());
         assertEquals("Prospect Jane Tan has been deleted successfully.",
-                logic.execute("delete 1").getFeedbackToUser());
+                logic.execute("delete 2").getFeedbackToUser());
         assertEquals(List.of(), logic.getFilteredPersonList());
         assertSavedPersons(client);
     }
@@ -125,7 +125,7 @@ public class DeleteIntegrationTest {
     @Test
     public void execute_invalidFilteredIndex_preservesFilterAndHiddenRecords() throws Exception {
         logic.execute("find Jane");
-        assertRejectedWithoutChanges("delete 2", CommandException.class, "No client exists at index 2.");
+        assertRejectedWithoutChanges("delete 1", CommandException.class, "No client exists at index 1.");
         assertEquals(List.of(prospect), logic.getFilteredPersonList());
         assertSavedPersons(client, prospect);
 

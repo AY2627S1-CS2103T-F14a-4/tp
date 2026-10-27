@@ -116,13 +116,13 @@ public class NoteDeleteCommandTest {
         model.setPerson(model.getFilteredPersonList().get(1), original);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
 
-        new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_SECOND_PERSON).execute(model, null);
+        new NoteDeleteCommand(INDEX_SECOND_PERSON, INDEX_SECOND_PERSON).execute(model, null);
 
         assertEquals(1, model.getFilteredPersonList().size());
         assertEquals(new PersonBuilder(original).withInteractionNotes(OTHER_NOTE).build(),
                 model.getFilteredPersonList().get(0));
         assertEquals(untouched, model.getClientBook().getPersonList().get(0));
-        assertCommandFailure(new NoteDeleteCommand(INDEX_SECOND_PERSON, INDEX_FIRST_PERSON), model,
+        assertCommandFailure(new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON), model,
                 Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
     }
 

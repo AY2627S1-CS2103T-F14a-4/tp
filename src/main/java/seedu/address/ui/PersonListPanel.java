@@ -2,6 +2,7 @@ package seedu.address.ui;
 
 import java.util.logging.Logger;
 
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.ListCell;
@@ -16,6 +17,7 @@ import seedu.address.model.person.Person;
 public class PersonListPanel extends UiPart<Region> {
     private static final String FXML = "PersonListPanel.fxml";
     private final Logger logger = LogsCenter.getLogger(PersonListPanel.class);
+    private final ObservableList<Person> allPersons;
 
     @FXML
     private ListView<Person> personListView;
@@ -24,9 +26,18 @@ public class PersonListPanel extends UiPart<Region> {
      * Creates a {@code PersonListPanel} with the given {@code ObservableList}.
      */
     public PersonListPanel(ObservableList<Person> personList) {
+        this(personList, personList);
+    }
+
+    /**
+     * Creates a {@code PersonListPanel} that displays {@code personList} with indexes from {@code allPersons}.
+     */
+    public PersonListPanel(ObservableList<Person> personList, ObservableList<Person> allPersons) {
         super(FXML);
+        this.allPersons = allPersons;
         personListView.setItems(personList);
         personListView.setCellFactory(listView -> new PersonListViewCell());
+        allPersons.addListener((ListChangeListener<Person>) change -> personListView.refresh());
     }
 
     /**
@@ -41,7 +52,7 @@ public class PersonListPanel extends UiPart<Region> {
                 setGraphic(null);
                 setText(null);
             } else {
-                setGraphic(new PersonCard(person, getIndex() + 1).getRoot());
+                setGraphic(new PersonCard(person, allPersons.indexOf(person) + 1).getRoot());
             }
         }
     }

@@ -2,6 +2,7 @@ package seedu.address.logic.commands;
 
 import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,6 +19,7 @@ public class NoteCommand extends Command {
     public static final String COMMAND_WORD = "note";
     public static final String MESSAGE_USAGE = "note INDEX d/yyyy-MM-dd n/NOTE";
     public static final String MESSAGE_SUCCESS = "Added interaction note for %s.";
+    public static final String MESSAGE_FUTURE_DATE = "Interaction date cannot be in the future.";
 
     private final Index index;
     private final InteractionNote note;
@@ -32,10 +34,14 @@ public class NoteCommand extends Command {
     @Override
     public CommandResult execute(Model model, Storage storage) throws CommandException {
         requireAllNonNull(model);
-        if (index.getZeroBased() >= model.getFilteredPersonList().size()) {
-            throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+
+        if (note.getDate().isAfter(LocalDate.now())) {
+            throw new CommandException(MESSAGE_FUTURE_DATE);
         }
-        Person original = model.getFilteredPersonList().get(index.getZeroBased());
+
+        Person original = getVisiblePersonAtIndex(model, index,
+                Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+
         List<InteractionNote> notes = new ArrayList<>(original.getInteractionNotes());
         notes.add(note);
         Person updated = new Person(original.getName(), original.getPhone(), original.getEmail(), original.getTags(),

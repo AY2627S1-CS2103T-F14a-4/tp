@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalPersons.ALICE;
+import static seedu.address.testutil.TypicalPersons.BENSON;
 import static seedu.address.testutil.TypicalPersons.getTypicalClientBook;
 
 import java.time.LocalDate;
@@ -28,14 +29,49 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import seedu.address.logic.commands.NoteCommand;
 import seedu.address.logic.commands.NoteDeleteCommand;
+import seedu.address.logic.parser.ClientBookParser;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.InteractionNote;
 import seedu.address.model.person.NextAction;
+import seedu.address.model.person.Person;
 import seedu.address.testutil.PersonBuilder;
 
 public class PersonCardTest {
+    @Test
+    public void filteredList_displaysOriginalIndexUntilPersonDeleted() throws Exception {
+        CompletableFuture<Void> checked = new CompletableFuture<>();
+        Platform.runLater(() -> {
+            try {
+                Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
+                model.updateFilteredPersonList(person -> person.getName().equals(BENSON.getName()));
+                PersonListPanel panel = new PersonListPanel(model.getFilteredPersonList(),
+                        model.getClientBook().getPersonList());
+                StackPane root = new StackPane(panel.getRoot());
+                new Scene(root, 600, 600);
+                root.applyCss();
+                root.layout();
+                ListView<?> list = (ListView<?>) root.lookup("#personListView");
+
+                assertEquals("2. ", ((Label) displayedCell(list, 0).getGraphic().lookup("#id")).getText());
+
+                Person editedBenson = new PersonBuilder(BENSON).withPhone("81234567").build();
+                model.setPerson(BENSON, editedBenson);
+                root.layout();
+                assertEquals("2. ", ((Label) displayedCell(list, 0).getGraphic().lookup("#id")).getText());
+
+                model.deletePerson(ALICE);
+                root.layout();
+                assertEquals("1. ", ((Label) displayedCell(list, 0).getGraphic().lookup("#id")).getText());
+                checked.complete(null);
+            } catch (Throwable error) {
+                checked.completeExceptionally(error);
+            }
+        });
+        checked.get(10, TimeUnit.SECONDS);
+    }
+
     @Test
     public void tags_allDisplayedInSortedOrder() throws Exception {
         CompletableFuture<Void> checked = new CompletableFuture<>();
@@ -95,6 +131,50 @@ public class PersonCardTest {
     }
 
     @Test
+    public void contactPreferences_clearCommand_hidesUpdatedLabels() throws Exception {
+        CompletableFuture<Void> checked = new CompletableFuture<>();
+        Platform.runLater(() -> {
+            try {
+                Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
+                model.setPerson(model.getFilteredPersonList().getFirst(),
+                        new PersonBuilder(model.getFilteredPersonList().getFirst())
+                                .withPreferredContactChannel("Phone").withPreferredContactTiming("Weekends").build());
+                PersonListPanel panel = new PersonListPanel(model.getFilteredPersonList());
+                StackPane root = new StackPane(panel.getRoot());
+                new Scene(root, 600, 600);
+                root.applyCss();
+                root.layout();
+                ListView<?> list = (ListView<?>) root.lookup("#personListView");
+                Region card = (Region) displayedCell(list, 0).getGraphic();
+                assertTrue(card.lookup("#preferredContactChannel").isVisible());
+                assertTrue(card.lookup("#preferredContactTiming").isVisible());
+                ClientBookParser parser = new ClientBookParser();
+                parser.parseCommand("contact 1 ch/-").execute(model, null);
+                root.layout();
+                card = (Region) displayedCell(list, 0).getGraphic();
+                Label channel = (Label) card.lookup("#preferredContactChannel");
+                assertFalse(channel.isVisible());
+                assertFalse(channel.isManaged());
+                assertEquals("", channel.getText());
+                assertTrue(card.lookup("#preferredContactTiming").isVisible());
+                parser.parseCommand("contact 1 tm/-").execute(model, null);
+                root.layout();
+                card = (Region) displayedCell(list, 0).getGraphic();
+                for (String field : List.of("preferredContactChannel", "preferredContactTiming")) {
+                    Label label = (Label) card.lookup("#" + field);
+                    assertFalse(label.isVisible());
+                    assertFalse(label.isManaged());
+                    assertEquals("", label.getText());
+                }
+                checked.complete(null);
+            } catch (Throwable error) {
+                checked.completeExceptionally(error);
+            }
+        });
+        checked.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
     public void nextAction_hiddenWhenAbsent_showsStatusDateAndWrappedDescription() throws Exception {
         CompletableFuture<Void> checked = new CompletableFuture<>();
         Platform.runLater(() -> {
@@ -132,10 +212,7 @@ public class PersonCardTest {
     /** Starts the real toolkit; headless Linux runs need a virtual display such as Xvfb. */
     @BeforeAll
     public static void startToolkit() throws Exception {
-        CompletableFuture<Void> started = new CompletableFuture<>();
-        Platform.startup(() -> started.complete(null));
-        started.get(10, TimeUnit.SECONDS);
-        Platform.setImplicitExit(false);
+        JavaFxTestUtil.startToolkit();
     }
 
     @Test

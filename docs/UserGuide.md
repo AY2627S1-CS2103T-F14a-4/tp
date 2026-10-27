@@ -28,7 +28,8 @@ and stores records locally.
    A GUI similar to the one below should appear in a few seconds. Your client book starts empty.<br>
    ![Ui](images/Ui.png)
 
-5. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
+5. Type a command in the command box and press Enter to execute it. The result box below the command box shows
+   the command you entered followed by its result. For example, type **`help`** and press Enter to open the help window.<br>
    Some example commands you can try:
 
    * `list` : Lists all contacts.
@@ -119,6 +120,10 @@ Format: `list`
 
 Each person's tags are shown with their contact and relationship details.
 
+Each person keeps the same index when the list is filtered or their details are edited. Search and due results show
+the person's original `list` index, so use the number shown beside the person for subsequent commands. Indexes are
+renumbered only after a person is deleted.
+
 ### Adding tags to a person: `tag`
 
 Adds one or more tags to a person in the currently displayed list.
@@ -128,12 +133,33 @@ Format: `tag INDEX TAG [MORE_TAGS...]`
 * `INDEX` must be a positive integer that refers to a person in the currently displayed list, including filtered
   search results.
 * Each `TAG` must contain only letters and numbers, with no spaces.
-* Existing tags are preserved. Tags are compared case-insensitively, so adding `PRIORITY` when `priority` exists does
-  not create a duplicate; the existing spelling is retained.
+* Existing tags are preserved. Tags are compared case-insensitively, so adding `PRIORITY` when `priority` exists
+  produces an error and no tags are added.
 
 Examples:
 * `tag 1 priority`
 * `tag 2 referral insurance`
+
+### Deleting tags from a person: `tagdelete`
+
+Deletes all or selected tags from a person in the currently displayed list.
+
+Format: `tagdelete INDEX [TAG...]`
+
+* `INDEX` must be a positive integer that refers to a person in the currently displayed list, including filtered
+  search results.
+* Leave `TAG` empty to delete every tag from the person.
+* Supply one or more whitespace-separated tags to delete only those tags. Tag matching is case-insensitive.
+* If any supplied tag does not belong to the person, an error is shown and no tags are deleted.
+* Before deletion, the result box below the command box asks `Are you sure you want to delete this?` and displays the
+  contact name and exact tags that will be removed. Type `Y` or `Yes` in the command box to proceed, or `N` or `No`
+  to cancel without changing the person. Responses are case-insensitive.
+* While confirmation is pending, other inputs produce an error and the deletion remains pending until a valid
+  confirmation response is entered.
+
+Examples:
+* `tagdelete 1` deletes every tag from the first displayed person after confirmation.
+* `tagdelete 1 friend referral` deletes the `friend` and `referral` tags after confirmation.
 
 ### Editing a person: `edit`
 
@@ -186,16 +212,22 @@ Examples:
 
 ### Recording preferred contact channel and timing: `contact`
 
-Records how and when a client or prospect prefers to be contacted.
+Records or clears how and when a client or prospect prefers to be contacted.
 
-Format: `contact INDEX [ch/CHANNEL] [tm/TIMING]`
+Format: `contact INDEX [ch/CHANNEL|-] [tm/TIMING|-]`
 
-* `INDEX` is a positive integer referring to the currently displayed list, including after a search.
+* `INDEX` is the positive integer shown on the person's card. Search results retain their original indices from
+  the full contact list. For example, if Bob is contact 2, use `contact 2 ch/WhatsApp` after `find Bob`.
+  The person must be visible in the current results; an index belonging to a hidden person is rejected.
 * Supply at least one of `ch/` or `tm/`, each at most once, in either order. Separate prefixes with spaces.
 * Each supplied value replaces the previous value; omitted preferences and all other person details remain unchanged.
 * Values must contain 1–200 characters after surrounding whitespace is trimmed. Internal spaces and case are preserved.
   Free text, Unicode and punctuation are accepted, for example `WhatsApp` and `Weekdays 6:30–8 pm`.
-* Empty or whitespace-only values are rejected. Preferences cannot be cleared with this command.
+* An exact `-` clears the supplied preference. Surrounding ordinary spaces are allowed, so `ch/   -   ` also clears
+  the channel. Clearing an absent preference is safe. Omitted preferences remain unchanged.
+* Larger values such as `Phone-call`, `-Phone`, `Phone-`, and `--` remain normal text.
+  Tabs and other control characters around a hyphen do not form a clearing marker; they follow normal value handling.
+* Empty or whitespace-only values remain invalid; clearing requires an explicit `-`.
 * The person's card displays each recorded preference, wrapping long values. Unset preferences are hidden.
 * Preferences are saved automatically. Older data files without these fields load with no preferences.
 
@@ -204,10 +236,19 @@ Examples:
 * `contact 1 ch/WhatsApp tm/Weekdays after 6 pm`
 * `contact 2 tm/Lunch break ch/Phone call`
 * `contact 1 tm/Weekends 10 am to noon` (keeps the existing channel)
+* `contact 1 ch/-` clears only the channel.
+* `contact 1 tm/-` clears only the timing.
+* `contact 1 ch/- tm/-` clears both preferences.
+* `contact 1 ch/WhatsApp tm/-` sets the channel and clears the timing.
+* `contact 1 ch/- tm/Weekends` clears the channel and sets the timing. Either prefix order is accepted.
+
+If either supplied preference is invalid, neither preference is changed. Cleared values stay absent after restarting
+the application, and their labels are hidden on the person's card.
 
 Success message: `Updated contact preferences for PERSON_NAME.`
 
-Missing or invalid indices produce `Index must be a positive integer.` An index outside the displayed list
+Missing or invalid indices produce `Index must be a positive integer.` An index outside the full contact list or
+belonging to a person hidden by the current filter
 produces `The person index provided is invalid.` Missing fields produce `At least one of ch/ or tm/ is required.`
 Duplicate `ch/` or `tm/` prefixes are rejected. These recognized prefixes, when preceded by a space,
 are delimiters and cannot be included literally in values. Other slash-containing text, such as `AM/PM`
@@ -220,7 +261,8 @@ Adds a dated note to a client or prospect. Notes appear on the person's card in 
 Format: `note INDEX d/DATE n/NOTE`
 
 * `INDEX` refers to the currently displayed list, including search results.
-* `DATE` must be a real calendar date in `yyyy-MM-dd` format. Past dates are accepted.
+* `DATE` must be a real calendar date in `yyyy-MM-dd` format. Today's date and past dates are accepted.
+  Future dates are rejected with `Interaction date cannot be in the future.` using the computer's local date.
 * Put the date before `n/`. Everything after `n/` is note text, including URLs, punctuation and prefix-like text.
 * Note text cannot be blank. Surrounding whitespace is removed; case and internal text are preserved.
 * Adding a note keeps all previous notes. Same-date and identical notes are allowed.
@@ -308,6 +350,9 @@ Finds persons using any combination of name keywords, relationship and tags.
 Format: `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...]]`
 
 * Every filter is optional, but at least one name keyword, relationship or tag must be provided.
+* Each whitespace-separated name keyword is validated independently. A keyword may contain letters with internal
+  hyphens (`-`) or apostrophes (`'`), or it may be the standalone relationship marker `s/o`, `d/o`, or `w/o`.
+  Digits, other symbols, and arbitrary slash forms are not allowed.
 * Name keywords, relationship values and tags are case-insensitive; for example, `hans` matches `Hans`, and `client`
   matches `Client`.
 * Keyword order does not matter; for example, `Hans Bo` matches `Bo Hans`.
@@ -319,7 +364,7 @@ Format: `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...
 * When filter types are combined, a result must match every supplied filter type. For example, a search with names,
   a relationship and tags must match at least one name keyword **and** the relationship **and** at least one tag.
 * Put name keywords before `r/` and `t/`. Tags follow a single `t/` and are separated by spaces.
-* Filtered persons retain the same order as in the `list` command.
+* Filtered persons retain the same order and indexes as in the `list` command.
 
 Examples:
 * `find John` returns `john` and `John Doe`
@@ -328,6 +373,8 @@ Examples:
 * `find r/client` returns all clients.
 * `find r/Prospect` returns all prospects.
 * `find alex david r/prospect` returns prospects whose names contain the full word `alex` or `david`.
+* `find s/o` returns persons whose names contain `s/o` as a standalone component.
+* `find Jack s/o` returns persons whose names contain either `Jack` or `s/o`.
 * `find t/referral priority` returns persons tagged `referral` or `priority`.
 * `find alex r/client t/priority referral` returns clients named `alex` who have a `priority` or `referral` tag.
 
@@ -341,8 +388,8 @@ Use the positive index number shown beside the person you want to delete. Only o
 spaces before and after it are ignored. The remaining records are renumbered after deletion.
 
 For example, `list` followed by `delete 2` deletes the second person in the full list.
-After `find Jane`, `delete 1` deletes the first search result, even if that person had a different index
-in the full list. The search stays active; use `list` to see everyone who remains.
+After `find Jane`, use Jane's unchanged index shown in the search results; for example, use `delete 2` if Jane was
+index 2 in the full list. The search stays active; use `list` to see everyone who remains.
 
 The success message includes the person's relationship and name: `Client John Doe has been deleted successfully.`
 or `Prospect Jane Tan has been deleted successfully.`
@@ -357,7 +404,7 @@ Input | Error message
 `delete` | `Client index is required.`
 `delete 1 2` or `delete 1 abc` | `Delete command only accepts a client index.`
 `delete 0`, `delete -1`, `delete abc`, or `delete 1.5` | `Client index must be a positive integer.`
-`delete 3` when fewer than three records are displayed | `No client exists at index 3.`
+`delete 3` when index 3 is not displayed | `No client exists at index 3.`
 
 ### Recording the next action: `next`
 
@@ -433,8 +480,8 @@ Format: `due`
 * Includes actions due today and overdue actions, using your computer's local date.
 * Excludes completed actions, future actions and people without a next action.
 * Replaces any previous `find` filter. Results keep their existing order and are not sorted by due date.
-* Use the displayed index for subsequent commands. After `done 1`, the completed person disappears
-  from the due list and the remaining displayed indices update.
+* Use the displayed index for subsequent commands. After `done INDEX`, the completed person disappears
+  from the due list; the indexes of the remaining persons do not change.
 * Use `list` to see everyone again. Run `due` again to refresh the date after midnight.
 
 For example, if today is `2026-10-20`, `due` includes incomplete actions dated `2026-10-19`
@@ -530,13 +577,14 @@ Action     | Format, Examples
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit**   | `edit INDEX [r/RELATIONSHIP] [n/NAME] [p/PHONE_NUMBER] [e/EMAIL]`<br> e.g.,`edit 2 r/Client n/James Lee e/jameslee@example.com`
 **Find**   | `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...]]`<br> e.g., `find James r/client t/priority referral`
-**Contact** | `contact INDEX [ch/CHANNEL] [tm/TIMING]`<br> e.g., `contact 1 ch/WhatsApp tm/After 6 pm`
+**Contact** | `contact INDEX [ch/CHANNEL\|-] [tm/TIMING\|-]`<br> e.g., `contact 1 ch/WhatsApp tm/-`
 **Info**   | `info INDEX [/fn VALUE\|-] [/pr VALUE\|-] [/ai VALUE\|-]`<br> e.g., `info 1 /fn retirement planning`
 **Note**   | `note INDEX d/DATE n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
 **Note edit** | `noteedit CONTACT_INDEX NOTE_INDEX n/NEW_NOTE_CONTENT`<br> e.g., `noteedit 1 2 n/Discussed insurance renewal`
 **Note delete** | `notedelete CONTACT_INDEX NOTE_INDEX`<br> e.g., `notedelete 1 2`
 **Restore** | `restore`<br> e.g., `restore`
 **Tag**    | `tag INDEX TAG [MORE_TAGS...]`<br> e.g., `tag 1 priority referral`
+**Tag delete** | `tagdelete INDEX [TAG...]`<br> e.g., `tagdelete 1 friend referral`
 **Next**   | `next INDEX a/ACTION d/yyyy-MM-dd`<br> e.g., `next 1 a/Call d/2026-10-20`
 **Done**   | `done INDEX`<br> e.g., `done 1`
 **Due**    | `due`

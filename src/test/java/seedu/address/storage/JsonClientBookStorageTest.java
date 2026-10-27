@@ -2,6 +2,7 @@ package seedu.address.storage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.HOON;
@@ -17,15 +18,46 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import seedu.address.commons.exceptions.DataLoadingException;
+import seedu.address.logic.parser.ClientBookParser;
 import seedu.address.model.ClientBook;
+import seedu.address.model.Model;
+import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyClientBook;
+import seedu.address.model.UserPrefs;
 import seedu.address.model.person.NextAction;
+import seedu.address.model.person.Person;
+import seedu.address.testutil.PersonBuilder;
 
 public class JsonClientBookStorageTest {
     private static final Path TEST_DATA_FOLDER = Paths.get("src", "test", "data", "JsonClientBookStorageTest");
 
     @TempDir
     public Path testFolder;
+
+    @Test
+    public void saveAndReadClearedPreferences_preservesAbsence() throws Exception {
+        for (int mask = 1; mask < 4; mask++) {
+            Path file = testFolder.resolve("cleared-preferences-" + mask + ".json");
+            ClientBook original = new ClientBook();
+            original.addPerson(new PersonBuilder(ALICE).withPreferredContactChannel("Phone")
+                    .withPreferredContactTiming("Weekends").build());
+            JsonClientBookStorage storage = new JsonClientBookStorage(file);
+            storage.saveClientBook(original);
+            Model model = new ModelManager(new ClientBook(storage.readClientBook().orElseThrow()), new UserPrefs());
+            boolean clearChannel = (mask & 1) != 0;
+            boolean clearTiming = (mask & 2) != 0;
+            new ClientBookParser().parseCommand("contact 1" + (clearChannel ? " ch/-" : "")
+                    + (clearTiming ? " tm/-" : "")).execute(model, null);
+            storage.saveClientBook(model.getClientBook());
+            ClientBook reloaded = new ClientBook(storage.readClientBook().orElseThrow());
+            assertEquals(model.getClientBook(), reloaded);
+            Person person = reloaded.getPersonList().getFirst();
+            assertEquals(clearChannel, person.getPreferredContactChannel().isEmpty());
+            assertEquals(clearTiming, person.getPreferredContactTiming().isEmpty());
+            assertTrue(person.getPreferredContactChannel().stream().noneMatch(value -> value.value.equals("-")));
+            assertTrue(person.getPreferredContactTiming().stream().noneMatch(value -> value.value.equals("-")));
+        }
+    }
 
     @Test
     public void saveAndReadFollowups_preservesPendingAndCompletedStates() throws Exception {

@@ -27,6 +27,32 @@ public class NoteCommandTest {
     private final ClientBookParser parser = new ClientBookParser();
 
     @Test
+    public void execute_todayAndPastDates_appendNotes() throws Exception {
+        LocalDate today = LocalDate.now();
+        Person original = model.getFilteredPersonList().get(0);
+        InteractionNote past = new InteractionNote(today.minusDays(1), "Yesterday's meeting");
+        InteractionNote current = new InteractionNote(today, "Today's meeting");
+
+        parser.parseCommand("note 1 d/" + past.getDate() + " n/" + past.getText()).execute(model, null);
+        parser.parseCommand("note 1 d/" + current.getDate() + " n/" + current.getText()).execute(model, null);
+
+        assertEquals(new PersonBuilder(original).withInteractionNotes(past, current).build(),
+                model.getFilteredPersonList().get(0));
+    }
+
+    @Test
+    public void execute_futureDate_rejectsWithoutChangingRecordsOrFilter() throws Exception {
+        InteractionNote existing = new InteractionNote(LocalDate.now().minusDays(1), "Initial meeting");
+        Person original = model.getFilteredPersonList().get(1);
+        model.setPerson(original, new PersonBuilder(original).withInteractionNotes(existing).build());
+        showPersonAtIndex(model, INDEX_SECOND_PERSON);
+
+        Command command = parser.parseCommand("note 1 d/" + LocalDate.now().plusDays(1) + " n/met");
+
+        assertCommandFailure(command, model, NoteCommand.MESSAGE_FUTURE_DATE);
+    }
+
+    @Test
     public void execute_firstAndRepeatedNotes_appendAndPreserveOtherFields() throws Exception {
         Person original = new PersonBuilder(model.getFilteredPersonList().get(0))
                 .withRelationship(Relationship.CLIENT).withFinancialNeed("Retirement")
@@ -63,12 +89,12 @@ public class NoteCommandTest {
         Person first = model.getFilteredPersonList().get(0);
         Person target = model.getFilteredPersonList().get(1);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
-        parser.parseCommand("note 1 d/2000-01-01 n/Called").execute(model, null);
+        parser.parseCommand("note 2 d/2000-01-01 n/Called").execute(model, null);
         assertEquals(first, model.getClientBook().getPersonList().get(0));
         assertEquals(target.getName(), model.getFilteredPersonList().get(0).getName());
         assertEquals(1, model.getFilteredPersonList().size());
         assertEquals(1, model.getFilteredPersonList().get(0).getInteractionNotes().size());
-        assertCommandFailure(new NoteCommand(INDEX_SECOND_PERSON,
+        assertCommandFailure(new NoteCommand(INDEX_FIRST_PERSON,
                 new InteractionNote(LocalDate.of(2000, 1, 1), "Called")), model,
                 Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
     }
