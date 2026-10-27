@@ -254,6 +254,13 @@ Duplicate `ch/` or `tm/` prefixes are rejected. These recognized prefixes, when 
 are delimiters and cannot be included literally in values. Other slash-containing text, such as `AM/PM`
 or `Phone/WhatsApp`, is preserved as part of the value.
 
+Reversed parameters `/ch` and `/tm` (including `/ch/VALUE` and `/tm/VALUE`) and repeated-letter prefixes
+`cch/`, `chh/`, `ttm/`, and `tmm/` are rejected when preceded by an ordinary space. The error explains:
+`Invalid contact parameter. Use ch/CHANNEL or tm/TIMING; use - to clear a preference.`
+These exact forms are treated as parameter mistakes even inside a preference. Detection is deliberately limited:
+other slash-containing text, including `Email xx/After 6 pm`, remains valid. Other misspellings may be stored as
+free text, so check the saved preference when unsure.
+
 ### Adding a dated interaction note: `note`
 
 Appends a dated note to a client or prospect. Notes appear on the person's card in the order they were added.
