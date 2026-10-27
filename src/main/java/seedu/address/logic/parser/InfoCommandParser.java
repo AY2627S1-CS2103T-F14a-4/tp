@@ -26,12 +26,13 @@ public class InfoCommandParser implements Parser<InfoCommand> {
     public static final String MESSAGE_INVALID_PARAMETER =
             "Invalid parameter. Valid parameters are /fn, /pr and /ai.";
 
-    private static final Pattern PARAMETER = Pattern.compile("(?<!\\S)/\\S+");
+    private static final Pattern PARAMETER = Pattern.compile("(?<!\\S)/\\S*");
 
     @Override
     public InfoCommand parse(String args) throws ParseException {
         requireNonNull(args);
-        // Scan every slash-prefixed token, including unknown parameters. Keep raw values so control
+        // Scan every slash-prefixed token, including unknown parameters and a bare slash.
+        // Embedded slashes remain value text. Keep raw values so control
         // characters are validated rather than silently removed by ArgumentTokenizer's trim().
         Matcher matcher = PARAMETER.matcher(args);
         Map<String, String> values = new HashMap<>();

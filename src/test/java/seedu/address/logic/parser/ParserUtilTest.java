@@ -175,7 +175,7 @@ public class ParserUtilTest {
         assertThrows(ParseException.class, FinancialNeed.MESSAGE_BLANK, () -> ParserUtil.parseFinancialNeed(" "));
         assertThrows(ParseException.class, FinancialNeed.MESSAGE_LENGTH, () ->
                 ParserUtil.parseFinancialNeed("A".repeat(201)));
-        for (String value : new String[] {"Needs/Wants", "\tPlan", "Plan\n", "Plan\r"}) {
+        for (String value : new String[] {"Needs:Wants", "\tPlan", "Plan\n", "Plan\r"}) {
             assertThrows(ParseException.class, FinancialNeed.MESSAGE_INVALID_CHARACTERS, () ->
                     ParserUtil.parseFinancialNeed(value));
         }
@@ -188,7 +188,7 @@ public class ParserUtilTest {
         assertThrows(ParseException.class, Priority.MESSAGE_BLANK, () -> ParserUtil.parsePriority(" "));
         assertThrows(ParseException.class, Priority.MESSAGE_LENGTH, () ->
                 ParserUtil.parsePriority("A".repeat(201)));
-        for (String value : new String[] {"Needs/Wants", "\tPlan", "Plan\n", "Plan\r"}) {
+        for (String value : new String[] {"Needs:Wants", "\tPlan", "Plan\n", "Plan\r"}) {
             assertThrows(ParseException.class, Priority.MESSAGE_INVALID_CHARACTERS, () ->
                     ParserUtil.parsePriority(value));
         }
@@ -201,7 +201,7 @@ public class ParserUtilTest {
         assertThrows(ParseException.class, AreaOfInterest.MESSAGE_BLANK, () -> ParserUtil.parseAreaOfInterest(" "));
         assertThrows(ParseException.class, AreaOfInterest.MESSAGE_LENGTH, () ->
                 ParserUtil.parseAreaOfInterest("A".repeat(201)));
-        for (String value : new String[] {"Needs/Wants", "\tPlan", "Plan\n", "Plan\r"}) {
+        for (String value : new String[] {"Needs:Wants", "\tPlan", "Plan\n", "Plan\r"}) {
             assertThrows(ParseException.class, AreaOfInterest.MESSAGE_INVALID_CHARACTERS, () ->
                     ParserUtil.parseAreaOfInterest(value));
         }

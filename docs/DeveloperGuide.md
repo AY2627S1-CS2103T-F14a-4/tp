@@ -284,12 +284,19 @@ The following sequence shows a successful update; parser validation and index ch
 
 `FinancialNeed`, `Priority` and `AreaOfInterest` are immutable value objects, independently optional on `Person`.
 Normal values contain 1-200 characters after trimming ordinary spaces; internal spaces are preserved. Validation
-accepts Unicode letters and decimal digits, spaces and the punctuation `. , ' ( ) & -`; blanks, tabs, line breaks
-and other characters are rejected. `Priority` stores validated text rather than a fixed enumeration.
+accepts Unicode letters (`\p{L}`), combining marks (`\p{M}`), decimal digits, spaces and the punctuation
+`. , ' ( ) & - $ % + /`; blanks, tabs, line breaks and other characters are rejected.
+Combining marks support decomposed accents and scripts such as Tamil. No Unicode normalization is performed:
+stored text and equality retain the supplied representation after ordinary-space trimming. The existing
+200-character limit uses `String.length()` (UTF-16 code units), including combining marks.
+`Priority` stores validated text rather than a fixed enumeration.
 
 `ClientBookParser` routes `info INDEX [/fn VALUE|-] [/pr VALUE|-] [/ai VALUE|-]` to `InfoCommandParser`.
 The parser requires a positive index and at least one financial prefix, accepts any prefix order, and rejects
-duplicate or unknown parameters. It recognizes an exact `-` surrounded only by ordinary spaces before calling
+duplicate or unknown parameters. Slashes embedded in a value token (for example, `Life/Health` or `CPF/SRS`)
+are value text. Every slash at the start of a whitespace-delimited token is scanned as a parameter, including
+a bare `/`, so malformed parameters cannot silently become values. `Life / Health` and `Life /Health`
+remain invalid; use `Life/Health`. The parser recognizes an exact `-` surrounded only by ordinary spaces before calling
 `ParserUtil` to validate normal values. Bare prefixes remain invalid. `InfoDescriptor` stores a specified flag
 and nullable value per field: omitted means unchanged, specified non-null means replace, and specified null
 means explicitly clear. `InfoCommand` defensively copies this descriptor, including its flags.

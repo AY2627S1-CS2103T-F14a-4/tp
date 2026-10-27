@@ -49,10 +49,27 @@ public class InfoCommandTest {
         model.setPerson(model.getFilteredPersonList().getFirst(), original);
         List<Person> expectedPersons = List.copyOf(model.getClientBook().getPersonList());
         for (String args : new String[] {"1 /fn Retirement /pr /ai", "1 /fn - /pr /ai",
-            "1 /fn /pr High /ai -", "1 /fn /pr - /ai Insurance"}) {
+            "1 /fn /pr High /ai -", "1 /fn /pr - /ai Insurance",
+            "1 /fn Retire on $3000 monthly /pr Bad! /ai -", "1 /fn - /pr Target 6% return /ai Bad!",
+            "1 /fn Bad! /pr - /ai CPF/SRS", "1 /fn CPF/SRS /fnn value",
+            "1 /fn Life / Health /pr -"}) {
             assertThrows(ParseException.class, () -> parser.parse(args).execute(model, null));
             assertEquals(expectedPersons, model.getClientBook().getPersonList());
         }
+    }
+
+    @Test
+    public void execute_financialNotation_preservesOtherFields() throws Exception {
+        Person original = new PersonBuilder(populatedPerson()).withPreferredContactChannel("Email")
+                .withPreferredContactTiming("Weekends").build();
+        model.setPerson(model.getFilteredPersonList().getFirst(), original);
+        showPersonAtIndex(model, INDEX_FIRST_PERSON);
+        parser.parse("1 /ai CPF/SRS + insurance /fn Retire on $3000 monthly /pr Target 6% return")
+                .execute(model, null);
+        Person expected = new PersonBuilder(original).withFinancialNeed("Retire on $3000 monthly")
+                .withPriority("Target 6% return").withAreaOfInterest("CPF/SRS + insurance").build();
+        assertEquals(expected, model.getFilteredPersonList().getFirst());
+        assertEquals(1, model.getFilteredPersonList().size());
     }
 
     @Test
