@@ -114,10 +114,7 @@ How the `Logic` component works:
    Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
 4. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
-`LogicManager` saves the client book only when a command changes its records. Read-only commands, such as `list`,
-`find`, and `due`, update the displayed view from memory without writing to storage. Before saving a changed client
-book, `LogicManager` keeps a copy of the previous records and filtered view. If saving fails, it restores both so the
-application does not display a change that will be lost after restart.
+`LogicManager` executes each command against a temporary model initialized with the current records, preferences and active filter. When a command changes records, it saves the temporary client book before committing it to the main model. Read-only commands, such as `list`, `find`, and `due`, update the displayed view from memory without writing to storage. If saving fails, the main model is never committed, so the application does not display a change that would be lost after restart. Regression tests cover read-only commands avoiding persistence, a failed save retaining the records and active filter, and a subsequent successful `tag` command preserving that filter.
 
 The sequence diagram below shows the corresponding flow for an `edit` command.
 
@@ -482,99 +479,13 @@ empty and whitespace-only actions, 200/201-character descriptions, trimming, inv
 leap days, past dates, replacement reset, filtered indices, preservation of unrelated fields, old JSON,
 invalid stored values, completion round trips and card display/wrapping.
 
-### \[Proposed\] Undo/redo feature
+### Backing up and restoring records
 
-#### Proposed Implementation
+`ClientBookParser` accepts `backup` and `restore` only without arguments and creates a `BackupCommand` or `RestoreCommand` respectively. Both commands derive the backup path from the main data-file path, placing `clientbook-backup.json` beside `clientbook.json` in the `data` folder.
 
-The proposed undo/redo mechanism is facilitated by `VersionedClientBook`. It extends `ClientBook` with an undo/redo history, stored internally as an `clientBookStateList` and `currentStatePointer`. Additionally, it implements the following operations:
+`BackupCommand` does not change the in-memory client book. It serializes the current records through `Storage#saveClientBook(ReadOnlyClientBook, Path)` to a temporary file in the backup folder, then replaces the backup file with an atomic move when supported. It falls back to a normal replacement move on file systems that do not support atomic moves. This prevents a failed write from replacing an existing backup with a partial file.
 
-* `VersionedClientBook#commit()` -- Saves the current client book state in its history.
-* `VersionedClientBook#undo()` -- Restores the previous client book state from its history.
-* `VersionedClientBook#redo()` -- Restores a previously undone client book state from its history.
-
-These operations are exposed in the `Model` interface as `Model#commitClientBook()`, `Model#undoClientBook()` and `Model#redoClientBook()` respectively.
-
-Given below is an example usage scenario and how the undo/redo mechanism behaves at each step.
-
-Step 1. The user launches the application for the first time. The `VersionedClientBook` will be initialized with the initial client book state, and the `currentStatePointer` pointing to that single client book state.
-
-<puml src="diagrams/UndoRedoState0.puml" alt="UndoRedoState0" />
-
-Step 2. The user executes `delete 5` command to delete the 5th person in the client book. The `delete` command calls `Model#commitClientBook()`, causing the modified state of the client book after the `delete 5` command executes to be saved in the `clientBookStateList`, and the `currentStatePointer` is shifted to the newly inserted client book state.
-
-<puml src="diagrams/UndoRedoState1.puml" alt="UndoRedoState1" />
-
-Step 3. The user executes `add n/David …​` to add a new person. The `add` command also calls `Model#commitClientBook()`, causing another modified client book state to be saved into the `clientBookStateList`.
-
-<puml src="diagrams/UndoRedoState2.puml" alt="UndoRedoState2" />
-
-<box type="info" seamless>
-
-**Note:** If a command fails its execution, it will not call `Model#commitClientBook()`, so the client book state will not be saved into the `clientBookStateList`.
-</box>
-
-Step 4. The user now decides that adding the person was a mistake, and decides to undo that action by executing the `undo` command. The `undo` command will call `Model#undoClientBook()`, which will shift the `currentStatePointer` once to the left, pointing it to the previous client book state, and restores the client book to that state.
-
-<puml src="diagrams/UndoRedoState3.puml" alt="UndoRedoState3" />
-
-
-<box type="info" seamless>
-
-**Note:** If the `currentStatePointer` is at index 0, pointing to the initial ClientBook state, then there are no previous ClientBook states to restore. The `undo` command uses `Model#canUndoClientBook()` to check if this is the case. If so, it will return an error to the user rather
-than attempting to perform the undo.
-</box>
-
-The following sequence diagram shows how an undo operation goes through the `Logic` component:
-
-<puml src="diagrams/UndoSequenceDiagram-Logic.puml" alt="UndoSequenceDiagram-Logic" />
-
-<box type="info" seamless>
-
-**Note:** The lifeline for `UndoCommand` should end at the destroy marker (X), but due to a limitation of PlantUML, it continues to the end of the diagram.
-</box>
-
-Similarly, how an undo operation goes through the `Model` component is shown below:
-
-<puml src="diagrams/UndoSequenceDiagram-Model.puml" alt="UndoSequenceDiagram-Model" />
-
-The `redo` command does the opposite — it calls `Model#redoClientBook()`, which shifts the `currentStatePointer` once to the right, pointing to the previously undone state, and restores the client book to that state.
-
-<box type="info" seamless>
-
-**Note:** If the `currentStatePointer` is at index `clientBookStateList.size() - 1`, pointing to the latest client book state, then there are no undone ClientBook states to restore. The `redo` command uses `Model#canRedoClientBook()` to check if this is the case. If so, it will return an error to the user rather than attempting to perform the redo.
-</box>
-
-Step 5. The user then decides to execute the command `list`. Commands that do not modify the client book, such as `list`, will usually not call `Model#commitClientBook()`, `Model#undoClientBook()` or `Model#redoClientBook()`. Thus, the `clientBookStateList` remains unchanged.
-
-<puml src="diagrams/UndoRedoState4.puml" alt="UndoRedoState4" />
-
-Step 6. The user executes `clear`, which calls `Model#commitClientBook()`. Since the `currentStatePointer` is not pointing at the end of the `clientBookStateList`, all client book states after the `currentStatePointer` will be purged. Reason: It no longer makes sense to redo the `add n/David …` command. This is the behavior that most modern desktop applications follow.
-
-<puml src="diagrams/UndoRedoState5.puml" alt="UndoRedoState5" />
-
-The following activity diagram summarizes what happens when a user executes a new command:
-
-<puml src="diagrams/CommitActivityDiagram.puml" width="250" />
-
-#### Design considerations:
-
-**Aspect: How undo & redo execute:**
-
-* **Alternative 1 (current choice):** Saves the entire client book.
-  * Pros: Easy to implement.
-  * Cons: May have performance issues in terms of memory usage.
-
-* **Alternative 2:** Individual command knows how to undo/redo by
-  itself.
-  * Pros: Will use less memory (e.g. for `delete`, just save the person being deleted).
-  * Cons: We must ensure that the implementation of each individual command is correct.
-
-_{more aspects and alternatives to be added}_
-
-### \[Proposed\] Data archiving
-
-_{Explain here how the data archiving feature will be implemented}_
-
+`RestoreCommand` first reads and validates the backup through `Storage#readClientBook(Path)`. Only after a valid `ReadOnlyClientBook` is available does it save those records to the main data file, replace the temporary model's client book, and reset the active filter to show all persons. It marks the result as already saved so `LogicManager` does not write the restored records again. A missing, invalid, or unreadable backup leaves the in-memory records unchanged.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -614,7 +525,6 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | --- | --- | --- | --- |
 | * * * | As a financial consultant | add a client or prospect with their basic contact details | keep a record of every professional relationship I manage. |
 | * * * | As a financial consultant | view all active clients and prospects | see the relationships currently under my care. |
-| * * | As a financial consultant preparing to contact someone | view one person's complete profile | recall the relevant relationship context before the conversation. |
 | * * | As a financial consultant | update a person's contact details | keep the record accurate when their information changes. |
 | * * * | As a financial consultant | delete a record that I created by mistake | prevent incorrect entries from cluttering my records. |
 
@@ -623,9 +533,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | Priority | As a … | I want to … | So that I can … |
 | --- | --- | --- | --- |
 | * * | As a financial consultant handling different kinds of relationships | assign one or more meaningful tags to a person | organise contacts according to how I work. |
-| * * * | As a financial consultant managing a relationship pipeline | record whether a person is a prospect, active client, or inactive client | tell what kind of attention each relationship needs. |
-| * * | As a financial consultant who relies on personal rapport | record a person's preferences and interests | make future conversations more relevant and personal. |
-| * * | As a financial consultant | record important dates shared by a client | remember occasions that matter to the relationship. |
+| * * * | As a financial consultant managing a relationship pipeline | record whether a person is a prospect or an active client | tell what kind of attention each relationship needs. |
 | * * | As a financial consultant | record a person's preferred contact channel and timing | approach them in a way that is convenient for them. |
 | * * * | As a financial consultant | record a client's high-level financial needs, priorities, and areas of interest | continue the business discussion from the correct context. |
 
@@ -657,17 +565,23 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | * * | As a financial consultant focusing on a segment of contacts | filter people by client or prospect relationship status | work with only the relevant group. |
 | * * | As a financial consultant planning the order of work | sort contacts by next follow-up or last interaction date | prioritise relationships using timely information. |
 | * | As a financial consultant maintaining long-term relationships | identify people I have not contacted recently | notice relationships that may otherwise be neglected. |
-| * * | As a busy financial consultant about to meet or call someone | view a concise summary of their preferences, recent interactions, and next action | refresh my memory without reading the entire record. |
 
 #### Long Term Use and Data Continuity
 
 | Priority | As a … | I want to … | So that I can … |
 | --- | --- | --- | --- |
-| * | As a long-time user | move inactive records out of my active view and restore them later | reduce clutter without permanently losing relationship history. |
 | * * | As a financial consultant moving or safeguarding my local data | create a backup copy of my records | protect the relationship information I have accumulated. |
 | * * | As a financial consultant recovering from data loss or changing computers | restore my records from a backup | resume work without rebuilding my relationship history. |
 | * * * | As a long-term user | have my data saved between sessions | continue managing my information without having to re-enter it each time. |
 
+### User Stories to be implemented in the future
+
+| Priority | As a … | I want to … | So that I can … |
+| --- | --- | --- | --- |
+| * * | As a financial consultant preparing to contact someone | view one person's complete profile | recall the relevant relationship context before the conversation. |
+| * * | As a financial consultant who relies on personal rapport | record a person's preferences and interests | make future conversations more relevant and personal. |
+| * * | As a financial consultant | record important dates shared by a client | remember occasions that matter to the relationship. |
+| * * | As a busy financial consultant about to meet or call someone | view a concise summary of their preferences, recent interactions, and next action | refresh my memory without reading the entire record. |
 
 ### Use cases
 
@@ -912,15 +826,25 @@ testers are expected to do more *exploratory* testing.
 
    1. Download the JAR file and copy it into an empty folder.
 
-   2. Double-click the JAR file.<br>
-      Expected: The GUI opens with a set of sample contacts. The window size may not be optimal.
+   2. Run the following command:
+
+      ```sh
+      java -jar clientbook.jar
+      ```
+
+      Expected: The GUI opens without any contacts. The window size may not be optimal.
 
 2. Saving window preferences
 
    1. Resize the window to an optimal size. Move the window to a different location. Close the window.
 
-   2. Relaunch the app by double-clicking the JAR file.<br>
-       Expected: The most recent window size and location are retained.
+   2. Run the following command:
+
+      ```sh
+      java -jar clientbook.jar
+      ```
+
+      Expected: The most recent window size and location are retained.
 
 3. _{ more test cases … }_
 

@@ -49,19 +49,19 @@ deactivate ClientBookParser
 LogicManager -> EditCommand : execute(m)
 activate EditCommand
 
+EditCommand -> Model : getClientBook().getPersonList()
+activate Model
+
+Model --> EditCommand : all persons
+deactivate Model
+
 EditCommand -> Model : getFilteredPersonList()
 activate Model
 
-Model --> EditCommand : persons
+Model --> EditCommand : visible persons
 deactivate Model
 
 EditCommand -> Model : setPerson(personToEdit, editedPerson)
-activate Model
-
-Model --> EditCommand
-deactivate Model
-
-EditCommand -> Model : updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS)
 activate Model
 
 Model --> EditCommand
