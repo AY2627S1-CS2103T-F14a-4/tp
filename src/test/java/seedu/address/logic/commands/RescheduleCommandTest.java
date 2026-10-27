@@ -14,11 +14,13 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.logic.Messages;
+import seedu.address.logic.parser.ClientBookParser;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
@@ -67,13 +69,35 @@ public class RescheduleCommandTest {
         Person second = model.getFilteredPersonList().get(1).withNextAction(new NextAction("Call", DATE, false));
         model.setPerson(model.getFilteredPersonList().get(1), second);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
-        new RescheduleCommand(INDEX_FIRST_PERSON, DATE.plusDays(1), null, CLOCK).execute(model, null);
+        new RescheduleCommand(INDEX_SECOND_PERSON, DATE.plusDays(1), null, CLOCK).execute(model, null);
         assertEquals(first, model.getClientBook().getPersonList().getFirst());
         assertEquals(second.withNextAction(new NextAction("Call", DATE.plusDays(1), false)),
                 model.getFilteredPersonList().getFirst());
         assertEquals(1, model.getFilteredPersonList().size());
-        assertCommandFailure(new RescheduleCommand(INDEX_SECOND_PERSON, DATE, null, CLOCK), model,
+        assertCommandFailure(new RescheduleCommand(INDEX_FIRST_PERSON, DATE, null, CLOCK), model,
                 Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+    }
+
+    @Test
+    public void execute_findWithNonconsecutiveIndices_targetsOriginalIndexAndRejectsHiddenClient() throws Exception {
+        Person first = model.getClientBook().getPersonList().getFirst();
+        Person hidden = model.getClientBook().getPersonList().get(1);
+        Person third = model.getClientBook().getPersonList().get(2)
+                .withNextAction(new NextAction("Call", DATE, true));
+        model.setPerson(model.getClientBook().getPersonList().get(2), third);
+        new ClientBookParser().parseCommand("find Alice Carl").execute(model, null);
+        assertEquals(List.of(first, third), model.getFilteredPersonList());
+
+        new RescheduleCommand(Index.fromOneBased(3), DATE.plusDays(1), null, CLOCK).execute(model, null);
+
+        Person updatedThird = third.withNextAction(new NextAction("Call", DATE.plusDays(1), false));
+        assertEquals(List.of(first, updatedThird), model.getFilteredPersonList());
+        assertEquals(first, model.getClientBook().getPersonList().getFirst());
+        assertEquals(hidden, model.getClientBook().getPersonList().get(1));
+        assertEquals(updatedThird, model.getClientBook().getPersonList().get(2));
+        assertCommandFailure(new RescheduleCommand(INDEX_SECOND_PERSON, DATE, "Email", CLOCK), model,
+                Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+        assertEquals(List.of(first, updatedThird), model.getFilteredPersonList());
     }
 
     @Test

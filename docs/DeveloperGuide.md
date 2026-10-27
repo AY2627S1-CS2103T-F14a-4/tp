@@ -457,7 +457,9 @@ string representation, parser validation and routing through `ClientBookParser`.
 `ClientBookParser` routes `reschedule INDEX d/yyyy-MM-dd [a/ACTION]` to
 `RescheduleCommandParser`. It reuses the existing `a/` and `d/` prefixes, index parsing,
 `NextAction.parseDate` and description validation. The parser validates calendar dates and format;
-`RescheduleCommand` additionally rejects dates before today at execution with
+`RescheduleCommand` resolves the client with `Command.getVisiblePersonAtIndex`, using its original
+full-list index and rejecting clients hidden by the current filter, as `next` and `done` do.
+It additionally rejects dates before today at execution with
 `Follow-up date cannot be before today.`. Its default clock uses the system's local zone, with an
 injectable `Clock` for deterministic tests. Duplicate prefixes, missing dates, invalid inputs and
 past replacement dates fail before model mutation. `NextAction.parseDate` remains a calendar

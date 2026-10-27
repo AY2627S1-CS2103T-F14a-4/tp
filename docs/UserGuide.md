@@ -450,7 +450,9 @@ Changes the date of an existing follow-up without requiring you to retype its de
 
 Format: `reschedule INDEX d/yyyy-MM-dd [a/ACTION]`
 
-* `INDEX` is the positive index in the currently displayed list.
+* `INDEX` is the positive client index shown beside the person. After `find`, indices keep their
+  positions in the complete client list: if the results show 1 and 3, use 3 for the second result.
+  An index not currently displayed is rejected.
 * `d/` is required. Use a real date in years `0001`–`9999`, written with exactly four year digits
   and two month/day digits, as for `next`. The replacement date must be today or later, using
   your computer's local date when the command executes. Past dates report
@@ -464,7 +466,7 @@ Format: `reschedule INDEX d/yyyy-MM-dd [a/ACTION]`
   A follow-up rescheduled for today appears in `due` again; one moved to a future date remains
   pending until it becomes due. Other contact information is preserved.
 * The current filter remains active. If a follow-up is moved into the future while viewing `due`,
-  its person disappears from that view and the remaining displayed indices update.
+  its person disappears from that view; the remaining client indices do not change.
 
 Examples:
 
