@@ -91,7 +91,8 @@ public class NoteCommandTest {
         for (InteractionNote note : notes) {
             new NoteCommand(INDEX_FIRST_PERSON, note).execute(model, null);
         }
-        assertEquals(notes, model.getFilteredPersonList().get(0).getInteractionNotes());
+        assertEquals(List.of(notes.get(2), notes.get(0), notes.get(1), notes.get(3), notes.get(4)),
+                model.getFilteredPersonList().get(0).getInteractionNotes());
     }
 
     @Test
@@ -131,7 +132,7 @@ public class NoteCommandTest {
     }
 
     @Test
-    public void execute_existingHistory_appendsBackdatedNoteAndPreservesOtherFields() throws Exception {
+    public void execute_existingHistory_sortsBackdatedNoteAndPreservesOtherFields() throws Exception {
         InteractionNote existing = new InteractionNote(LocalDate.of(2026, 10, 6), "Initial meeting");
         InteractionNote backdated = new InteractionNote(LocalDate.of(2000, 1, 1), "Earlier interaction");
         Person original = new PersonBuilder(model.getFilteredPersonList().get(0))
@@ -141,7 +142,8 @@ public class NoteCommandTest {
 
         new NoteCommand(INDEX_FIRST_PERSON, backdated).execute(model, null);
 
-        assertEquals(new PersonBuilder(original).withInteractionNotes(existing, backdated).build(),
+        assertEquals(List.of(backdated, existing), model.getFilteredPersonList().get(0).getInteractionNotes());
+        assertEquals(new PersonBuilder(original).withInteractionNotes(backdated, existing).build(),
                 model.getFilteredPersonList().get(0));
     }
 

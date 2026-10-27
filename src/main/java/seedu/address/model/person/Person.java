@@ -3,6 +3,7 @@ package seedu.address.model.person;
 import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -86,7 +87,8 @@ public class Person {
         this.financialNeed = financialNeed;
         this.priority = priority;
         this.areaOfInterest = areaOfInterest;
-        this.interactionNotes = List.copyOf(interactionNotes);
+        this.interactionNotes = List.copyOf(interactionNotes).stream()
+                .sorted(Comparator.comparing(InteractionNote::getDate)).toList();
         this.nextAction = nextAction;
         this.preferredContactChannel = preferredContactChannel;
         this.preferredContactTiming = preferredContactTiming;
@@ -99,7 +101,7 @@ public class Person {
         this(name, phone, email, Collections.emptySet(), relationship);
     }
 
-    /** Returns notes in insertion order, including repeated entries. */
+    /** Returns immutable notes in ascending date order, preserving input order for notes with the same date. */
     public List<InteractionNote> getInteractionNotes() {
         return interactionNotes;
     }
