@@ -206,6 +206,13 @@ same order and indexes as in the `list` command. `PersonListPanel` looks up each
 when rendering its index. Index-based commands use `Command#getVisiblePersonAtIndex` to resolve that complete-list
 index and reject it if the corresponding person is not in the current filter.
 
+The successful `CommandResult` returned by `FindCommand` includes a selection request. `MainWindow` responds by
+calling `PersonListPanel#selectFirstPerson`, which selects the first filtered person and scrolls it into view, or
+clears the selection if the result list is empty. A key-event filter on `MainWindow` handles the <kbd>Up</kbd> and
+<kbd>Down</kbd> arrow keys whenever a person is selected. It asks `PersonListPanel` to select the previous or next
+result and scroll to that index. Selection remains at the corresponding boundary when the first or last result is
+reached. Keeping this navigation at the window level allows it to work while the command box retains keyboard focus.
+
 The following sequence shows a combined search. The `FilteredList` applies the predicate to each source person;
 omitted filter types evaluate as matched, while the supplied filter types must all match.
 
@@ -1070,6 +1077,24 @@ These cases are covered in `DeleteIntegrationTest`. Parser whitespace and intege
    3. Test case: `find Alex r/client t/priority k/retirement`.<br>
       Expected: Alex is displayed only if the record also has the `priority` tag, demonstrating `AND` across filter
       types.
+
+6. Find-result keyboard navigation
+
+   1. Prerequisites: Add enough persons matching the same search to require scrolling in the result list.
+
+   2. Test case: Enter a `find` command that returns multiple persons.<br>
+      Expected: The first result is selected automatically.
+
+   3. Test case: Press the <kbd>Down</kbd> arrow key repeatedly.<br>
+      Expected: Each press selects the next result and scrolls it into view. Selection remains on the last result
+      after the end of the list is reached.
+
+   4. Test case: Press the <kbd>Up</kbd> arrow key repeatedly.<br>
+      Expected: Each press selects the previous result and scrolls it into view. Selection remains on the first
+      result after the start of the list is reached.
+
+   5. Test case: Enter a `find` command with no matches, then press either arrow key.<br>
+      Expected: No person is selected and arrow-key navigation does not occur.
 
 ### Saving data
 

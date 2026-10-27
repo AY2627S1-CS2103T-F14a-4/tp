@@ -383,6 +383,10 @@ Format: `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...
 * Put name keywords before any prefixed filter. Tags follow a single `t/`, and detail keywords follow a single
   `k/`; values within each filter are separated by spaces. The `r/`, `t/`, and `k/` filters may appear in any order.
 * Filtered persons retain the same order and indexes as in the `list` command.
+* After a successful `find`, the first matching person is selected automatically. Press the <kbd>Down</kbd> or
+  <kbd>Up</kbd> arrow key to select the next or previous result respectively. The list scrolls automatically to keep
+  the selected result visible, and navigation stops at the first and last results. If there are no matches, no
+  person is selected.
 
 Examples:
 * `find John` returns `john` and `John Doe`

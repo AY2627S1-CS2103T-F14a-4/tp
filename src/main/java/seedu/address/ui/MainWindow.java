@@ -7,6 +7,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextInputControl;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
@@ -116,6 +117,7 @@ public class MainWindow extends UiPart<Stage> {
     void fillInnerParts() {
         personListPanel = new PersonListPanel(logic.getFilteredPersonList(), logic.getPersonList());
         personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
+        getRoot().addEventFilter(KeyEvent.KEY_PRESSED, this::handlePersonListNavigation);
 
         resultDisplay = new ResultDisplay();
         resultDisplayPlaceholder.getChildren().add(resultDisplay.getRoot());
@@ -125,6 +127,19 @@ public class MainWindow extends UiPart<Stage> {
 
         CommandBox commandBox = new CommandBox(this::executeCommand);
         commandBoxPlaceholder.getChildren().add(commandBox.getRoot());
+    }
+
+    private void handlePersonListNavigation(KeyEvent event) {
+        if (!personListPanel.hasSelectedPerson()) {
+            return;
+        }
+        if (event.getCode() == KeyCode.DOWN) {
+            personListPanel.selectNextPerson();
+            event.consume();
+        } else if (event.getCode() == KeyCode.UP) {
+            personListPanel.selectPreviousPerson();
+            event.consume();
+        }
     }
 
     /**
@@ -181,6 +196,10 @@ public class MainWindow extends UiPart<Stage> {
             CommandResult commandResult = logic.execute(commandText);
             logger.info("Result: " + commandResult.getFeedbackToUser());
             resultDisplay.setFeedbackToUser(commandText, commandResult.getFeedbackToUser());
+
+            if (commandResult.shouldSelectFirstResult()) {
+                personListPanel.selectFirstPerson();
+            }
 
             if (commandResult.isShowHelp()) {
                 handleHelp();
