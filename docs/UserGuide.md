@@ -261,7 +261,8 @@ Appends a dated note to a client or prospect. Notes appear on the person's card 
 Format: `note INDEX d/DATE n/NOTE`
 
 * `INDEX` refers to the currently displayed list, including search results.
-* `DATE` must be a real calendar date in `yyyy-MM-dd` format. Past dates are accepted.
+* `DATE` must be a real calendar date in `yyyy-MM-dd` format. Today's date and past dates are accepted.
+  Future dates are rejected with `Interaction date cannot be in the future.` using the computer's local date.
 * Put the date before `n/`. Everything after `n/` is note text, including URLs, punctuation and prefix-like text.
 * Note text cannot be blank. Surrounding whitespace is removed; case and internal text are preserved.
 * Adding a note keeps all previous notes. Same-date and identical notes are allowed.
