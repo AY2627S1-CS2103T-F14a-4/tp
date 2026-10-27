@@ -7,6 +7,7 @@ import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -27,6 +28,7 @@ import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.InfoCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.RescheduleCommand;
 import seedu.address.logic.commands.RestoreCommand;
 import seedu.address.logic.commands.TagCommand;
 import seedu.address.logic.commands.TagDeleteCommand;
@@ -78,6 +80,15 @@ public class ClientBookParserTest {
     @Test
     public void parseCommand_done() throws Exception {
         assertEquals(new DoneCommand(INDEX_FIRST_PERSON), parser.parseCommand("done 1"));
+    }
+
+    @Test
+    public void parseCommand_reschedule() throws Exception {
+        LocalDate date = LocalDate.of(2026, 11, 2);
+        assertEquals(new RescheduleCommand(INDEX_FIRST_PERSON, date, null),
+                parser.parseCommand("reschedule 1 d/2026-11-02"));
+        assertEquals(new RescheduleCommand(INDEX_FIRST_PERSON, date, "Send revised proposal"),
+                parser.parseCommand("reschedule 1 a/Send revised proposal d/2026-11-02"));
     }
 
     @Test

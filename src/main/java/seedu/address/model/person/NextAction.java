@@ -60,6 +60,11 @@ public class NextAction {
         return new NextAction(action, dueDate, true);
     }
 
+    /** Returns a copy with a new date, preserving completion and an omitted description. */
+    public NextAction reschedule(LocalDate dueDate, String action) {
+        return new NextAction(action == null ? this.action : action, dueDate, completed);
+    }
+
     @Override
     public boolean equals(Object other) {
         return other == this || other instanceof NextAction nextAction

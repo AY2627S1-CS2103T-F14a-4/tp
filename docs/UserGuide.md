@@ -444,6 +444,35 @@ Repeated `a/` or `d/` prefixes produce the standard duplicate-prefix error. Spac
 are reserved delimiters and cannot appear literally within the description. URLs such as `https://example.com`
 and other text are accepted. Rejected commands leave the person's data unchanged.
 
+### Rescheduling a follow-up: `reschedule`
+
+Changes the date of an existing follow-up without requiring you to retype its description.
+
+Format: `reschedule INDEX d/yyyy-MM-dd [a/ACTION]`
+
+* `INDEX` is the positive index in the currently displayed list.
+* `d/` is required. Date validation is identical to `next`: a real date in years `0001`–`9999`,
+  written with exactly four year digits and two month/day digits. Valid past dates are accepted;
+  an incomplete follow-up with a past date remains overdue.
+* Omit `a/` to keep the existing description, or supply it to replace the description.
+  A supplied description must contain 1–200 characters after trimming surrounding whitespace.
+  Duplicate `a/` or `d/` prefixes are rejected.
+* The person must already have a follow-up. Otherwise, the command reports
+  `NAME has no follow-up to reschedule. Use next to create one.` without changing any record.
+* Completion status is preserved. Rescheduling completed work keeps it completed; use `next`
+  to replace it with a new pending action. Other contact information is preserved.
+* The current filter remains active. If a follow-up is moved into the future while viewing `due`,
+  its person disappears from that view and the remaining displayed indices update.
+
+Examples:
+
+* `reschedule 1 d/2026-11-02` — change only the follow-up date.
+* `reschedule 1 d/2026-11-02 a/Send revised proposal` — change the date and description.
+
+The success message is `Follow-up for NAME has been rescheduled successfully.`.
+Invalid indices, dates and descriptions report the same validation messages as `next`.
+Changes are saved automatically using the existing follow-up storage format.
+
 ### Completing a follow-up: `done`
 
 Marks the next action of a client or prospect in the currently displayed list as completed.
@@ -585,6 +614,7 @@ Action     | Format, Examples
 **Tag**    | `tag INDEX TAG [MORE_TAGS...]`<br> e.g., `tag 1 priority referral`
 **Tag delete** | `tagdelete INDEX [TAG...]`<br> e.g., `tagdelete 1 friend referral`
 **Next**   | `next INDEX a/ACTION d/yyyy-MM-dd`<br> e.g., `next 1 a/Call d/2026-10-20`
+**Reschedule** | `reschedule INDEX d/yyyy-MM-dd [a/ACTION]`<br> e.g., `reschedule 1 d/2026-11-02`
 **Done**   | `done INDEX`<br> e.g., `done 1`
 **Due**    | `due`
 **List**   | `list`

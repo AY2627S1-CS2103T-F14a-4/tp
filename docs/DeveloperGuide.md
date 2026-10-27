@@ -452,6 +452,26 @@ Tests cover the immutable completed copy, preserved description/date and person 
 indices, out-of-range indices, absent actions, repeated completion, unchanged data on errors, command equality,
 string representation, parser validation and routing through `ClientBookParser`.
 
+#### Rescheduling existing follow-ups (US21)
+
+`ClientBookParser` routes `reschedule INDEX d/yyyy-MM-dd [a/ACTION]` to
+`RescheduleCommandParser`. It reuses the existing `a/` and `d/` prefixes, index parsing,
+`NextAction.parseDate` and description validation. Valid past dates remain supported, consistently
+with `next`. Duplicate prefixes, missing dates and invalid inputs fail before model mutation.
+
+A separate minimal command keeps `next` creation/replacement semantics unchanged while permitting
+an omitted description and requiring an existing follow-up. `RescheduleCommand` resolves the displayed
+index, rejects a person without a follow-up, then calls `NextAction.reschedule` and
+`Person.withNextAction` before `Model#setPerson`. The immutable copy preserves completion status;
+`next` remains the way to replace completed work with a pending action. All other person fields and
+the active filter are preserved. An incomplete action moved past the date captured by `due` is
+therefore automatically removed from that filtered view.
+
+`LogicManager` persists the updated person through the existing `JsonAdaptedNextAction`; no JSON
+schema change or migration is required. Parser/command tests cover invalid inputs, displayed indices,
+missing follow-ups, date-only and description changes, completed actions and due-filter updates.
+Model and JSON round-trip tests verify immutable rescheduling and preservation of optional fields.
+
 #### Viewing due actions (US19)
 
 `ClientBookParser` routes argument-free `due` to `DueCommand`; any arguments are rejected with

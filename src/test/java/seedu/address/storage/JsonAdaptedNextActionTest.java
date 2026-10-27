@@ -30,6 +30,23 @@ public class JsonAdaptedNextActionTest {
     }
 
     @Test
+    public void toModelType_rescheduledAction_preservesOtherFieldsAndCompletion() throws Exception {
+        for (boolean completed : new boolean[] {false, true}) {
+            Person original = new PersonBuilder().withFinancialNeed("Retirement").withPriority("High")
+                    .withAreaOfInterest("Insurance").withPreferredContactChannel("WhatsApp")
+                    .withPreferredContactTiming("Evening").withTags("friend")
+                    .withNextAction(new NextAction("Call", LocalDate.of(2026, 10, 20), completed)).build();
+            Person updated = original.withNextAction(original.getNextAction().orElseThrow()
+                    .reschedule(LocalDate.of(2026, 10, 30), "Email"));
+            String json = JsonUtil.toJsonString(new JsonAdaptedPerson(updated));
+            Person loaded = JsonUtil.fromJsonString(json, JsonAdaptedPerson.class).toModelType();
+            assertEquals(updated, loaded);
+            assertEquals(new NextAction("Email", LocalDate.of(2026, 10, 30), completed),
+                    loaded.getNextAction().orElseThrow());
+        }
+    }
+
+    @Test
     public void toModelType_oldJsonOrNullFollowup_loadsWithoutFollowup() throws Exception {
         String oldJson = "{\"name\":\"Amy Bee\",\"phone\":\"85355255\",\"email\":\"amy@gmail.com\"}";
         assertTrue(JsonUtil.fromJsonString(oldJson, JsonAdaptedPerson.class).toModelType().getNextAction().isEmpty());
