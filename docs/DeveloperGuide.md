@@ -460,8 +460,8 @@ string representation, parser validation and routing through `ClientBookParser`.
 `RescheduleCommand` additionally rejects dates before today at execution with
 `Follow-up date cannot be before today.`. Its default clock uses the system's local zone, with an
 injectable `Clock` for deterministic tests. Duplicate prefixes, missing dates, invalid inputs and
-past replacement dates fail before model mutation. The general `next` command remains unchanged
-and continues to accept historical dates.
+past replacement dates fail before model mutation. `NextAction.parseDate` remains a calendar
+validator, so existing stored overdue follow-ups remain loadable.
 
 A separate minimal command keeps `next` creation/replacement semantics unchanged while permitting
 an omitted description and requiring an existing follow-up. `RescheduleCommand` resolves the displayed
