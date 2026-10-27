@@ -37,7 +37,8 @@ public class DueSortingIntegrationTest {
     private final Person zed = new PersonBuilder().withName("Zed").withPhone("90000002")
             .withEmail("zed@example.com").withNextAction(new NextAction("Call", today.minusDays(1), false)).build();
     private final Person bob = new PersonBuilder().withName("Bob").withPhone("90000003")
-            .withEmail("bob@example.com").withTags("review").withNextAction(new NextAction("Call", today.minusDays(1), false)).build();
+            .withEmail("bob@example.com").withTags("review")
+            .withNextAction(new NextAction("Call", today.minusDays(1), false)).build();
 
     private Model model;
     private Logic logic;
@@ -80,8 +81,8 @@ public class DueSortingIntegrationTest {
     public void execute_futureNoteRejected_preservesSortedViewAndSavedData() throws Exception {
         logic.execute("due");
         String savedBefore = Files.readString(storage.getClientBookFilePath());
-        CommandException exception = assertThrows(CommandException.class,
-                () -> logic.execute("note 3 d/" + today.plusDays(1) + " n/Future interaction"));
+        String command = "note 3 d/" + today.plusDays(1) + " n/Future interaction";
+        CommandException exception = assertThrows(CommandException.class, () -> logic.execute(command));
 
         assertEquals(NoteCommand.MESSAGE_FUTURE_DATE, exception.getMessage());
         assertEquals(List.of(bob, zed, alice), model.getFilteredPersonList());
