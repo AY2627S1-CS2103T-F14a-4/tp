@@ -71,7 +71,9 @@ public class ClientBookParser {
         logger.fine("Command word: " + commandWord + "; Arguments: " + arguments);
 
         return switch (commandWord) {
-            case ContactCommand.COMMAND_WORD -> new ContactCommandParser().parse(arguments);
+            // Recognize contact clearing markers before trailing control characters are trimmed.
+            case ContactCommand.COMMAND_WORD -> new ContactCommandParser().parse(
+                    userInput.substring(userInput.indexOf(commandWord) + commandWord.length()));
             case AddCommand.COMMAND_WORD -> new AddCommandParser().parse(arguments);
             case BackupCommand.COMMAND_WORD -> {
                 if (!arguments.isBlank()) {

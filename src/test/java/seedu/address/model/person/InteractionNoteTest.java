@@ -31,6 +31,23 @@ public class InteractionNoteTest {
     }
 
     @Test
+    public void person_historySortedByDate_preservesTiesAndDoesNotModifyInput() {
+        InteractionNote newer = new InteractionNote(LocalDate.of(2026, 10, 20), "Newer");
+        InteractionNote older = new InteractionNote(LocalDate.of(2026, 10, 10), "Older");
+        InteractionNote middle = new InteractionNote(LocalDate.of(2026, 10, 15), "Middle");
+        InteractionNote sameDate = new InteractionNote(middle.getDate(), "Same date, added later");
+        List<InteractionNote> source = new ArrayList<>(List.of(newer, middle, older, sameDate, middle));
+        Person person = new Person(ALICE.getName(), ALICE.getPhone(), ALICE.getEmail(), ALICE.getTags(),
+                ALICE.getRelationship(), null, null, null, source);
+
+        assertEquals(List.of(older, middle, sameDate, middle, newer), person.getInteractionNotes());
+        assertEquals(List.of(newer, middle, older, sameDate, middle), source);
+        source.clear();
+        assertEquals(List.of(older, middle, sameDate, middle, newer), person.getInteractionNotes());
+        assertThrows(UnsupportedOperationException.class, () -> person.getInteractionNotes().clear());
+    }
+
+    @Test
     public void parseDate_realDatesOnly() {
         assertEquals(LocalDate.of(2000, 2, 29), InteractionNote.parseDate("2000-02-29"));
         for (String invalid : List.of("2026-02-30", "2026-13-01", "2026-2-01", "06-10-2026", "")) {

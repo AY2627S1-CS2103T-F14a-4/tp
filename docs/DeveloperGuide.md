@@ -253,14 +253,28 @@ The following sequence shows the confirmation gate before selected tags are dele
 
 ### Contact preferences (US12)
 
-`ContactCommandParser` reuses `ArgumentTokenizer`, duplicate-prefix checks and `ParserUtil.parseIndex`.
-Immutable `PreferredContactChannel` and `PreferredContactTiming` validate and strip supplied values before execution.
-Their free-text character policy follows `NextAction`, allowing time punctuation without a new restrictive whitelist.
-`ContactCommand` checks the displayed index, then uses `Person#withContactPreferences` to replace only supplied
-preferences. All other fields and the active filter are preserved. `edit`, `info`, `note`, `withNextAction` and
+`ContactCommandParser` accepts `contact INDEX [ch/CHANNEL|-] [tm/TIMING|-]` in either prefix order. It reuses
+duplicate-prefix checks and `ParserUtil.parseIndex`, but retains raw preference values using the same ordinary-space
+prefix boundaries as `ArgumentTokenizer`. `ClientBookParser` passes the original contact arguments so its initial
+trimming cannot change marker recognition. The shared tokenizer is unchanged.
+
+Only an exact `-` surrounded by ordinary spaces clears a preference. Non-marker values retain the existing trimming
+and validation through immutable `PreferredContactChannel` and `PreferredContactTiming`. Thus a tab-padded hyphen is
+normal text, not a clear operation. Free text, Unicode, punctuation and the 1-200-character limit remain supported.
+
+`ContactDescriptor` holds a specified flag and nullable value for each preference: omitted means preserve,
+specified non-null means replace, and specified null means clear. `ContactCommand` defensively copies the descriptor
+and rejects an empty descriptor. It calls `Command#getVisiblePersonAtIndex` to resolve the original full-list index
+and verify that the person is visible in the current filtered results. Search results retain their original indices,
+matching the numbers shown by the UI. It then constructs a replacement `Person` with the resolved preferences and
+calls `Model#setPerson`. `Person#withContactPreferences` retains its original null-means-keep
+contract for other callers. All unrelated fields and the active filter are preserved. `edit`, `info`, `note`, `withNextAction` and
 `PersonBuilder` also copy both preferences. `PersonCard` hides absent values and wraps recorded values.
 `JsonAdaptedPerson` persists optional `preferredContactChannel` and `preferredContactTiming` strings; missing or
 null properties mean absence, while invalid non-null values produce `IllegalValueException`.
+Clearing uses this existing absence representation without changing the JSON format. Clearing absent fields and
+repeating clears are safe. Tests cover set/clear combinations, raw markers, invalid-input atomicity, filtered indices,
+unrelated-field preservation, descriptor equality/copying, JSON save/reload after clearing, and live card label hiding.
 
 The following sequence shows a successful update; parser validation and index checks precede model mutation.
 
@@ -308,9 +322,11 @@ list. It works for clients and prospects, preserves the current filter, and does
 2. `InteractionNote` stores an immutable `LocalDate` and nonblank text. Date parsing checks the `yyyy-MM-dd` shape
    and uses strict ISO calendar validation. Past dates are allowed. Surrounding text whitespace is stripped;
    internal content and case are preserved without a character whitelist or maximum length.
-3. `NoteCommand` checks the displayed index, copies the selected person's history, appends the new entry and calls
-   `Model#setPerson` with a replacement `Person`. Other fields remain unchanged. Same-date and identical entries
-   are retained in insertion order.
+3. `NoteCommand` checks the displayed index and rejects an exact duplicate in that person's history using
+   `InteractionNote.equals()` before making changes. Otherwise, it copies the history, appends the new entry and calls
+   `Model#setPerson` with a replacement `Person`. Other fields remain unchanged. The same date with different text,
+   or the same text with different dates, is allowed. `Person` stably sorts its defensive copy by date, oldest first,
+   preserving order for equal dates.
 4. The observable list updates the corresponding `PersonListViewCell`. `LogicManager` saves the client book through
    the existing storage pipeline and returns `Added interaction note for NAME.` on success.
 
@@ -344,7 +360,7 @@ structured interaction outcomes and note search remain separate user stories.
 The parser requires two positive indices followed by `n/` and nonblank text. As with `note`, everything after
 the prefix is treated as note content, including further prefix-like strings.
 
-`NoteEditCommand` resolves the contact against the filtered list and the note against its insertion-ordered
+`NoteEditCommand` resolves the contact against the filtered list and the note against its chronologically ordered
 history, using one-based indices. It rejects out-of-range indices (including empty histories) before mutation.
 It copies the history and replaces just the selected entry with an `InteractionNote` containing the original
 date and updated text. It then calls `Model#setPerson` with a replacement person preserving all other fields,
@@ -365,20 +381,20 @@ second interaction note from the first contact in the currently filtered list.
 positive integer indices using `ParserUtil.parseIndex`.
 
 `NoteDeleteCommand` resolves the contact against the currently filtered list and the note against that
-contact's insertion-ordered history. Both indices are one-based. Out-of-range indices, including an empty
+contact's chronologically ordered history. Both indices are one-based. Out-of-range indices, including an empty
 history, are rejected before changing the model. The command copies the history and removes the selected
 entry by position, preserving duplicates and the order of remaining entries. Subsequent note positions shift
 down by one. It calls `Model#setPerson` with a replacement person preserving all other fields, including
 contact preferences and the next action, and retains the current filter.
 
-`PersonCard` prefixes each note label with its one-based insertion-order position, matching command indices.
+`PersonCard` prefixes each note label with its one-based chronological position, matching command indices.
 Replacing the person rebuilds the card through the existing observable list, so remaining notes are renumbered
 and an empty history is hidden without forcing a refresh or changing stored notes.
 
 Deletion feedback uses the `InteractionNote` returned by positional removal, including its actual date and text.
 Only the feedback excerpt has whitespace collapsed. It is limited to 80 Unicode code points using
 `offsetByCodePoints`, followed by `…` when truncated, without splitting surrogate pairs or changing stored content.
-Command and UI tests cover excerpt boundaries, supplementary Unicode characters, duplicate notes, insertion
+Command and UI tests cover excerpt boundaries, supplementary Unicode characters, duplicate notes, chronological
 order, automatic renumbering and hiding the last deleted note's history.
 
 `LogicManager` saves the replacement through the existing JSON pipeline. No storage schema or model API

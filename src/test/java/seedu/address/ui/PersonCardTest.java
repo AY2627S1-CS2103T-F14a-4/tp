@@ -29,6 +29,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import seedu.address.logic.commands.NoteCommand;
 import seedu.address.logic.commands.NoteDeleteCommand;
+import seedu.address.logic.parser.ClientBookParser;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
@@ -120,6 +121,50 @@ public class PersonCardTest {
                             assertTrue(label.getBoundsInParent().getMaxX() <= card.getWidth());
                         }
                     }
+                }
+                checked.complete(null);
+            } catch (Throwable error) {
+                checked.completeExceptionally(error);
+            }
+        });
+        checked.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void contactPreferences_clearCommand_hidesUpdatedLabels() throws Exception {
+        CompletableFuture<Void> checked = new CompletableFuture<>();
+        Platform.runLater(() -> {
+            try {
+                Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
+                model.setPerson(model.getFilteredPersonList().getFirst(),
+                        new PersonBuilder(model.getFilteredPersonList().getFirst())
+                                .withPreferredContactChannel("Phone").withPreferredContactTiming("Weekends").build());
+                PersonListPanel panel = new PersonListPanel(model.getFilteredPersonList());
+                StackPane root = new StackPane(panel.getRoot());
+                new Scene(root, 600, 600);
+                root.applyCss();
+                root.layout();
+                ListView<?> list = (ListView<?>) root.lookup("#personListView");
+                Region card = (Region) displayedCell(list, 0).getGraphic();
+                assertTrue(card.lookup("#preferredContactChannel").isVisible());
+                assertTrue(card.lookup("#preferredContactTiming").isVisible());
+                ClientBookParser parser = new ClientBookParser();
+                parser.parseCommand("contact 1 ch/-").execute(model, null);
+                root.layout();
+                card = (Region) displayedCell(list, 0).getGraphic();
+                Label channel = (Label) card.lookup("#preferredContactChannel");
+                assertFalse(channel.isVisible());
+                assertFalse(channel.isManaged());
+                assertEquals("", channel.getText());
+                assertTrue(card.lookup("#preferredContactTiming").isVisible());
+                parser.parseCommand("contact 1 tm/-").execute(model, null);
+                root.layout();
+                card = (Region) displayedCell(list, 0).getGraphic();
+                for (String field : List.of("preferredContactChannel", "preferredContactTiming")) {
+                    Label label = (Label) card.lookup("#" + field);
+                    assertFalse(label.isVisible());
+                    assertFalse(label.isManaged());
+                    assertEquals("", label.getText());
                 }
                 checked.complete(null);
             } catch (Throwable error) {
@@ -251,15 +296,15 @@ public class PersonCardTest {
                 root.layout();
                 ListView<?> list = (ListView<?>) root.lookup("#personListView");
                 VBox notes = (VBox) displayedCell(list, 0).getGraphic().lookup("#interactionNotes");
-                assertEquals("1. " + duplicate, ((Label) notes.getChildren().get(1)).getText());
-                assertEquals("2. " + backdated, ((Label) notes.getChildren().get(2)).getText());
+                assertEquals("1. " + backdated, ((Label) notes.getChildren().get(1)).getText());
+                assertEquals("2. " + duplicate, ((Label) notes.getChildren().get(2)).getText());
                 assertEquals("3. " + duplicate, ((Label) notes.getChildren().get(3)).getText());
 
                 new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON).execute(model, null);
                 root.layout();
                 notes = (VBox) displayedCell(list, 0).getGraphic().lookup("#interactionNotes");
                 assertEquals(3, notes.getChildren().size());
-                assertEquals("1. " + backdated, ((Label) notes.getChildren().get(1)).getText());
+                assertEquals("1. " + duplicate, ((Label) notes.getChildren().get(1)).getText());
                 assertEquals("2. " + duplicate, ((Label) notes.getChildren().get(2)).getText());
 
                 new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON).execute(model, null);

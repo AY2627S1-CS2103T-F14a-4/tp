@@ -212,16 +212,22 @@ Examples:
 
 ### Recording preferred contact channel and timing: `contact`
 
-Records how and when a client or prospect prefers to be contacted.
+Records or clears how and when a client or prospect prefers to be contacted.
 
-Format: `contact INDEX [ch/CHANNEL] [tm/TIMING]`
+Format: `contact INDEX [ch/CHANNEL|-] [tm/TIMING|-]`
 
-* `INDEX` is a positive integer referring to the currently displayed list, including after a search.
+* `INDEX` is the positive integer shown on the person's card. Search results retain their original indices from
+  the full contact list. For example, if Bob is contact 2, use `contact 2 ch/WhatsApp` after `find Bob`.
+  The person must be visible in the current results; an index belonging to a hidden person is rejected.
 * Supply at least one of `ch/` or `tm/`, each at most once, in either order. Separate prefixes with spaces.
 * Each supplied value replaces the previous value; omitted preferences and all other person details remain unchanged.
 * Values must contain 1–200 characters after surrounding whitespace is trimmed. Internal spaces and case are preserved.
   Free text, Unicode and punctuation are accepted, for example `WhatsApp` and `Weekdays 6:30–8 pm`.
-* Empty or whitespace-only values are rejected. Preferences cannot be cleared with this command.
+* An exact `-` clears the supplied preference. Surrounding ordinary spaces are allowed, so `ch/   -   ` also clears
+  the channel. Clearing an absent preference is safe. Omitted preferences remain unchanged.
+* Larger values such as `Phone-call`, `-Phone`, `Phone-`, and `--` remain normal text.
+  Tabs and other control characters around a hyphen do not form a clearing marker; they follow normal value handling.
+* Empty or whitespace-only values remain invalid; clearing requires an explicit `-`.
 * The person's card displays each recorded preference, wrapping long values. Unset preferences are hidden.
 * Preferences are saved automatically. Older data files without these fields load with no preferences.
 
@@ -230,10 +236,19 @@ Examples:
 * `contact 1 ch/WhatsApp tm/Weekdays after 6 pm`
 * `contact 2 tm/Lunch break ch/Phone call`
 * `contact 1 tm/Weekends 10 am to noon` (keeps the existing channel)
+* `contact 1 ch/-` clears only the channel.
+* `contact 1 tm/-` clears only the timing.
+* `contact 1 ch/- tm/-` clears both preferences.
+* `contact 1 ch/WhatsApp tm/-` sets the channel and clears the timing.
+* `contact 1 ch/- tm/Weekends` clears the channel and sets the timing. Either prefix order is accepted.
+
+If either supplied preference is invalid, neither preference is changed. Cleared values stay absent after restarting
+the application, and their labels are hidden on the person's card.
 
 Success message: `Updated contact preferences for PERSON_NAME.`
 
-Missing or invalid indices produce `Index must be a positive integer.` An index outside the displayed list
+Missing or invalid indices produce `Index must be a positive integer.` An index outside the full contact list or
+belonging to a person hidden by the current filter
 produces `The person index provided is invalid.` Missing fields produce `At least one of ch/ or tm/ is required.`
 Duplicate `ch/` or `tm/` prefixes are rejected. These recognized prefixes, when preceded by a space,
 are delimiters and cannot be included literally in values. Other slash-containing text, such as `AM/PM`
@@ -241,16 +256,22 @@ or `Phone/WhatsApp`, is preserved as part of the value.
 
 ### Adding a dated interaction note: `note`
 
-Appends a dated note to a client or prospect. Notes appear on the person's card in the order they were added.
+Adds a dated note to a client or prospect. Notes appear on the person's card in ascending date order (oldest first).
 
 Format: `note INDEX d/DATE n/NOTE`
 
 * `INDEX` refers to the currently displayed list, including search results.
 * `DATE` must be a real calendar date in `yyyy-MM-dd` format, with a year from `0001` to `9999`.
-  Year `0000` is rejected with `Interaction date must be a valid date in yyyy-MM-dd format.` Past dates are accepted.
+  Year `0000` is rejected with `Interaction date must be a valid date in yyyy-MM-dd format.`
+  Today's date and past dates are accepted.
+  Future dates are rejected with `Interaction date cannot be in the future.` using the computer's local date.
 * Put the date before `n/`. Everything after `n/` is note text, including URLs, punctuation and prefix-like text.
 * Note text cannot be blank. Surrounding whitespace is removed; case and internal text are preserved.
-* Adding a note keeps all previous notes. Same-date and identical notes are allowed.
+* Adding a note keeps all previous notes. An exact duplicate (same date and text) for the same contact is rejected
+  with `This interaction note already exists for this contact.` Existing records remain unchanged.
+* Notes with the same date but different text, or the same text but different dates, are allowed.
+  Text comparison is case-sensitive and preserves internal spaces; surrounding whitespace is removed as usual.
+  Identical notes for different contacts are allowed.
 * Notes are saved automatically and preserved when using `edit` or `info`.
 * Each entry shows its date and text under **Interaction notes:** on the person's card. Long text wraps, and the
   card grows to fit its contents immediately. Scroll the client list to read longer histories.
@@ -270,7 +291,8 @@ Missing indices, dates or note prefixes produce an error. Dates such as `2026-02
 `Interaction note cannot be empty.` An index outside the displayed list produces
 `The person index provided is invalid.` These input errors leave the stored records unchanged.
 
-Notes are displayed in insertion order, including backdated entries; they are not sorted by date.
+Backdated notes are placed in chronological order. Notes with the same date retain their existing order;
+new notes with that date appear after them. Displayed note numbers update to match this order.
 Searching interaction notes is not currently supported.
 
 ### Editing a dated interaction note: `noteedit`
@@ -282,7 +304,7 @@ Format: `noteedit CONTACT_INDEX NOTE_INDEX n/NEW_NOTE_CONTENT`
 * Both indices must be positive integers. `CONTACT_INDEX` refers to the currently displayed contact list,
   including search results. The current search filter remains active after editing.
 * `NOTE_INDEX` is the number displayed beside the note under **Interaction notes:** on that contact's card.
-  Numbering starts at 1 and follows insertion order, rather than date order.
+  Numbering starts at 1 and follows chronological order (oldest first).
 * The original interaction date, other notes, and all other contact information are preserved.
 * New text cannot be blank. Surrounding whitespace is removed; case and internal text are preserved.
   Everything after `n/` is note text, including URLs and prefix-like strings. Enter it on one command line.
@@ -307,7 +329,7 @@ Format: `notedelete CONTACT_INDEX NOTE_INDEX`
 * Both indices must be positive integers. `CONTACT_INDEX` refers to the currently displayed contact list,
   including search results. The current filter remains active after deletion.
 * `NOTE_INDEX` is the number displayed beside the note under **Interaction notes:** on that contact's card.
-  Numbering starts at 1 and follows insertion order, rather than date order (e.g., `1. 2026-10-15: Called`).
+  Numbering starts at 1 and follows chronological order (oldest first), e.g., `1. 2026-10-15: Called`.
 * Only the specified note is removed, even if identical notes exist. Remaining notes retain their order,
   dates and text; subsequent displayed note numbers shift down by one automatically.
 * All other contact information is preserved, including financial information, tags, contact preferences
@@ -561,7 +583,7 @@ Action     | Format, Examples
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit**   | `edit INDEX [r/RELATIONSHIP] [n/NAME] [p/PHONE_NUMBER] [e/EMAIL]`<br> e.g.,`edit 2 r/Client n/James Lee e/jameslee@example.com`
 **Find**   | `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...]]`<br> e.g., `find James r/client t/priority referral`
-**Contact** | `contact INDEX [ch/CHANNEL] [tm/TIMING]`<br> e.g., `contact 1 ch/WhatsApp tm/After 6 pm`
+**Contact** | `contact INDEX [ch/CHANNEL\|-] [tm/TIMING\|-]`<br> e.g., `contact 1 ch/WhatsApp tm/-`
 **Info**   | `info INDEX [/fn VALUE\|-] [/pr VALUE\|-] [/ai VALUE\|-]`<br> e.g., `info 1 /fn retirement planning`
 **Note**   | `note INDEX d/DATE n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
 **Note edit** | `noteedit CONTACT_INDEX NOTE_INDEX n/NEW_NOTE_CONTENT`<br> e.g., `noteedit 1 2 n/Discussed insurance renewal`
