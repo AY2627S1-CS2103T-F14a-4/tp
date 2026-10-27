@@ -258,6 +258,9 @@ Format: `noteedit CONTACT_INDEX NOTE_INDEX [d/DATE] [n/NEW_NOTE_CONTENT]`
   Numbering starts at 1 and follows insertion order, rather than date order.
 * Supply at least one of `d/` or `n/`. Omitted fields retain their existing values.
 * A replacement date must be a real calendar date in `yyyy-MM-dd` format, following the same rules as `note`.
+  An explicitly supplied future date is rejected with `Interaction date cannot be in the future.` using the computer's
+  local date. Today's date and past dates are accepted. Omitting `d/` preserves the existing date, even for legacy
+  future-dated notes.
   Put `d/DATE` before `n/` when editing both fields.
 * Editing keeps the note in its original position. Other notes and all other contact information are preserved.
 * New text cannot be blank. Surrounding whitespace is removed; case and internal text are preserved.

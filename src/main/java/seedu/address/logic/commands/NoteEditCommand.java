@@ -24,6 +24,7 @@ public class NoteEditCommand extends Command {
     public static final String MESSAGE_NO_FIELDS = "At least one of d/ or n/ is required.";
     public static final String MESSAGE_SUCCESS = "Updated interaction note %d for %s.";
     public static final String MESSAGE_INVALID_NOTE_INDEX = "The interaction note index provided is invalid.";
+    public static final String MESSAGE_FUTURE_DATE = "Interaction date cannot be in the future.";
 
     private final Index contactIndex;
     private final Index noteIndex;
@@ -57,6 +58,9 @@ public class NoteEditCommand extends Command {
         List<InteractionNote> notes = new ArrayList<>(original.getInteractionNotes());
         if (noteIndex.getZeroBased() >= notes.size()) {
             throw new CommandException(MESSAGE_INVALID_NOTE_INDEX);
+        }
+        if (date != null && date.isAfter(LocalDate.now())) {
+            throw new CommandException(MESSAGE_FUTURE_DATE);
         }
         InteractionNote originalNote = notes.get(noteIndex.getZeroBased());
         notes.set(noteIndex.getZeroBased(), new InteractionNote(date == null ? originalNote.getDate() : date,
