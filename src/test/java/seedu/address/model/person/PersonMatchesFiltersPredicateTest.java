@@ -40,6 +40,20 @@ public class PersonMatchesFiltersPredicateTest {
     }
 
     @Test
+    public void test_partialTagKeyword_matches() {
+        assertTrue(new PersonMatchesFiltersPredicate(List.of(), Optional.empty(), List.of("friend"))
+                .test(clientAlice));
+        assertTrue(new PersonMatchesFiltersPredicate(List.of(), Optional.empty(), List.of("RIEND"))
+                .test(clientAlice));
+        assertTrue(new PersonMatchesFiltersPredicate(List.of(), Optional.empty(), List.of("prior"))
+                .test(clientAlice));
+        assertFalse(new PersonMatchesFiltersPredicate(List.of(), Optional.empty(), List.of("fiend"))
+                .test(clientAlice));
+        assertFalse(new PersonMatchesFiltersPredicate(List.of(), Optional.empty(), List.of("friendship"))
+                .test(clientAlice));
+    }
+
+    @Test
     public void test_differentFilters_useAnd() {
         assertTrue(new PersonMatchesFiltersPredicate(List.of("Alice"), Optional.of(Relationship.CLIENT),
                 List.of("FRIENDS")).test(clientAlice));

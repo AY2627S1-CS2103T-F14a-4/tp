@@ -20,7 +20,7 @@ public class FindCommand extends Command {
     public static final String COMMAND_WORD = "find";
 
     public static final String MESSAGE_USAGE = COMMAND_WORD + ": Finds persons matching all supplied filter types. "
-            + "Names partially match any name keyword and tags match any tag keyword (case-insensitive).\n"
+            + "Names and tags partially match any corresponding keyword (case-insensitive).\n"
             + "Parameters: [KEYWORD [MORE_KEYWORDS]...] [" + PREFIX_RELATIONSHIP + "RELATIONSHIP] "
             + "[" + PREFIX_TAG + "TAG [MORE_TAGS...]]\n"
             + "Examples:\n"

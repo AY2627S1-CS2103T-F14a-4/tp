@@ -359,7 +359,9 @@ Format: `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...
   does not. A keyword can also match part of a hyphenated name, so either `Anne` or `Marie` matches `Anne-Marie Tan`.
 * Persons matching at least one keyword are returned (an `OR` search); for example, `Hans Bo` returns `Hans Gruber` and `Bo Yang`.
 * `RELATIONSHIP` must be either `client` or `prospect` and is case-insensitive.
-* Each `TAG` must be alphanumeric. A person with at least one of the supplied tags matches the tag filter.
+* Each `TAG` keyword must be alphanumeric and matches any contiguous part of a tag. For example, `t/friend`
+  matches `friend`, `friends`, and `bestfriend`. A person with at least one matching tag keyword matches the tag
+  filter.
 * When filter types are combined, a result must match every supplied filter type. For example, a search with names,
   a relationship and tags must match at least one name keyword **and** the relationship **and** at least one tag.
 * Put name keywords before `r/` and `t/`. Tags follow a single `t/` and are separated by spaces.
@@ -376,6 +378,7 @@ Examples:
 * `find alex david r/prospect` returns prospects whose names contain `alex` or `david` as contiguous text.
 * `find s/o` returns persons whose names contain `s/o` as a standalone component.
 * `find Jack s/o` returns persons whose names contain either `Jack` or `s/o`.
+* `find t/friend` returns persons with tags such as `friend`, `friends`, or `bestfriend`.
 * `find t/referral priority` returns persons tagged `referral` or `priority`.
 * `find alex r/client t/priority referral` returns clients named `alex` who have a `priority` or `referral` tag.
 

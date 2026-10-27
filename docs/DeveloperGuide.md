@@ -190,8 +190,9 @@ which requires relationship markers to appear between name components.
 
 The parser creates a `PersonMatchesFiltersPredicate`. Name keywords use case-insensitive contiguous substring
 matching and are joined with `OR`. Thus, `Alex` matches `Alexander`, while either `Anne` or `Marie` matches
-`Anne-Marie Tan`. Tag keywords use exact, case-insensitive tag matching and are also joined with `OR`. The predicate
-joins the name, relationship and tag filter results with `AND`. For example,
+`Anne-Marie Tan`. Tag keywords use the same case-insensitive contiguous substring matching and are also joined with
+`OR`; for example, `friend` matches both `friend` and `friends`. The predicate joins the name, relationship and tag
+filter results with `AND`. For example,
 `find Alex David r/client t/priority referral` returns clients whose name contains `Alex` or `David` and whose tags
 contain `priority` or `referral`.
 
@@ -1040,6 +1041,14 @@ These cases are covered in `DeleteIntegrationTest`. Parser whitespace and intege
    1. Test case: `find Alex r/client`.<br>
       Expected: Only clients whose names contain the contiguous text `Alex` are displayed. This includes names such
       as `Alexander`, and matching is case-insensitive.
+
+4. Tag filtering
+
+   1. Prerequisites: Add persons tagged `friend`, `friends`, `bestfriend`, and `family`.
+
+   2. Test case: `find t/friend`.<br>
+      Expected: The persons tagged `friend`, `friends`, and `bestfriend` are displayed. The person tagged `family`
+      is not displayed.
 
 ### Saving data
 

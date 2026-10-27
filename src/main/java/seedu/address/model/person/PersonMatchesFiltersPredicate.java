@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 
+import seedu.address.commons.util.StringUtil;
 import seedu.address.commons.util.ToStringBuilder;
 
 /** Tests whether a person matches all supplied find filters. */
@@ -31,7 +32,7 @@ public class PersonMatchesFiltersPredicate implements Predicate<Person> {
                 || person.getRelationship().equals(relationship.get());
         boolean matchesTags = tagKeywords.isEmpty()
                 || tagKeywords.stream().anyMatch(keyword -> person.getTags().stream()
-                        .anyMatch(tag -> tag.tagName.equalsIgnoreCase(keyword)));
+                        .anyMatch(tag -> StringUtil.containsSubstringIgnoreCase(tag.tagName, keyword)));
         return matchesName && matchesRelationship && matchesTags;
     }
 
