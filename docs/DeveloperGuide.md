@@ -466,8 +466,15 @@ zone to make the date boundary deterministic. The predicate captures the executi
 refreshes it after midnight. Empty results report `No follow-ups are due.`; otherwise the command reports
 the number of matching follow-ups.
 
-In v1.4 this feature only filters and preserves the existing list order. Sorting is a separate user story;
-keeping it outside US19 avoids changes to the shared model and existing `find`/`list` behaviour.
+The due view is sorted by due date ascending, then name ignoring case, with exact spelling as a final
+tie-breaker (#138). `ModelManager` exposes a `SortedList` over its existing `FilteredList`, so sorting
+does not mutate or persist the backing contact order. The model stores both its current predicate and
+comparator. `LogicManager` carries both across its temporary-model execution and successful commit;
+indexed commands continue to use the displayed client indices from the complete client book,
+independent of sorted row positions. Replacing a person
+updates the active order automatically. The original single-argument filter update clears sorting,
+so `list` and `find` retain their original contact-order behaviour. Tests cover date/name ties, stored
+order, live updates, and indexed commands through the complete logic/storage path.
 
 #### Persistence and card display
 

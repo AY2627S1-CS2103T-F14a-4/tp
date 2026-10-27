@@ -4,10 +4,12 @@ import static java.util.Objects.requireNonNull;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.util.Comparator;
 
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.model.Model;
 import seedu.address.model.person.NextActionDuePredicate;
+import seedu.address.model.person.Person;
 import seedu.address.storage.Storage;
 
 /**
@@ -18,6 +20,12 @@ public class DueCommand extends Command {
     public static final String MESSAGE_USAGE = "due";
     public static final String MESSAGE_NO_FOLLOW_UPS = "No follow-ups are due.";
     public static final String MESSAGE_SUCCESS = "%d follow-up(s) due today or earlier.";
+
+    private static final Comparator<Person> DUE_ORDER = Comparator
+            .comparing((Person person) -> person.getNextAction()
+                    .map(action -> action.getDueDate()).orElse(LocalDate.MAX))
+            .thenComparing(person -> person.getName().fullName, String.CASE_INSENSITIVE_ORDER)
+            .thenComparing(person -> person.getName().fullName);
 
     private final Clock clock;
 
@@ -33,7 +41,7 @@ public class DueCommand extends Command {
     public CommandResult execute(Model model, Storage storage) {
         requireNonNull(model);
         LocalDate today = LocalDate.now(clock);
-        model.updateFilteredPersonList(new NextActionDuePredicate(today));
+        model.updateFilteredPersonList(new NextActionDuePredicate(today), DUE_ORDER);
         int count = model.getFilteredPersonList().size();
         return new CommandResult(count == 0 ? MESSAGE_NO_FOLLOW_UPS : String.format(MESSAGE_SUCCESS, count));
     }
