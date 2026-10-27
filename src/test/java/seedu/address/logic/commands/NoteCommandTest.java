@@ -40,15 +40,15 @@ public class NoteCommandTest {
     private final ClientBookParser parser = new ClientBookParser();
 
     @Test
-    public void execute_throughLogic_boundaryYearsPersistAndInvalidDatesPreserveRecords() throws Exception {
+    public void execute_throughLogic_validDatesPersistAndInvalidDatesPreserveRecords() throws Exception {
         JsonClientBookStorage storage = new JsonClientBookStorage(temporaryFolder.resolve("clientbook.json"));
         LogicManager logic = new LogicManager(model, new StorageManager(storage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json"))));
         InteractionNote earliest = new InteractionNote(LocalDate.of(1, 1, 1), "Earliest date");
-        InteractionNote latest = new InteractionNote(LocalDate.of(9999, 12, 31), "Latest date");
+        InteractionNote past = new InteractionNote(LocalDate.of(2000, 2, 29), "Past date");
         logic.execute("note 1 d/0001-01-01 n/Earliest date");
-        logic.execute("note 1 d/9999-12-31 n/Latest date");
-        assertEquals(List.of(earliest, latest), model.getFilteredPersonList().get(0).getInteractionNotes());
+        logic.execute("note 1 d/2000-02-29 n/Past date");
+        assertEquals(List.of(earliest, past), model.getFilteredPersonList().get(0).getInteractionNotes());
         ReadOnlyClientBook saved = storage.readClientBook().orElseThrow();
         assertEquals(model.getClientBook(), saved);
         showPersonAtIndex(model, INDEX_FIRST_PERSON);
