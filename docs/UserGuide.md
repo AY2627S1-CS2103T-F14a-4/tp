@@ -212,16 +212,22 @@ Examples:
 
 ### Recording preferred contact channel and timing: `contact`
 
-Records how and when a client or prospect prefers to be contacted.
+Records or clears how and when a client or prospect prefers to be contacted.
 
-Format: `contact INDEX [ch/CHANNEL] [tm/TIMING]`
+Format: `contact INDEX [ch/CHANNEL|-] [tm/TIMING|-]`
 
-* `INDEX` is a positive integer referring to the currently displayed list, including after a search.
+* `INDEX` is the positive integer shown on the person's card. Search results retain their original indices from
+  the full contact list. For example, if Bob is contact 2, use `contact 2 ch/WhatsApp` after `find Bob`.
+  The person must be visible in the current results; an index belonging to a hidden person is rejected.
 * Supply at least one of `ch/` or `tm/`, each at most once, in either order. Separate prefixes with spaces.
 * Each supplied value replaces the previous value; omitted preferences and all other person details remain unchanged.
 * Values must contain 1–200 characters after surrounding whitespace is trimmed. Internal spaces and case are preserved.
   Free text, Unicode and punctuation are accepted, for example `WhatsApp` and `Weekdays 6:30–8 pm`.
-* Empty or whitespace-only values are rejected. Preferences cannot be cleared with this command.
+* An exact `-` clears the supplied preference. Surrounding ordinary spaces are allowed, so `ch/   -   ` also clears
+  the channel. Clearing an absent preference is safe. Omitted preferences remain unchanged.
+* Larger values such as `Phone-call`, `-Phone`, `Phone-`, and `--` remain normal text.
+  Tabs and other control characters around a hyphen do not form a clearing marker; they follow normal value handling.
+* Empty or whitespace-only values remain invalid; clearing requires an explicit `-`.
 * The person's card displays each recorded preference, wrapping long values. Unset preferences are hidden.
 * Preferences are saved automatically. Older data files without these fields load with no preferences.
 
@@ -230,10 +236,19 @@ Examples:
 * `contact 1 ch/WhatsApp tm/Weekdays after 6 pm`
 * `contact 2 tm/Lunch break ch/Phone call`
 * `contact 1 tm/Weekends 10 am to noon` (keeps the existing channel)
+* `contact 1 ch/-` clears only the channel.
+* `contact 1 tm/-` clears only the timing.
+* `contact 1 ch/- tm/-` clears both preferences.
+* `contact 1 ch/WhatsApp tm/-` sets the channel and clears the timing.
+* `contact 1 ch/- tm/Weekends` clears the channel and sets the timing. Either prefix order is accepted.
+
+If either supplied preference is invalid, neither preference is changed. Cleared values stay absent after restarting
+the application, and their labels are hidden on the person's card.
 
 Success message: `Updated contact preferences for PERSON_NAME.`
 
-Missing or invalid indices produce `Index must be a positive integer.` An index outside the displayed list
+Missing or invalid indices produce `Index must be a positive integer.` An index outside the full contact list or
+belonging to a person hidden by the current filter
 produces `The person index provided is invalid.` Missing fields produce `At least one of ch/ or tm/ is required.`
 Duplicate `ch/` or `tm/` prefixes are rejected. These recognized prefixes, when preceded by a space,
 are delimiters and cannot be included literally in values. Other slash-containing text, such as `AM/PM`
@@ -560,7 +575,7 @@ Action     | Format, Examples
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit**   | `edit INDEX [r/RELATIONSHIP] [n/NAME] [p/PHONE_NUMBER] [e/EMAIL]`<br> e.g.,`edit 2 r/Client n/James Lee e/jameslee@example.com`
 **Find**   | `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...]]`<br> e.g., `find James r/client t/priority referral`
-**Contact** | `contact INDEX [ch/CHANNEL] [tm/TIMING]`<br> e.g., `contact 1 ch/WhatsApp tm/After 6 pm`
+**Contact** | `contact INDEX [ch/CHANNEL\|-] [tm/TIMING\|-]`<br> e.g., `contact 1 ch/WhatsApp tm/-`
 **Info**   | `info INDEX [/fn VALUE\|-] [/pr VALUE\|-] [/ai VALUE\|-]`<br> e.g., `info 1 /fn retirement planning`
 **Note**   | `note INDEX d/DATE n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
 **Note edit** | `noteedit CONTACT_INDEX NOTE_INDEX n/NEW_NOTE_CONTENT`<br> e.g., `noteedit 1 2 n/Discussed insurance renewal`

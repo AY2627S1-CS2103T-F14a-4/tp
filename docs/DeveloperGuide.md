@@ -253,14 +253,28 @@ The following sequence shows the confirmation gate before selected tags are dele
 
 ### Contact preferences (US12)
 
-`ContactCommandParser` reuses `ArgumentTokenizer`, duplicate-prefix checks and `ParserUtil.parseIndex`.
-Immutable `PreferredContactChannel` and `PreferredContactTiming` validate and strip supplied values before execution.
-Their free-text character policy follows `NextAction`, allowing time punctuation without a new restrictive whitelist.
-`ContactCommand` checks the displayed index, then uses `Person#withContactPreferences` to replace only supplied
-preferences. All other fields and the active filter are preserved. `edit`, `info`, `note`, `withNextAction` and
+`ContactCommandParser` accepts `contact INDEX [ch/CHANNEL|-] [tm/TIMING|-]` in either prefix order. It reuses
+duplicate-prefix checks and `ParserUtil.parseIndex`, but retains raw preference values using the same ordinary-space
+prefix boundaries as `ArgumentTokenizer`. `ClientBookParser` passes the original contact arguments so its initial
+trimming cannot change marker recognition. The shared tokenizer is unchanged.
+
+Only an exact `-` surrounded by ordinary spaces clears a preference. Non-marker values retain the existing trimming
+and validation through immutable `PreferredContactChannel` and `PreferredContactTiming`. Thus a tab-padded hyphen is
+normal text, not a clear operation. Free text, Unicode, punctuation and the 1-200-character limit remain supported.
+
+`ContactDescriptor` holds a specified flag and nullable value for each preference: omitted means preserve,
+specified non-null means replace, and specified null means clear. `ContactCommand` defensively copies the descriptor
+and rejects an empty descriptor. It calls `Command#getVisiblePersonAtIndex` to resolve the original full-list index
+and verify that the person is visible in the current filtered results. Search results retain their original indices,
+matching the numbers shown by the UI. It then constructs a replacement `Person` with the resolved preferences and
+calls `Model#setPerson`. `Person#withContactPreferences` retains its original null-means-keep
+contract for other callers. All unrelated fields and the active filter are preserved. `edit`, `info`, `note`, `withNextAction` and
 `PersonBuilder` also copy both preferences. `PersonCard` hides absent values and wraps recorded values.
 `JsonAdaptedPerson` persists optional `preferredContactChannel` and `preferredContactTiming` strings; missing or
 null properties mean absence, while invalid non-null values produce `IllegalValueException`.
+Clearing uses this existing absence representation without changing the JSON format. Clearing absent fields and
+repeating clears are safe. Tests cover set/clear combinations, raw markers, invalid-input atomicity, filtered indices,
+unrelated-field preservation, descriptor equality/copying, JSON save/reload after clearing, and live card label hiding.
 
 The following sequence shows a successful update; parser validation and index checks precede model mutation.
 
