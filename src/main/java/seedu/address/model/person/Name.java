@@ -64,6 +64,17 @@ public class Name {
         return null;
     }
 
+    /**
+     * Returns whether this name and {@code otherName} are equal after ignoring letter case and redundant spaces.
+     */
+    public boolean hasSameName(Name otherName) {
+        requireNonNull(otherName);
+        return getWhitespaceNormalizedName().equalsIgnoreCase(otherName.getWhitespaceNormalizedName());
+    }
+
+    private String getWhitespaceNormalizedName() {
+        return fullName.trim().replaceAll(" +", " ");
+    }
 
     @Override
     public String toString() {

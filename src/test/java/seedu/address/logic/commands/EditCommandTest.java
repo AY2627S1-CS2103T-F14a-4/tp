@@ -176,6 +176,19 @@ public class EditCommandTest {
     }
 
     @Test
+    public void execute_duplicateNameDifferingOnlyInCaseOrSpacingUnfilteredList_failure() {
+        Person firstPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        EditCommand differentCaseCommand = new EditCommand(INDEX_SECOND_PERSON,
+                new EditPersonDescriptorBuilder()
+                        .withName(firstPerson.getName().fullName.toUpperCase(Locale.ROOT)).build());
+        EditCommand extraSpacingCommand = new EditCommand(INDEX_SECOND_PERSON,
+                new EditPersonDescriptorBuilder().withName(firstPerson.getName().fullName.replace(" ", "  ")).build());
+
+        assertCommandFailure(differentCaseCommand, model, EditCommand.MESSAGE_DUPLICATE_NAME);
+        assertCommandFailure(extraSpacingCommand, model, EditCommand.MESSAGE_DUPLICATE_NAME);
+    }
+
+    @Test
     public void execute_duplicatePhoneUnfilteredList_failure() {
         Person firstPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()

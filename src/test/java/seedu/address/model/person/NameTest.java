@@ -54,6 +54,12 @@ public class NameTest {
     }
 
     @Test
+    public void hasSameName() {
+        assertTrue(new Name("  Ada   Lovelace ").hasSameName(new Name("ada lovelace")));
+        assertTrue(new Name("Σ").hasSameName(new Name("ς")));
+    }
+
+    @Test
     public void equals() {
         Name name = new Name("Valid Name");
 

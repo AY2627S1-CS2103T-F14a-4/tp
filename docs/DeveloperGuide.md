@@ -261,7 +261,7 @@ The following sequence shows the confirmation gate before selected tags are dele
 
 <puml src="diagrams/TagDeleteSequenceDiagram.puml" alt="Deleting tags with confirmation sequence" />
 
-### Contact preferences (US12)
+### Contact preferences
 
 `ContactCommandParser` accepts `contact INDEX [ch/CHANNEL|-] [tm/TIMING|-]`. It requires a positive index
 and at least one preference, and rejects duplicate prefixes. Prefixes are case-sensitive and begin after an
@@ -302,7 +302,7 @@ are rejected. Clearing reuses this absence representation. The card hides absent
 values. Parser, command and storage tests cover set/omit/clear combinations, filtered indices, preservation of
 unrelated fields and save/reload compatibility.
 
-### Financial information (US13)
+### Financial information
 
 `InfoCommandParser` accepts `info INDEX [fn/VALUE|-] [pr/VALUE|-] [ai/VALUE|-]`, requiring a positive index
 and at least one field. Prefixes may appear in any order at whitespace boundaries; duplicates, slash-first
@@ -339,7 +339,7 @@ properties load as absent, while non-null values are validated. Clearing therefo
 Present values appear on the card; absent labels are hidden. Regression tests cover financial notation and Unicode,
 validation and atomicity, descriptor states, original filtered indices, and persistence after setting or clearing.
 
-### Dated interaction notes (US14)
+### Dated interaction notes
 
 `note INDEX d/yyyy-MM-dd [t/TYPE] [o/OUTCOME] n/NOTE` appends an interaction note to the person at the displayed
 client index. It works for clients and prospects, preserves the current filter, and does not replace earlier entries.
@@ -380,6 +380,17 @@ measurement. No fixed card height or forced list refresh is needed.
 
 The parser distinguishes missing index, date and note prefix; malformed calendar dates and blank text have specific
 errors. Execution rejects indices outside the currently displayed list before changing the model.
+
+Missing indices, dates or note prefixes produce an error. Dates such as `2026-02-30` are rejected with
+`Interaction date must be a valid date in yyyy-MM-dd format.` Blank note text produces
+`Interaction note cannot be empty.` An index outside the displayed list produces
+`The person index provided is invalid.` These input errors leave the stored records unchanged.
+
+Unsupported or empty `t/` values report
+`Interaction type must be MEETING, CALL, MESSAGE, OTHER, or UNSPECIFIED.` Unsupported or empty `o/` values report
+`Interaction outcome must be SUCCESSFUL, UNSUCCESSFUL, PENDING, or UNSPECIFIED.` Repeated header prefixes produce
+the standard duplicate-prefix error. Metadata written after `n/` remains literal note text and does not set type
+or outcome.
 
 This feature provides adding, displaying, editing and deleting dated notes, with chronological sorting and
 structured type/outcome metadata. Searching interaction notes (US16) remains outside this feature.
@@ -431,6 +442,12 @@ The parser requires two positive indices and at least one editable field. When s
 `n/` and is calendar-validated; explicitly supplied future dates are rejected during execution. As with `note`,
 everything after `n/` is treated as note content, including further prefix-like strings.
 
+Missing arguments, missing both editable fields, invalid indices, invalid dates, and blank supplied text produce an
+error without changing records. Invalid dates produce `Interaction date must be a valid date in yyyy-MM-dd format.`
+An out-of-range contact index produces `The person index provided is invalid.` An out-of-range note index, including
+when the contact has no notes, produces `The interaction note index provided is invalid.` Blank text produces
+`Interaction note cannot be empty.`
+
 `NoteEditCommand` resolves the contact against the filtered list and the note against its chronologically ordered
 history, using one-based indices. It rejects out-of-range indices (including empty histories) before mutation.
 It copies the history and replaces just the selected entry with an `InteractionNote` containing the supplied
@@ -451,6 +468,10 @@ second interaction note from the first contact in the currently filtered list.
 
 `notedelete CONTACT_INDEX NOTE_INDEX` is routed to `NoteDeleteCommandParser`, which requires exactly two
 positive integer indices using `ParserUtil.parseIndex`.
+
+Missing or extra arguments and invalid indices produce an error without changing records. An out-of-range contact
+index produces `The person index provided is invalid.` An out-of-range note index, including when the contact has
+no notes, produces `The interaction note index provided is invalid.`
 
 `NoteDeleteCommand` resolves the contact against the currently filtered list and the note against that
 contact's chronologically ordered history. Both indices are one-based. Out-of-range indices, including an empty
@@ -476,7 +497,7 @@ including an empty history.
 
 Automated and manual regression checks are described in the [Testing guide](Testing.md#us14-interaction-note-regression-checks).
 
-### Follow-ups (US18, US19 and US20)
+### Follow-ups
 
 Each `Person` has zero or one immutable `NextAction`: an action description, a `LocalDate` due date,
 and a boolean completion status. Absence is exposed through `Person#getNextAction()` as an empty `Optional`.
@@ -484,7 +505,7 @@ The value participates in full person equality and hashing, but does not affect 
 `Person#withNextAction` creates a replacement person while preserving all unrelated information.
 `EditCommand`, `InfoCommand` and `NoteCommand` must carry this field into their replacement persons.
 
-#### Recording or replacing an action (US18)
+#### Recording or replacing an action
 
 `ClientBookParser` routes `next` to `NextCommandParser`, which uses `ArgumentTokenizer` for `a/` and `d/`.
 The parser validates the index through `ParserUtil#parseIndex`, rejects duplicate prefixes, and distinguishes
@@ -493,6 +514,23 @@ missing action/date fields. `NextAction` strips surrounding description whitespa
 and strict calendar validation. Both parsing and model construction restrict the year to 1–9999;
 year zero is rejected, including when loading JSON. Calendar parsing and the model continue to
 accept historical dates so existing saved follow-ups remain loadable as they become overdue.
+
+##### Validation errors
+
+Input | Error message
+------|--------------
+`next` | `Person index is required.`
+`next 1 d/2026-10-20` | `Next action is required: use a/ACTION.`
+`next 1 a/Call` or `next 1 a/Call d/` | `Due date is required: use d/yyyy-MM-dd.`
+`next 0 a/Call d/2026-10-20` or a negative/non-integer index | `Index must be a positive integer.`
+`next 99 a/Call d/2026-10-20` when fewer than 99 people are displayed | `The person index provided is invalid.`
+`next 1 a/ d/2026-10-20` or an action over 200 characters | `Next action must contain 1 to 200 characters.`
+`next 1 a/Call d/2026-02-30` | `Due date must be a valid date in yyyy-MM-dd format.`
+`next 1 a/Call d/2026-10-25` when today is `2026-10-26` | `Follow-up date cannot be before today.`
+
+Repeated `a/` or `d/` prefixes produce the standard duplicate-prefix error. Space-prefixed `a/` and `d/`
+are reserved delimiters and cannot appear literally within the description. URLs such as `https://example.com`
+and other text are accepted.
 
 `NextCommand` resolves the visible person against its index in the complete list, rejects invalid indices,
 and checks the requested date against `LocalDate.now(clock)` before any mutation. Both new and
@@ -513,7 +551,7 @@ The diagram shows the successful path, assuming the example date is today or lat
 Parser failures, invalid displayed indices and past replacement dates stop before mutation;
 save failures follow the existing `LogicManager` error handling.
 
-#### Completing an action (US20)
+#### Completing an action
 
 `ClientBookParser` routes `done INDEX` to `DoneCommandParser`. Empty arguments report
 `Person index is required.`; otherwise `ParserUtil#parseIndex` validates the entire argument string,
@@ -522,6 +560,20 @@ rejecting zero, negative, non-integer and multiple indices.
 `DoneCommand` first resolves the visible person against its index in the complete list, then checks that the selected
 person has a next action. These checks occur before any model mutation and report, respectively,
 `Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX` and `NAME has no next action to complete.`.
+
+##### Validation errors
+
+The command checks these conditions in the order shown; a rejected command leaves all data and the current filter
+unchanged:
+
+Condition | Error message
+----------|--------------
+The index is outside the currently displayed list | `The person index provided is invalid.`
+The person has no next action | `NAME has no next action to complete.`
+
+`done` without an index reports `Person index is required.`. Zero, negative numbers, non-integers, and extra
+arguments such as `done 1 2` report `Index must be a positive integer.`.
+
 If the action is already completed, the command returns a normal `CommandResult` with
 `Next action for NAME is already completed.` without calling `Model#setPerson` or changing the filter.
 
@@ -535,7 +587,7 @@ Tests cover the immutable completed copy, preserved description/date and person 
 indices, out-of-range indices, absent actions, repeated completion, unchanged data on errors, command equality,
 string representation, parser validation and routing through `ClientBookParser`.
 
-#### Rescheduling existing follow-ups (US21)
+#### Rescheduling existing follow-ups
 
 `ClientBookParser` routes `reschedule INDEX d/yyyy-MM-dd [a/ACTION]` to
 `RescheduleCommandParser`. It reuses the existing `a/` and `d/` prefixes, index parsing,
@@ -563,7 +615,7 @@ missing follow-ups, date-only and description changes, reopening completed actio
 past dates without mutation, local-zone date boundaries and due-filter updates. Model and JSON
 round-trip tests verify immutable rescheduling, pending status and preservation of optional fields.
 
-#### Yearly recurring reminders (US22)
+#### Yearly recurring reminders
 
 `ClientBookParser` dispatches `remind INDEX a/LABEL d/MM-dd` to `RemindCommandParser`, which reuses
 `ParserUtil.parseIndex` and the existing action/date prefixes. It rejects duplicate/missing prefixes and
@@ -605,7 +657,7 @@ captured execution date. The 30-day horizon uses `ChronoUnit.DAYS`, supports yea
 accumulated overdue annual occurrence. `PersonCard` shows labels and next dates in the existing card;
 `done` still changes only `NextAction`.
 
-#### Viewing due actions (US19)
+#### Viewing due actions
 
 `ClientBookParser` routes argument-free `due` to `DueCommand`; any arguments are rejected with
 `The due command takes no arguments.`. On each execution, `DueCommand` obtains today's date using
@@ -746,7 +798,6 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | * * * | As a financial consultant looking for a specific person | find clients or prospects using one or more name keywords | quickly locate the relevant client record. |
 | * * | As a financial consultant who remembers context rather than a name | search across preferences and notes using keywords | find the relevant relationship from the detail I remember. |
 | * * | As a financial consultant focusing on a segment of contacts | filter people by client or prospect relationship status | work with only the relevant group. |
-| * * | As a financial consultant planning the order of work | sort contacts by next follow-up or last interaction date | prioritise relationships using timely information. |
 | * | As a financial consultant maintaining long-term relationships | identify people I have not contacted recently | notice relationships that may otherwise be neglected. |
 
 #### Long Term Use and Data Continuity
@@ -765,6 +816,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | * * | As a financial consultant who relies on personal rapport | record a person's preferences and interests | make future conversations more relevant and personal. |
 | * * | As a financial consultant | record important dates shared by a client | remember occasions that matter to the relationship. |
 | * * | As a busy financial consultant about to meet or call someone | view a concise summary of their preferences, recent interactions, and next action | refresh my memory without reading the entire record. |
+| * * | As a financial consultant planning the order of work | sort contacts by next follow-up or last interaction date | prioritise relationships using timely information. |
 
 ### Use cases
 
