@@ -38,6 +38,38 @@ public class JsonAdaptedRecurringReminderTest {
     }
 
     @Test
+    public void deletionRoundTrip_preservesRemainingReminderAndAllOptionalFields() throws Exception {
+        Person source = new PersonBuilder().withFinancialNeed("Retirement").withPriority("High")
+                .withAreaOfInterest("Insurance").withPreferredContactChannel("Email")
+                .withPreferredContactTiming("Morning").withTags("friend")
+                .withInteractionNotes(new InteractionNote(LocalDate.of(2026, 1, 1), "Discussed plans"))
+                .withNextAction(new NextAction("Call", LocalDate.of(2026, 1, 2), true))
+                .withRecurringReminders(new RecurringReminder("Birthday", MonthDay.of(2, 29)),
+                        new RecurringReminder("Renewal", MonthDay.of(12, 31))).build();
+        Person oneRemaining = source.withoutRecurringReminder("bIRTHDAY");
+        String json = JsonUtil.toJsonString(new JsonAdaptedPerson(oneRemaining));
+        Person loaded = JsonUtil.fromJsonString(json, JsonAdaptedPerson.class).toModelType();
+        assertEquals(oneRemaining, loaded);
+        assertEquals(List.of(new RecurringReminder("Renewal", MonthDay.of(12, 31))), loaded.getRecurringReminders());
+        Person noneRemaining = loaded.withoutRecurringReminder("RENEWAL");
+        String emptyJson = JsonUtil.toJsonString(new JsonAdaptedPerson(noneRemaining));
+        assertEquals(noneRemaining, JsonUtil.fromJsonString(emptyJson, JsonAdaptedPerson.class).toModelType());
+        assertEquals(new PersonBuilder(source).withRecurringReminders().build(), noneRemaining);
+    }
+
+    @Test
+    public void mixedCaseDuplicateLabels_rejectsJsonWithoutNormalizingDisplaySpelling() throws Exception {
+        for (String[] labels : List.of(new String[] {"Birthday", "birthday"}, new String[] {"İ", "i"},
+                new String[] {"Σ", "ς"})) {
+            String reminders = "[{\"label\":\"" + labels[0] + "\",\"date\":\"01-01\"},"
+                    + "{\"label\":\"" + labels[1] + "\",\"date\":\"02-02\"}]";
+            String json = OLD_JSON.substring(0, OLD_JSON.length() - 1) + ",\"recurringReminders\":" + reminders + "}";
+            JsonAdaptedPerson adapted = JsonUtil.fromJsonString(json, JsonAdaptedPerson.class);
+            assertThrows(IllegalValueException.class, adapted::toModelType);
+        }
+    }
+
+    @Test
     public void missingNullOrEmptyReminderList_loadsOldData() throws Exception {
         for (String suffix : List.of("", ",\"recurringReminders\":null", ",\"recurringReminders\":[]")) {
             String json = OLD_JSON.substring(0, OLD_JSON.length() - 1) + suffix + "}";

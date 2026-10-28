@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -235,14 +236,14 @@ class JsonAdaptedPerson {
             modelNotes.add(note.toModelType());
         }
         List<RecurringReminder> modelReminders = new ArrayList<>();
-        Set<String> reminderLabels = new HashSet<>();
+        Set<String> reminderLabels = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         for (JsonAdaptedRecurringReminder reminder : recurringReminders) {
             if (reminder == null) {
                 throw new IllegalValueException("Recurring reminder cannot be null.");
             }
             RecurringReminder modelReminder = reminder.toModelType();
             if (!reminderLabels.add(modelReminder.getLabel())) {
-                throw new IllegalValueException("Recurring reminder labels must be unique.");
+                throw new IllegalValueException("Recurring reminder labels must be unique ignoring case.");
             }
             modelReminders.add(modelReminder);
         }

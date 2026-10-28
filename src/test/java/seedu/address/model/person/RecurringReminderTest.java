@@ -54,8 +54,11 @@ public class RecurringReminderTest {
         assertEquals(updated, new PersonBuilder(original).withRecurringReminders(BIRTHDAY).build());
         RecurringReminder replacement = new RecurringReminder("Birthday", MonthDay.of(3, 1));
         assertEquals(List.of(replacement), updated.withRecurringReminder(replacement).getRecurringReminders());
-        assertEquals(2, updated.withRecurringReminder(new RecurringReminder("birthday", MonthDay.of(3, 1)))
-                .getRecurringReminders().size());
+        assertEquals(List.of(replacement), updated.withRecurringReminder(
+                new RecurringReminder("birthday", MonthDay.of(3, 1))).getRecurringReminders());
+        assertEquals(original, updated.withoutRecurringReminder("bIRTHDAY"));
+        assertEquals(List.of(BIRTHDAY), updated.getRecurringReminders());
+        assertThrows(IllegalArgumentException.class, () -> updated.withoutRecurringReminder("Renewal"));
         List<RecurringReminder> input = new ArrayList<>(List.of(BIRTHDAY));
         Person copied = new Person(original.getName(), original.getPhone(), original.getEmail(), original.getTags(),
                 original.getRelationship(), null, null, null, List.of(), null, null, null, input);
@@ -66,6 +69,21 @@ public class RecurringReminderTest {
         assertEquals(List.of(BIRTHDAY), copied.getRecurringReminders());
         assertNotEquals(original, updated);
         assertEquals(updated.hashCode(), new PersonBuilder(updated).build().hashCode());
+    }
+
+    @Test
+    public void personConstructor_rejectsCaseVariantLabelsUsingLocaleIndependentMatching() {
+        for (String[] labels : List.of(new String[] {"Birthday", "birthday"}, new String[] {"İ", "i"},
+                new String[] {"Σ", "ς"})) {
+            RecurringReminder first = new RecurringReminder(labels[0], MonthDay.of(1, 1));
+            RecurringReminder second = new RecurringReminder(labels[1], MonthDay.of(2, 2));
+            assertThrows(IllegalArgumentException.class, () -> new PersonBuilder()
+                    .withRecurringReminders(first, second).build());
+            Person person = new PersonBuilder().withRecurringReminders(first).build();
+            Person updated = person.withRecurringReminder(second);
+            assertEquals(List.of(new RecurringReminder(labels[0], second.getDate())), updated.getRecurringReminders());
+            assertTrue(updated.withoutRecurringReminder(labels[1]).getRecurringReminders().isEmpty());
+        }
     }
 
     @Test

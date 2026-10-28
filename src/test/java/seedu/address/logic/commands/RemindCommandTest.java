@@ -43,9 +43,10 @@ public class RemindCommandTest {
                 command.execute(model, null).getFeedbackToUser());
         assertEquals(new PersonBuilder(original).withRecurringReminders(REMINDER).build(),
                 model.getFilteredPersonList().getFirst());
-        RecurringReminder changed = new RecurringReminder("Birthday", MonthDay.of(10, 27));
+        RecurringReminder changed = new RecurringReminder("bIRTHDAY", MonthDay.of(10, 27));
         new RemindCommand(INDEX_FIRST_PERSON, changed).execute(model, null);
-        assertEquals(List.of(changed), model.getFilteredPersonList().getFirst().getRecurringReminders());
+        assertEquals(List.of(new RecurringReminder("Birthday", changed.getDate())),
+                model.getFilteredPersonList().getFirst().getRecurringReminders());
     }
 
     @Test
@@ -74,7 +75,7 @@ public class RemindCommandTest {
         ClientBookParser parser = new ClientBookParser();
         for (String command : List.of("edit 1 p/81234567", "info 1 /fn Retirement", "note 1 d/2026-01-01 n/New",
                 "noteedit 1 1 n/Changed", "notedelete 1 1", "tag 1 priority", "contact 1 ch/Email tm/Morning",
-                "next 1 a/Call d/2026-01-02", "done 1")) {
+                "next 1 a/Call d/9999-12-31", "done 1")) {
             parser.parseCommand(command).execute(model, null);
             Person updated = model.getFilteredPersonList().getFirst();
             assertEquals(List.of(REMINDER), updated.getRecurringReminders(), command);

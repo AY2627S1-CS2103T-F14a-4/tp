@@ -500,15 +500,30 @@ control characters and slashes. The date is a strictly formatted `MonthDay`; no 
 rule is stored.
 
 `RemindCommand` resolves the displayed index and uses `Person.withRecurringReminder` through
-`Model.setPerson`. Exact case-sensitive label matching updates a reminder in place; otherwise it appends.
-`Person` defensively copies its reminder list, enforces unique labels, and includes it in equality, hashing
+`Model.setPerson`. Case-insensitive label matching updates a reminder in place and retains the existing
+label's display spelling; otherwise it appends with the supplied spelling. `equalsIgnoreCase` performs
+lookup for upserts and deletion, and `TreeSet(String.CASE_INSENSITIVE_ORDER)` enforces the same equivalence
+for model and storage uniqueness. This policy is locale-independent and does not lowercase saved labels.
+Reminder value equality retains display spelling as metadata.
+
+`Person` defensively copies its reminder list, enforces unique labels ignoring case, and includes it in equality, hashing
 and every copy path. Existing `edit`, `info` and note mutation commands pass the list through their person
 copies. `add` syntax and existing constructors are unchanged; older constructors default to an empty list.
 
 `JsonAdaptedRecurringReminder` stores `{ "label": "Birthday", "date": "02-29" }` within the person's
 `recurringReminders` array. `JsonAdaptedPerson` validates each element and rejects null elements or duplicate
-labels. A missing, null or empty array loads as an empty list, preserving compatibility with old JSON.
+labels, including case variants such as `Birthday` and `birthday`. A missing, null or empty array loads
+as an empty list, preserving compatibility with old JSON.
 Persistence uses the existing `LogicManager`/storage path, including backup and restore.
+
+`ClientBookParser` separately dispatches `unremind INDEX a/LABEL` to `UnremindCommandParser`, which reuses
+`RecurringReminder.parseLabel` for the same label validation as creation. `UnremindCommand` validates the
+displayed index and finds the label ignoring case before any mutation. A missing match (including an empty
+reminder list) reports a `CommandException`. `Person.withoutRecurringReminder` creates an immutable copy
+without that label and preserves every other field. `Model.setPerson` re-evaluates the active due filter;
+removing the last qualifying yearly reminder hides the person unless a due action still qualifies.
+The existing persistence path saves deletions. `remind` continues to require a valid nonempty date;
+its empty date syntax is not overloaded for deletion, consistent with the separate `notedelete` command.
 
 `RecurringReminder.nextOccurrence(today)` computes this year's occurrence or next year's if it has passed.
 `MonthDay.atYear` maps February 29 to February 28 in non-leap years. `NextActionDuePredicate` retains its

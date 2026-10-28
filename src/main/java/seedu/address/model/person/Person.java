@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.model.tag.Tag;
@@ -104,8 +105,10 @@ public class Person {
                 .sorted(Comparator.comparing(InteractionNote::getDate)).toList();
         this.nextAction = nextAction;
         this.recurringReminders = List.copyOf(recurringReminders);
-        checkArgument(this.recurringReminders.stream().map(RecurringReminder::getLabel).distinct().count()
-                == this.recurringReminders.size(), "Recurring reminder labels must be unique.");
+        Set<String> reminderLabels = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        this.recurringReminders.forEach(reminder -> reminderLabels.add(reminder.getLabel()));
+        checkArgument(reminderLabels.size() == this.recurringReminders.size(),
+                "Recurring reminder labels must be unique ignoring case.");
         this.preferredContactChannel = preferredContactChannel;
         this.preferredContactTiming = preferredContactTiming;
     }
@@ -126,13 +129,13 @@ public class Person {
         return recurringReminders;
     }
 
-    /** Replaces the reminder with the same case-sensitive label, or appends a new reminder. */
+    /** Updates a label ignoring case, preserving its display spelling; otherwise appends a new reminder. */
     public Person withRecurringReminder(RecurringReminder reminder) {
         requireAllNonNull(reminder);
         List<RecurringReminder> updated = new ArrayList<>(recurringReminders);
         int existing = -1;
         for (int i = 0; i < updated.size(); i++) {
-            if (updated.get(i).getLabel().equals(reminder.getLabel())) {
+            if (updated.get(i).getLabel().equalsIgnoreCase(reminder.getLabel())) {
                 existing = i;
                 break;
             }
@@ -140,8 +143,18 @@ public class Person {
         if (existing < 0) {
             updated.add(reminder);
         } else {
-            updated.set(existing, reminder);
+            updated.set(existing, new RecurringReminder(updated.get(existing).getLabel(), reminder.getDate()));
         }
+        return new Person(name, phone, email, tags, relationship, financialNeed, priority, areaOfInterest,
+                interactionNotes, nextAction, preferredContactChannel, preferredContactTiming, updated);
+    }
+
+    /** Removes the label ignoring case, preserving every other person field. */
+    public Person withoutRecurringReminder(String label) {
+        String trimmed = RecurringReminder.parseLabel(label);
+        List<RecurringReminder> updated = new ArrayList<>(recurringReminders);
+        boolean removed = updated.removeIf(reminder -> reminder.getLabel().equalsIgnoreCase(trimmed));
+        checkArgument(removed, "No yearly reminder matches the supplied label.");
         return new Person(name, phone, email, tags, relationship, financialNeed, priority, areaOfInterest,
                 interactionNotes, nextAction, preferredContactChannel, preferredContactTiming, updated);
     }

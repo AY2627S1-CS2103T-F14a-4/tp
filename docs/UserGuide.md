@@ -536,12 +536,13 @@ Examples:
 
 * `remind 1 a/Birthday d/11-10`
 * `remind 1 a/Policy renewal d/12-01`
-* `remind 1 a/Birthday d/11-11` changes that person's existing `Birthday` reminder to November 11.
+* `remind 1 a/birthday d/11-11` updates the existing `Birthday` reminder to November 11, keeping its display spelling.
 
 The index refers to the currently displayed list. The label must contain 1–50 characters after trimming
-surrounding whitespace; control characters and `/` are not accepted. Labels are case-sensitive:
-`Birthday` and `birthday` are different reminders. A matching label updates the date; another label adds
-an additional reminder. The `a/` and `d/` fields are both required and cannot be repeated.
+surrounding whitespace; control characters and `/` are not accepted. Label matching ignores case:
+`Birthday`, `birthday` and `BIRTHDAY` refer to the same reminder. A matching label updates the date and
+keeps the existing display spelling; another label adds a reminder with the supplied spelling. The `a/`
+and `d/` fields are both required and cannot be repeated. An empty `d/` is invalid; use `unremind` to delete.
 
 Use exactly two month and day digits, with a real calendar date: `02-29` is accepted, while `2-29`,
 `02-30` and `2026-11-10` are rejected. Dates repeat every year. February 29 is observed on February 28
@@ -551,6 +552,26 @@ The contact card shows each label and its next occurrence as `Yearly | YYYY-MM-D
 Reminders survive restarting ClientBook and do not replace the person's one-off next action or other
 optional information. `done` completes only that one-off next action; yearly reminders continue annually.
 Only yearly dates are supported; reminders have no completion history.
+
+### Removing a yearly reminder: `unremind`
+
+Removes one yearly reminder from a client or prospect in the currently displayed list.
+
+Format: `unremind INDEX a/LABEL`
+
+For example, `unremind 1 a/birthday` removes the first displayed person's `Birthday` reminder, ignoring
+label case. Multi-word labels work too: `unremind 1 a/Policy renewal`. The label follows the same
+1–50-character validation and surrounding-whitespace trimming as `remind`. The `a/` field is required
+and cannot be repeated; no date is accepted.
+
+An invalid displayed index reports the usual invalid-index error. An unmatched label or a person without
+reminders reports `NAME has no yearly reminder matching label "LABEL".` and changes nothing. Successful
+deletion preserves all other reminders, the next action, notes, preferences and other contact information,
+and remains deleted after restarting ClientBook.
+
+While `due` is active, removing the last qualifying reminder makes the person disappear unless they
+still have an incomplete due/overdue next action. Other qualifying reminders keep the person visible.
+Use the updated displayed indices for your next command, or use `list` to view everyone.
 
 ### Viewing due follow-ups and upcoming reminders: `due`
 
@@ -683,6 +704,7 @@ Action     | Format, Examples
 **Reschedule** | `reschedule INDEX d/yyyy-MM-dd [a/ACTION]`<br> e.g., `reschedule 1 d/2026-11-02`
 **Done**   | `done INDEX`<br> e.g., `done 1`
 **Yearly reminder** | `remind INDEX a/LABEL d/MM-dd`<br>e.g. `remind 1 a/Birthday d/11-10`
+**Remove yearly reminder** | `unremind INDEX a/LABEL`<br>e.g. `unremind 1 a/birthday`
 **Due**    | `due`
 **List**   | `list`
 **Help**   | `help`

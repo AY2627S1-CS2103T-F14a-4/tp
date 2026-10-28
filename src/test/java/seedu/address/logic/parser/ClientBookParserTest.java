@@ -32,6 +32,7 @@ import seedu.address.logic.commands.RescheduleCommand;
 import seedu.address.logic.commands.RestoreCommand;
 import seedu.address.logic.commands.TagCommand;
 import seedu.address.logic.commands.TagDeleteCommand;
+import seedu.address.logic.commands.UnremindCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.PersonMatchesFiltersPredicate;
@@ -89,6 +90,12 @@ public class ClientBookParserTest {
                 parser.parseCommand("reschedule 1 d/2026-11-02"));
         assertEquals(new RescheduleCommand(INDEX_FIRST_PERSON, date, "Send revised proposal"),
                 parser.parseCommand("reschedule 1 a/Send revised proposal d/2026-11-02"));
+    }
+
+    @Test
+    public void parseCommand_unremind() throws Exception {
+        assertEquals(new UnremindCommand(INDEX_FIRST_PERSON, "birthday"),
+                parser.parseCommand("unremind 1 a/birthday"));
     }
 
     @Test

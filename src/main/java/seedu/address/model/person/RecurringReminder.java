@@ -22,11 +22,17 @@ public class RecurringReminder {
     /** Creates a yearly reminder after stripping surrounding label whitespace. */
     public RecurringReminder(String label, MonthDay date) {
         requireAllNonNull(label, date);
+        this.label = parseLabel(label);
+        this.date = date;
+    }
+
+    /** Validates and strips a label without changing its display spelling. */
+    public static String parseLabel(String label) {
+        requireAllNonNull(label);
         String trimmed = label.strip();
         checkArgument(!trimmed.isEmpty() && trimmed.length() <= 50 && !trimmed.contains("/")
                 && trimmed.chars().noneMatch(Character::isISOControl), MESSAGE_LABEL_CONSTRAINTS);
-        this.label = trimmed;
-        this.date = date;
+        return trimmed;
     }
 
     /** Parses exactly two month digits and two day digits; February 29 is supported. */
