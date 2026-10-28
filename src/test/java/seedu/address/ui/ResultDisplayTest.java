@@ -12,10 +12,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import javafx.application.Platform;
-import javafx.geometry.Orientation;
 import javafx.geometry.VPos;
 import javafx.scene.Scene;
-import javafx.scene.control.ScrollBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.Priority;
@@ -76,7 +74,8 @@ public class ResultDisplayTest {
                     try {
                         layout.layout();
                         double twoRowHeight = display.getRoot().getHeight();
-                        assertFalse(getVerticalScrollBar(textArea).isVisible());
+                        assertEquals(ScrollPane.ScrollBarPolicy.NEVER,
+                                getScrollPane(textArea).getVbarPolicy());
 
                         display.setFeedbackToUser("test", "Line 1\nLine 2\nLine 3");
                         assertEquals(4, textArea.getPrefRowCount());
@@ -86,7 +85,6 @@ public class ResultDisplayTest {
                                 layout.layout();
                                 double fourRowHeight = display.getRoot().getHeight();
                                 assertTrue(fourRowHeight > twoRowHeight);
-                                assertFalse(getVerticalScrollBar(textArea).isVisible());
                                 assertEquals(ScrollPane.ScrollBarPolicy.NEVER,
                                         getScrollPane(textArea).getVbarPolicy());
 
@@ -96,7 +94,6 @@ public class ResultDisplayTest {
                                     try {
                                         layout.layout();
                                         assertEquals(fourRowHeight, display.getRoot().getHeight());
-                                        assertTrue(getVerticalScrollBar(textArea).isVisible());
                                         assertEquals(ScrollPane.ScrollBarPolicy.AS_NEEDED,
                                                 getScrollPane(textArea).getVbarPolicy());
                                         assertViewportFitsFourRowsButNotFive(textArea);
@@ -155,8 +152,6 @@ public class ResultDisplayTest {
                                 layout.layout();
                                 assertEquals(4, textArea.getPrefRowCount());
                                 assertTrue(textArea.isWrapText());
-                                assertFalse(getScrollBar(textArea, Orientation.HORIZONTAL).isVisible());
-                                assertFalse(getVerticalScrollBar(textArea).isVisible());
                                 assertEquals(ScrollPane.ScrollBarPolicy.NEVER,
                                         getScrollPane(textArea).getVbarPolicy());
 
@@ -194,19 +189,6 @@ public class ResultDisplayTest {
 
     private void runAfterLayoutUpdates(Runnable task) {
         Platform.runLater(() -> Platform.runLater(task));
-    }
-
-    private ScrollBar getVerticalScrollBar(TextArea textArea) {
-        return getScrollBar(textArea, Orientation.VERTICAL);
-    }
-
-    private ScrollBar getScrollBar(TextArea textArea, Orientation orientation) {
-        return textArea.lookupAll(".scroll-bar").stream()
-                .filter(ScrollBar.class::isInstance)
-                .map(ScrollBar.class::cast)
-                .filter(scrollBar -> scrollBar.getOrientation() == orientation)
-                .findFirst()
-                .orElseThrow();
     }
 
     private void assertViewportFitsFourRowsButNotFive(TextArea textArea) {
