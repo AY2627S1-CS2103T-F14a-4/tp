@@ -144,7 +144,8 @@ public class DueCommandTest {
                 .withPerson(both).withPerson(DUE_YESTERDAY).build(), new UserPrefs());
         command.execute(mixed, null);
         assertEquals(List.of(DUE_YESTERDAY, both, upcoming), mixed.getFilteredPersonList());
-        new DoneCommand(seedu.address.commons.core.index.Index.fromOneBased(2)).execute(mixed, null);
+        new DoneCommand(Index.fromOneBased(3)).execute(mixed, null);
+        assertTrue(mixed.getClientBook().getPersonList().get(2).getNextAction().orElseThrow().isCompleted());
         assertEquals(3, mixed.getFilteredPersonList().size(), "Upcoming reminders keep a completed person visible");
     }
 

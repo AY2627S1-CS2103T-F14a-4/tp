@@ -63,7 +63,7 @@ public class ContactCommand extends Command {
                 descriptor.isChannelSpecified() ? descriptor.getChannel().orElse(null)
                         : original.getPreferredContactChannel().orElse(null),
                 descriptor.isTimingSpecified() ? descriptor.getTiming().orElse(null)
-                        : original.getPreferredContactTiming().orElse(null));
+                        : original.getPreferredContactTiming().orElse(null), original.getRecurringReminders());
         model.setPerson(original, updated);
         return new CommandResult(String.format(MESSAGE_SUCCESS, original.getName().fullName));
     }

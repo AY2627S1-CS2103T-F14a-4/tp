@@ -2,6 +2,7 @@ package seedu.address.logic.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.showPersonAtIndex;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
@@ -105,6 +106,25 @@ public class RemindCommandTest {
             assertEquals(original.getPreferredContactChannel(), updated.getPreferredContactChannel(), command);
             assertEquals(original.getPreferredContactTiming(), updated.getPreferredContactTiming(), command);
         }
+    }
+
+    @Test
+    public void execute_clearContactPreferences_preservesRemindersAndOtherFields() throws Exception {
+        Person original = new PersonBuilder(model.getClientBook().getPersonList().getFirst())
+                .withPreferredContactChannel("Email").withPreferredContactTiming("Morning")
+                .withNextAction(new NextAction("Call", LocalDate.of(2026, 1, 2), true))
+                .withRecurringReminders(REMINDER).build();
+        model.setPerson(model.getClientBook().getPersonList().getFirst(), original);
+
+        new ClientBookParser().parseCommand("contact 1 ch/- tm/-").execute(model, null);
+
+        Person updated = model.getClientBook().getPersonList().getFirst();
+        assertTrue(updated.getPreferredContactChannel().isEmpty());
+        assertTrue(updated.getPreferredContactTiming().isEmpty());
+        assertEquals(List.of(REMINDER), updated.getRecurringReminders());
+        assertEquals(original.getNextAction(), updated.getNextAction());
+        assertEquals(original.getTags(), updated.getTags());
+        assertEquals(original.getInteractionNotes(), updated.getInteractionNotes());
     }
 
     @Test
