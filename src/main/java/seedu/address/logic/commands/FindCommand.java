@@ -1,6 +1,7 @@
 package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_DETAIL_KEYWORD;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_RELATIONSHIP;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
 
@@ -20,14 +21,17 @@ public class FindCommand extends Command {
     public static final String COMMAND_WORD = "find";
 
     public static final String MESSAGE_USAGE = COMMAND_WORD + ": Finds persons matching all supplied filter types. "
-            + "Names match any name keyword and tags match any tag keyword (case-insensitive).\n"
+            + "Names, tags and remembered details partially match any corresponding keyword (case-insensitive).\n"
             + "Parameters: [KEYWORD [MORE_KEYWORDS]...] [" + PREFIX_RELATIONSHIP + "RELATIONSHIP] "
-            + "[" + PREFIX_TAG + "TAG [MORE_TAGS...]]\n"
+            + "[" + PREFIX_TAG + "TAG [MORE_TAGS...]] "
+            + "[" + PREFIX_DETAIL_KEYWORD + "DETAIL_KEYWORD [MORE_KEYWORDS...]]\n"
             + "Examples:\n"
             + COMMAND_WORD + " alice bob charlie\n"
             + COMMAND_WORD + " " + PREFIX_RELATIONSHIP + "client\n"
             + COMMAND_WORD + " " + PREFIX_TAG + "priority referral\n"
-            + COMMAND_WORD + " alice bob " + PREFIX_RELATIONSHIP + "prospect " + PREFIX_TAG + "priority";
+            + COMMAND_WORD + " " + PREFIX_DETAIL_KEYWORD + "retirement WhatsApp\n"
+            + COMMAND_WORD + " alice " + PREFIX_RELATIONSHIP + "client " + PREFIX_TAG + "priority "
+            + PREFIX_DETAIL_KEYWORD + "retirement";
 
     private final Predicate<Person> predicate;
 
@@ -43,7 +47,8 @@ public class FindCommand extends Command {
         requireNonNull(model);
         model.updateFilteredPersonList(predicate);
         return new CommandResult(
-                String.format(Messages.MESSAGE_PERSONS_LISTED_OVERVIEW, model.getFilteredPersonList().size()));
+                String.format(Messages.MESSAGE_PERSONS_LISTED_OVERVIEW, model.getFilteredPersonList().size()),
+                false, false, false, true);
     }
 
     @Override

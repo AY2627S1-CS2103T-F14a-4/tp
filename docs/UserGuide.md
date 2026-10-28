@@ -91,9 +91,9 @@ Format: `add r/RELATIONSHIP n/NAME e/EMAIL p/PHONE_NUMBER [t/TAG]...`
 * `NAME` must contain 1–100 characters after leading and trailing whitespace is removed. It may include letters,
   spaces, hyphens (`-`), apostrophes (`'`), and the relationship markers `s/o`, `d/o`, or `w/o`.
 * A name must not duplicate another contact's name.
-* `EMAIL` must contain one `@`, no whitespace, text in both the local and domain parts, and at least one dot in the
-  domain. Its local part may use common characters such as `.`, `_`, `+`, and `-`; each domain label may use
-  letters, digits, and hyphens, and cannot exceed 63 characters.
+* `EMAIL` must contain 5–254 characters, one `@`, no whitespace, text in both the local and domain parts, and at
+  least one dot in the domain. Its local part may use common characters such as `.`, `_`, `+`, and `-`; each domain
+  label may use letters, digits, and hyphens, and cannot exceed 63 characters.
 * Each phone number must contain 8 to 15 digits, excluding an optional leading `+`, following the E.164 international
   maximum. Spaces, hyphens, parentheses, and periods may separate digits. You can record multiple numbers in one
   value by separating them with labels, for example, `home: 92849584 ph: 02848594`.
@@ -167,15 +167,20 @@ Edits an existing person in the client book.
 
 Format: `edit INDEX [r/RELATIONSHIP] [n/NAME] [p/PHONE] [e/EMAIL]`
 
+<box type="tip" seamless>
+
 * Edits the person at the specified `INDEX`. The index refers to the index number shown in the displayed person list. The index **must be a positive integer** 1, 2, 3, ...
 * At least one of the optional fields must be provided.
 * Existing values will be updated to the input values.
 * `RELATIONSHIP` must be either `Client` or `Prospect`.
 * The edited name must not duplicate another contact's name.
-* `EMAIL` must meet the same format requirements as `add`, including a maximum of 63 characters for each domain label.
+* `EMAIL` must meet the same format requirements as `add`, including a total length of 5–254 characters and a
+  maximum of 63 characters for each domain label.
 * The edited email address and phone number must not duplicate those of another contact. Phone numbers use the same
   formatting-insensitive, multiple-number comparison as `add`; for example, `9999 9999` and `99999999` conflict.
   Email-domain casing is also ignored, so `alice@example.com` conflicts with `alice@EXAMPLE.COM`.
+
+</box>
 
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.
@@ -289,26 +294,46 @@ free text, so check the saved preference when unsure.
 
 Adds a dated note to a client or prospect. Notes appear on the person's card in ascending date order (oldest first).
 
-Format: `note INDEX d/DATE n/NOTE`
+Format: `note INDEX d/DATE [t/TYPE] [o/OUTCOME] n/NOTE`
 
 * `INDEX` refers to the currently displayed list, including search results.
 * `DATE` must be a real calendar date in `yyyy-MM-dd` format, with a year from `0001` to `9999`.
   Year `0000` is rejected with `Interaction date must be a valid date in yyyy-MM-dd format.`
   Today's date and past dates are accepted.
   Future dates are rejected with `Interaction date cannot be in the future.` using the computer's local date.
-* Put the date before `n/`. Everything after `n/` is note text, including URLs, punctuation and prefix-like text.
+* Put `d/DATE` first, then any optional `t/` and `o/` fields in either order, before `n/`.
+  Everything after `n/` is note text, including URLs, punctuation and prefix-like text.
+* `TYPE` describes the interaction: `MEETING`, `CALL`, `MESSAGE`, or `OTHER`.
+  `OUTCOME` records its result: `SUCCESSFUL`, `UNSUCCESSFUL`, or `PENDING`.
+  Values ignore case and are saved and displayed in uppercase. For example, `t/call` means `CALL`.
+* Both fields are optional and independent. An omitted field is `UNSPECIFIED`, meaning no detail was recorded;
+  this does not imply `OTHER`, a successful interaction, or a pending result. You may also supply `UNSPECIFIED`
+  explicitly. Existing commands without either field still work, and older saved notes load with these defaults.
+* Each header prefix (`d/`, `t/`, `o/`) may appear only once. Blank or unsupported metadata values are rejected.
 * Note text cannot be blank. Surrounding whitespace is removed; case and internal text are preserved.
 * Adding a note keeps all previous notes. An exact duplicate (same date and text) for the same contact is rejected
   with `This interaction note already exists for this contact.` Existing records remain unchanged.
+* Changing type or outcome does not bypass the same-date-and-text duplicate check.
 * Notes with the same date but different text, or the same text but different dates, are allowed.
   Text comparison is case-sensitive and preserves internal spaces; surrounding whitespace is removed as usual.
   Identical notes for different contacts are allowed.
 * Notes are saved automatically and preserved when using `edit` or `info`.
-* Each entry shows its date and text under **Interaction notes:** on the person's card. Long text wraps, and the
+* Each entry shows its date, type, outcome and text under **Interaction notes:** on the person's card. Long text wraps, and the
   card grows to fit its contents immediately. Scroll the client list to read longer histories.
 * There is no maximum note length imposed by this command. Enter a note on one command line.
 
 Example: `note 1 d/2026-10-06 n/Discussed retirement planning and agreed to follow up next month.`
+
+Example with interaction details:
+
+`note 1 d/2026-10-28 t/CALL o/UNSUCCESSFUL n/Client did not answer`
+
+The card displays `1. 2026-10-28 [Type: CALL; Outcome: UNSUCCESSFUL]: Client did not answer`
+if this is the first note. Use today's date or a past date when trying the example.
+
+Partial metadata is supported: `note 1 d/2026-10-28 t/MESSAGE n/Sent policy details` displays
+`[Type: MESSAGE; Outcome: UNSPECIFIED]`. With neither field, the display shows
+`[Type: UNSPECIFIED; Outcome: UNSPECIFIED]`.
 
 Success message: `Added interaction note for PERSON_NAME.`
 
@@ -322,9 +347,15 @@ Missing indices, dates or note prefixes produce an error. Dates such as `2026-02
 `Interaction note cannot be empty.` An index outside the displayed list produces
 `The person index provided is invalid.` These input errors leave the stored records unchanged.
 
+Unsupported or empty `t/` values report
+`Interaction type must be MEETING, CALL, MESSAGE, OTHER, or UNSPECIFIED.` Unsupported or empty `o/` values report
+`Interaction outcome must be SUCCESSFUL, UNSUCCESSFUL, PENDING, or UNSPECIFIED.` Repeated header prefixes
+produce the standard duplicate-prefix error. Use lowercase prefixes with a slash (`t/CALL`, not `t=CALL`).
+Metadata written after `n/` remains literal note text and does not set type or outcome.
+
 Backdated notes are placed in chronological order. Notes with the same date retain their existing order;
 new notes with that date appear after them. Displayed note numbers update to match this order.
-Searching interaction notes is not currently supported.
+Use `find k/KEYWORD` to search interaction note dates and text together with other remembered details.
 
 ### Editing a dated interaction note: `noteedit`
 
@@ -346,6 +377,8 @@ Format: `noteedit CONTACT_INDEX NOTE_INDEX [d/DATE] [n/NEW_NOTE_CONTENT]`
   Notes with identical dates retain their relative order. Other notes and all other contact information are preserved.
 * New text cannot be blank. Surrounding whitespace is removed; case and internal text are preserved.
   Everything after `n/` is note text, including URLs and prefix-like strings. Enter it on one command line.
+* Type and outcome are preserved when changing either date or text. `noteedit` does not change these fields;
+  `t/` and `o/` after `n/` are literal note text.
 * Changes are saved automatically.
 
 Example: `noteedit 1 2 n/Discussed insurance renewal`
@@ -392,13 +425,13 @@ Missing or extra arguments and invalid indices produce an error without changing
 An out-of-range contact index produces `The person index provided is invalid.` An out-of-range note index,
 including when the contact has no notes, produces `The interaction note index provided is invalid.`
 
-### Locating persons by name, relationship or tags: `find`
+### Locating persons by name, relationship, tags or remembered details: `find`
 
-Finds persons using any combination of name keywords, relationship and tags.
+Finds persons using any combination of name keywords, relationship, tags and remembered-detail keywords.
 
-Format: `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...]]`
+Format: `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...]] [k/DETAIL_KEYWORD [MORE_KEYWORDS...]]`
 
-* Every filter is optional, but at least one name keyword, relationship or tag must be provided.
+* Every filter is optional, but at least one name keyword, relationship, tag or detail keyword must be provided.
 * Each whitespace-separated name keyword is validated independently. A keyword may contain letters with internal
   hyphens (`-`) or apostrophes (`'`), or it may be the standalone relationship marker `s/o`, `d/o`, or `w/o`.
   Digits, other symbols, and arbitrary slash forms are not allowed.
@@ -406,26 +439,54 @@ Format: `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...
   matches `Client`.
 * Keyword order does not matter; for example, `Hans Bo` matches `Bo Hans`.
 * Keyword searches consider only names.
-* Only full words match; for example, `Han` does not match `Hans`.
+* Each name keyword matches any contiguous part of a name. For example, `Alex` matches `Alexander`, while `Aex`
+  does not. A keyword can also match part of a hyphenated name, so either `Anne` or `Marie` matches `Anne-Marie Tan`.
 * Persons matching at least one keyword are returned (an `OR` search); for example, `Hans Bo` returns `Hans Gruber` and `Bo Yang`.
 * `RELATIONSHIP` must be either `client` or `prospect` and is case-insensitive.
-* Each `TAG` must be alphanumeric. A person with at least one of the supplied tags matches the tag filter.
+* Each `TAG` keyword must be alphanumeric and matches any contiguous part of a tag. For example, `t/friend`
+  matches `friend`, `friends`, and `bestfriend`. A person with at least one matching tag keyword matches the tag
+  filter.
+* Each whitespace-separated `DETAIL_KEYWORD` after `k/` performs a case-insensitive contiguous search across the
+  preferred contact channel, preferred contact timing, financial need, priority, area of interest, and every
+  interaction note's date and text, plus the follow-up action text and due date. Follow-up completion status is not
+  searched. Names, phone numbers, email addresses, relationships and tags are also not searched by `k/` because they
+  have their own filters or identifying fields.
+* Detail keywords may contain punctuation and digits, such as `6:30`, `A/B`, or `2026-10-06`. A person matching at
+  least one supplied detail keyword matches the detail filter (an `OR` search).
 * When filter types are combined, a result must match every supplied filter type. For example, a search with names,
-  a relationship and tags must match at least one name keyword **and** the relationship **and** at least one tag.
-* Put name keywords before `r/` and `t/`. Tags follow a single `t/` and are separated by spaces.
+  a relationship, tags and details must match at least one name keyword **and** the relationship **and** at least
+  one tag **and** at least one detail keyword.
+* Put name keywords before any prefixed filter. Tags follow a single `t/`, and detail keywords follow a single
+  `k/`; values within each filter are separated by spaces. The `r/`, `t/`, and `k/` filters may appear in any order.
 * Filtered persons retain the same order and indexes as in the `list` command.
+* After a successful `find`, the first matching person is selected automatically. Press the <kbd>Down</kbd> or
+  <kbd>Up</kbd> arrow key to select the next or previous result respectively. The list scrolls automatically to keep
+  the selected result visible, and navigation stops at the first and last results. If there are no matches, no
+  person is selected.
 
 Examples:
 * `find John` returns `john` and `John Doe`
+* `find Alex` returns `Alex` and `Alexander`.
+* `find Anne` and `find Marie` both return `Anne-Marie Tan`.
 * `find alex david` returns `Alex Yeoh`, `David Li`<br>
   ![result for 'find alex david'](images/findAlexDavidResult.png)
 * `find r/client` returns all clients.
 * `find r/Prospect` returns all prospects.
-* `find alex david r/prospect` returns prospects whose names contain the full word `alex` or `david`.
+* `find alex david r/prospect` returns prospects whose names contain `alex` or `david` as contiguous text.
 * `find s/o` returns persons whose names contain `s/o` as a standalone component.
 * `find Jack s/o` returns persons whose names contain either `Jack` or `s/o`.
+* `find t/friend` returns persons with tags such as `friend`, `friends`, or `bestfriend`.
 * `find t/referral priority` returns persons tagged `referral` or `priority`.
-* `find alex r/client t/priority referral` returns clients named `alex` who have a `priority` or `referral` tag.
+* `find k/retirement` returns persons whose preferences, financial information, or interaction notes contain
+  `retirement`.
+* `find k/WhatsApp 2026-10-06` returns persons whose remembered details contain `WhatsApp` or whose interaction notes
+  contain the date `2026-10-06`.
+* `find k/investment` returns persons whose follow-up action text contains `investment`, as well as matches in the
+  other remembered-detail fields.
+* `find k/2026-12-15` returns persons with an interaction note dated `2026-12-15` or a follow-up due on that date.
+  Partial date searches such as `find k/2026-12` work because date matching is contiguous.
+* `find alex r/client t/priority referral k/retirement WhatsApp` returns clients named `alex` who have a `priority`
+  or `referral` tag and whose remembered details contain `retirement` or `WhatsApp`.
 
 ### Deleting a client/prospect: `delete`
 
@@ -692,15 +753,9 @@ ClientBook data is saved automatically as a JSON file `[JAR file location]/data/
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, ClientBook starts with an empty client book at the next run. The invalid file remains on disk until you run a command (ClientBook saves after every command). Still, we recommend backing up the file before editing it.<br>
+If your changes make the data file invalid, ClientBook starts with an empty client book at the next run. The invalid file remains on disk until ClientBook next successfully saves record data, for example, after a command that changes records. Still, we recommend backing up the file before editing it.<br>
 Furthermore, certain edits can cause the ClientBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
-
-### Archiving data files `[coming in v2.0]`
-
-_Details coming soon ..._
-
---------------------------------------------------------------------------------------------------------------------
 
 ## FAQ
 
@@ -725,10 +780,10 @@ Action     | Format, Examples
 **Clear**  | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit**   | `edit INDEX [r/RELATIONSHIP] [n/NAME] [p/PHONE_NUMBER] [e/EMAIL]`<br> e.g.,`edit 2 r/Client n/James Lee e/jameslee@example.com`
-**Find**   | `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...]]`<br> e.g., `find James r/client t/priority referral`
+**Find**   | `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...]] [k/DETAIL_KEYWORD [MORE_KEYWORDS...]]`<br> e.g., `find James r/client t/priority referral k/retirement`
 **Contact** | `contact INDEX [ch/CHANNEL\|-] [tm/TIMING\|-]`<br> e.g., `contact 1 ch/WhatsApp tm/-`
 **Info**   | `info INDEX [fn/VALUE\|-] [pr/VALUE\|-] [ai/VALUE\|-]`<br> e.g., `info 1 fn/retirement planning`
-**Note**   | `note INDEX d/DATE n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
+**Note**   | `note INDEX d/DATE [t/TYPE] [o/OUTCOME] n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
 **Note edit** | `noteedit CONTACT_INDEX NOTE_INDEX [d/DATE] [n/NEW_NOTE_CONTENT]`<br> e.g., `noteedit 1 2 d/2026-10-19 n/Discussed insurance renewal`
 **Note delete** | `notedelete CONTACT_INDEX NOTE_INDEX`<br> e.g., `notedelete 1 2`
 **Restore** | `restore`<br> e.g., `restore`

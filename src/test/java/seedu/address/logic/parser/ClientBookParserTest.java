@@ -131,7 +131,8 @@ public class ClientBookParserTest {
         List<String> keywords = List.of("foo", "bar", "baz");
         FindCommand command = (FindCommand) parser.parseCommand(
                 FindCommand.COMMAND_WORD + " " + keywords.stream().collect(Collectors.joining(" ")));
-        assertEquals(new FindCommand(new PersonMatchesFiltersPredicate(keywords, Optional.empty(), List.of())),
+        assertEquals(new FindCommand(new PersonMatchesFiltersPredicate(keywords, Optional.empty(), List.of(),
+                        List.of())),
                 command);
     }
 
@@ -140,7 +141,7 @@ public class ClientBookParserTest {
         FindCommand command = (FindCommand) parser.parseCommand(FindCommand.COMMAND_WORD + " r/client");
 
         assertEquals(new FindCommand(new PersonMatchesFiltersPredicate(List.of(), Optional.of(Relationship.CLIENT),
-                List.of())), command);
+                List.of(), List.of())), command);
     }
 
     @Test
@@ -149,7 +150,7 @@ public class ClientBookParserTest {
         FindCommand command = (FindCommand) parser.parseCommand(FindCommand.COMMAND_WORD + " foo bar r/client");
 
         assertEquals(new FindCommand(new PersonMatchesFiltersPredicate(keywords, Optional.of(Relationship.CLIENT),
-                List.of())), command);
+                List.of(), List.of())), command);
     }
 
     @Test

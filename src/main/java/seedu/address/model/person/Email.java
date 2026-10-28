@@ -24,12 +24,13 @@ public class Email {
     public static final String MESSAGE_LOCAL_PART_CHARACTERS =
             "The part before @ contains unsupported characters.";
     public static final String MESSAGE_DOMAIN_EMPTY_LABEL =
-            "The domain cannot start, end, or contain consecutive dots.";
+            "The email domain cannot start, end, or contain consecutive dots.";
     public static final String MESSAGE_DOMAIN_DOT =
-            "The domain must contain at least one dot.";
+            "The email domain must contain at least one dot.";
     public static final String MESSAGE_DOMAIN_LABEL =
-            "Each domain label must use letters, digits, or hyphens, and cannot start or end with a hyphen.";
-    public static final String MESSAGE_DOMAIN_LABEL_LENGTH = "Each domain label cannot exceed 63 characters.";
+            "Each email domain label must use letters, digits, or hyphens, and cannot start or end with a hyphen.";
+    public static final String MESSAGE_DOMAIN_LABEL_LENGTH =
+            "Each email domain label cannot exceed 63 characters.";
 
     private static final int MIN_EMAIL_LENGTH = 5;
     private static final int MAX_EMAIL_LENGTH = 254;

@@ -17,6 +17,9 @@ public class CliSyntax {
     public static final Prefix PREFIX_PHONE = new Prefix("p/");
     public static final Prefix PREFIX_EMAIL = new Prefix("e/");
     public static final Prefix PREFIX_TAG = new Prefix("t/");
+    public static final Prefix PREFIX_INTERACTION_TYPE = new Prefix("t/");
+    public static final Prefix PREFIX_INTERACTION_OUTCOME = new Prefix("o/");
     public static final Prefix PREFIX_RELATIONSHIP = new Prefix("r/");
+    public static final Prefix PREFIX_DETAIL_KEYWORD = new Prefix("k/");
 
 }

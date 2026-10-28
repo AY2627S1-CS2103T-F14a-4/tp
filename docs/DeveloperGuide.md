@@ -115,10 +115,7 @@ How the `Logic` component works:
    Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
 4. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
-`LogicManager` saves the client book only when a command changes its records. Read-only commands, such as `list`,
-`find`, and `due`, update the displayed view from memory without writing to storage. Before saving a changed client
-book, `LogicManager` keeps a copy of the previous records and filtered view. If saving fails, it restores both so the
-application does not display a change that will be lost after restart.
+`LogicManager` executes each command against a temporary model initialized with the current records, preferences and active filter. When a command changes records, it saves the temporary client book before committing it to the main model. Read-only commands, such as `list`, `find`, and `due`, update the displayed view from memory without writing to storage. If saving fails, the main model is never committed, so the application does not display a change that would be lost after restart. Regression tests cover read-only commands avoiding persistence, a failed save retaining the records and active filter, and a subsequent successful `tag` command preserving that filter.
 
 The sequence diagram below shows the corresponding flow for an `edit` command.
 
@@ -177,22 +174,28 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
-### Find by name, relationship and tags
+### Find by name, relationship, tags and remembered details
 
-The `find` command supports three independently optional filters: name keywords, one relationship, and tag keywords.
-`FindCommandParser` tokenizes the `r/` and `t/` prefixes, rejects duplicate filter prefixes, and delegates prefixed
-value validation to `ParserUtil`. At least one filter must be present. Name keywords precede the prefixed filters;
-multiple tag keywords follow one `t/` prefix and are separated by whitespace. The parser splits the name preamble
-into independent keywords and validates each one against the search-keyword grammar. Ordinary keywords contain
-letters with optional internal hyphens or apostrophes, while `s/o`, `d/o`, and `w/o` are also valid standalone
-keywords. Digits, other symbols, and arbitrary slash forms are rejected. This differs from full-name validation,
-which requires relationship markers to appear between name components.
+The `find` command supports four independently optional filters: name keywords, one relationship, tag keywords, and
+remembered-detail keywords. `FindCommandParser` tokenizes the `r/`, `t/`, and `k/` prefixes, rejects duplicate filter
+prefixes, and delegates relationship and tag validation to `ParserUtil`. At least one filter must be present. Name
+keywords precede the prefixed filters; multiple tag or detail keywords follow one corresponding prefix and are
+separated by whitespace. The parser splits the name preamble into independent keywords and validates each one
+against the search-keyword grammar. Ordinary name keywords contain letters with optional internal hyphens or
+apostrophes, while `s/o`, `d/o`, and `w/o` are also valid standalone keywords. Digits, other symbols, and arbitrary
+slash forms are rejected for names. Detail keywords accept any non-whitespace text so users can search remembered
+values such as times, dates, and punctuation.
 
-The parser creates a `PersonMatchesFiltersPredicate`. Name keywords use the existing full-word, case-insensitive
-matching and are joined with `OR`. Tag keywords use exact, case-insensitive tag matching and are also joined with
-`OR`. The predicate joins the name, relationship and tag filter results with `AND`. For example,
-`find Alex David r/client t/priority referral` returns clients whose name contains `Alex` or `David` and whose tags
-contain `priority` or `referral`.
+The parser creates a `PersonMatchesFiltersPredicate`. Name keywords use case-insensitive contiguous substring
+matching and are joined with `OR`. Thus, `Alex` matches `Alexander`, while either `Anne` or `Marie` matches
+`Anne-Marie Tan`. Tag keywords use the same case-insensitive contiguous substring matching and are also joined with
+`OR`; for example, `friend` matches both `friend` and `friends`. Detail keywords search the two contact preferences,
+the three financial-information fields, each interaction note's date and text, and the follow-up action text and due
+date. Dates use their ISO `yyyy-MM-dd` representation, so both full dates and contiguous fragments match. Follow-up
+completion status is excluded. Detail keywords are joined with `OR`. The predicate joins the name, relationship,
+tag, and detail filter results with `AND`. For example,
+`find Alex David r/client t/priority referral k/retirement WhatsApp` returns clients whose name contains `Alex` or
+`David`, whose tags contain `priority` or `referral`, and whose remembered details contain `retirement` or `WhatsApp`.
 
 `FindCommand` passes the predicate to `Model#updateFilteredPersonList(Predicate<Person>)`, which updates the
 `FilteredList<Person>` observed by the UI. Filtering does not reorder the source list, so matching persons retain the
@@ -200,10 +203,17 @@ same order and indexes as in the `list` command. `PersonListPanel` looks up each
 when rendering its index. Index-based commands use `Command#getVisiblePersonAtIndex` to resolve that complete-list
 index and reject it if the corresponding person is not in the current filter.
 
+The successful `CommandResult` returned by `FindCommand` includes a selection request. `MainWindow` responds by
+calling `PersonListPanel#selectFirstPerson`, which selects the first filtered person and scrolls it into view, or
+clears the selection if the result list is empty. A key-event filter on `MainWindow` handles the <kbd>Up</kbd> and
+<kbd>Down</kbd> arrow keys whenever a person is selected. It asks `PersonListPanel` to select the previous or next
+result and scroll to that index. Selection remains at the corresponding boundary when the first or last result is
+reached. Keeping this navigation at the window level allows it to work while the command box retains keyboard focus.
+
 The following sequence shows a combined search. The `FilteredList` applies the predicate to each source person;
 omitted filter types evaluate as matched, while the supplied filter types must all match.
 
-<puml src="diagrams/FindSequenceDiagram.puml" alt="Find by name, relationship and tags sequence" />
+<puml src="diagrams/FindSequenceDiagram.puml" alt="Find by name, relationship, tags and details sequence" />
 
 ### Tagging a person
 
@@ -339,18 +349,18 @@ The following sequence shows `info 1 pr/High ai/-`; validation and index resolut
 
 ### Dated interaction notes (US14)
 
-`note INDEX d/yyyy-MM-dd n/NOTE` appends an interaction note to the person at the index in the currently displayed
-list. It works for clients and prospects, preserves the current filter, and does not replace earlier entries.
+`note INDEX d/yyyy-MM-dd [t/TYPE] [o/OUTCOME] n/NOTE` appends an interaction note to the person at the displayed
+client index. It works for clients and prospects, preserves the current filter, and does not replace earlier entries.
 
 #### Model and command flow
 
-1. `ClientBookParser` routes the command to `NoteCommandParser`. The parser reads the index and date before `n/`,
-   then treats the entire remaining body as text. URLs, slashes and further prefix-like strings remain note content.
-2. `InteractionNote` stores an immutable `LocalDate` and nonblank text. Date parsing checks the `yyyy-MM-dd` shape
+1. `ClientBookParser` routes the command to `NoteCommandParser`. The parser reads the index, date and optional
+   interaction metadata before the first `n/`, then treats the entire remaining body as text. URLs, slashes and further prefix-like strings remain note content.
+2. `InteractionNote` stores an immutable `LocalDate`, nonblank text, `InteractionType` and `InteractionOutcome`. Date parsing checks the `yyyy-MM-dd` shape
    and uses strict ISO calendar validation. Past dates are allowed. Surrounding text whitespace is stripped;
    internal content and case are preserved without a character whitelist or maximum length.
 3. `NoteCommand` checks the displayed index and rejects an exact duplicate in that person's history using
-   `InteractionNote.equals()` before making changes. Otherwise, it copies the history, appends the new entry and calls
+   `InteractionNote.hasSameContent()` (date and stripped text) before making changes. Otherwise, it copies the history, appends the new entry and calls
    `Model#setPerson` with a replacement `Person`. Other fields remain unchanged. The same date with different text,
    or the same text with different dates, is allowed. `Person` stably sorts its defensive copy by date, oldest first,
    preserving order for equal dates.
@@ -364,8 +374,9 @@ their replacement persons. `PersonBuilder` also preserves it when copying a pers
 #### Persistence and display
 
 `JsonAdaptedPerson` stores an `interactionNotes` array of `JsonAdaptedInteractionNote` objects, each containing
-`date` and `text`. Missing or null arrays in older JSON files become empty histories. Loading validates stored
-dates and note text; serialization preserves entry order and duplicates.
+`date`, `text`, `type` and `outcome`. Missing or null arrays in older JSON files become empty histories.
+Missing or null metadata fields default independently to `UNSPECIFIED`; unknown or blank stored enum values
+raise `IllegalValueException`. Loading validates dates and note text; serialization preserves entry order and duplicates.
 
 `PersonCard` displays dated, wrapped labels in the existing card's interaction-note container. Empty histories are
 hidden and unmanaged. Labels have a zero minimum/preferred width and an unbounded maximum width so the parent
@@ -378,21 +389,63 @@ measurement. No fixed card height or forced list refresh is needed.
 The parser distinguishes missing index, date and note prefix; malformed calendar dates and blank text have specific
 errors. Execution rejects indices outside the currently displayed list before changing the model.
 
-This feature provides adding, displaying, editing and deleting dated notes. Chronological sorting,
-structured interaction outcomes and note search remain separate user stories.
+This feature provides adding, displaying, editing and deleting dated notes, with chronological sorting and
+structured type/outcome metadata. Searching interaction notes (US16) remains outside this feature.
 
-#### Editing note text
+#### Interaction type and outcome (US15)
 
-`noteedit CONTACT_INDEX NOTE_INDEX n/NEW_NOTE_CONTENT` is routed to `NoteEditCommandParser`.
-The parser requires two positive indices followed by `n/` and nonblank text. As with `note`, everything after
-the prefix is treated as note content, including further prefix-like strings.
+`InteractionType` contains `MEETING`, `CALL`, `MESSAGE`, `OTHER`, and `UNSPECIFIED`.
+`InteractionOutcome` contains `SUCCESSFUL`, `UNSUCCESSFUL`, `PENDING`, and `UNSPECIFIED`.
+The explicit unspecified states represent absent information without inventing historical interaction details.
+Both the legacy two-argument `InteractionNote` constructor and old JSON use these defaults.
+The four-argument constructor rejects null metadata. Full value equality and hashing include both fields,
+so changes to metadata participate in person equality and persistence; duplicate-note detection deliberately
+continues to compare only date and text, preserving the existing rule regardless of metadata.
+
+`NoteCommandParser` retains the date-first syntax and splits at the first whitespace-delimited `n/`.
+It tokenizes only the header with `PREFIX_DUE_DATE`, `PREFIX_INTERACTION_TYPE` (`t/`) and
+`PREFIX_INTERACTION_OUTCOME` (`o/`), using the existing `ArgumentTokenizer` and duplicate-prefix validation.
+Header whitespace is normalized for tokenization; the body is preserved independently.
+The optional metadata fields can appear in either order after the date. Enum parsers strip surrounding
+whitespace and use `Locale.ROOT` for case-insensitive input, returning field-specific validation errors.
+The `t/` spelling is shared with tags but interpreted only by each command's own parser; `find` and tag commands
+retain their existing meaning. Prefix-like strings after `n/` remain content, keeping URLs and old note bodies compatible.
+
+`NoteCommand` still appends through immutable person replacement and the existing `LogicManager` transaction.
+`JsonAdaptedInteractionNote` writes uppercase enum names, accepts case-insensitive stored values, and preserves
+its two-argument constructor for existing callers. No file migration or dependency is required. Missing/null
+fields are backward compatible; invalid supplied values are rejected rather than silently discarded.
+`PersonCard` already renders each note through `InteractionNote.toString()`, which now produces
+`DATE [Type: TYPE; Outcome: OUTCOME]: TEXT`; wrapping, numbering and chronological ordering are unchanged.
+`NoteEditCommand` copies the selected note's metadata when replacing date or text. Deletion removes only the
+selected note; `edit`, `info`, contact preferences, tags and follow-up mutations carry the immutable history through.
+`noteedit` does not expose metadata editing; its existing date/text syntax remains unchanged.
+
+Enums were chosen over free text to enforce a small, consistent vocabulary. `UNSPECIFIED` was chosen over
+`OTHER`/`PENDING` defaults because those values assert details the user may never have recorded. Full value equality
+is separate from the date/text duplicate rule to avoid both missed persistence changes and duplicate-rule regressions.
+Keeping metadata before `n/`, rather than scanning the entire command, protects existing free-form note content.
+
+Tests cover all enum values, mixed-case parsing under a Turkish default locale, independent optional fields,
+malformed/missing/duplicate prefixes, literal prefixes in the body, explicit defaults, invalid/null values,
+JSON round-trips and legacy fields. Logic/storage integration tests exercise original filtered indexes,
+chronological ties, unchanged duplicate rejection, note editing/deletion, unrelated contact mutations,
+backup/restore and reopening saved records. JavaFX tests assert the exact canonical and unspecified display text.
+
+#### Editing note date and text
+
+`noteedit CONTACT_INDEX NOTE_INDEX [d/DATE] [n/NEW_NOTE_CONTENT]` is routed to `NoteEditCommandParser`.
+The parser requires two positive indices and at least one editable field. When supplied, the date comes before
+`n/` and is calendar-validated; explicitly supplied future dates are rejected during execution. As with `note`,
+everything after `n/` is treated as note content, including further prefix-like strings.
 
 `NoteEditCommand` resolves the contact against the filtered list and the note against its chronologically ordered
 history, using one-based indices. It rejects out-of-range indices (including empty histories) before mutation.
-It copies the history and replaces just the selected entry with an `InteractionNote` containing the original
-date and updated text. It then calls `Model#setPerson` with a replacement person preserving all other fields,
-including contact preferences and the next action. The current filter remains active. `LogicManager` persists the change through the
-existing JSON pipeline; no schema changes or note IDs are needed.
+It copies the history and replaces just the selected entry with an `InteractionNote` containing the supplied
+date/text (preserving omitted values), original type and original outcome. Date changes trigger chronological reordering.
+It then calls `Model#setPerson` with a replacement person preserving all other fields, including contact preferences
+and the next action. The current filter remains active. `LogicManager` persists the change through the existing
+JSON pipeline; no additional schema changes or note IDs are needed for editing.
 
 `NoteEditCommandTest` and `NoteEditCommandParserTest` cover validation, filtered lists, duplicate notes,
 date and contact-field preservation, command routing, and saving/reloading an edit through `LogicManager`.
@@ -617,99 +670,13 @@ local clock-zone boundaries, replacement reset, filtered indices, preservation o
 old JSON, historical follow-ups remaining visible in `due`, invalid stored values, completion round
 trips and card display/wrapping.
 
-### \[Proposed\] Undo/redo feature
+### Backing up and restoring records
 
-#### Proposed Implementation
+`ClientBookParser` accepts `backup` and `restore` only without arguments and creates a `BackupCommand` or `RestoreCommand` respectively. Both commands derive the backup path from the main data-file path, placing `clientbook-backup.json` beside `clientbook.json` in the `data` folder.
 
-The proposed undo/redo mechanism is facilitated by `VersionedClientBook`. It extends `ClientBook` with an undo/redo history, stored internally as an `clientBookStateList` and `currentStatePointer`. Additionally, it implements the following operations:
+`BackupCommand` does not change the in-memory client book. It serializes the current records through `Storage#saveClientBook(ReadOnlyClientBook, Path)` to a temporary file in the backup folder, then replaces the backup file with an atomic move when supported. It falls back to a normal replacement move on file systems that do not support atomic moves. This prevents a failed write from replacing an existing backup with a partial file.
 
-* `VersionedClientBook#commit()` -- Saves the current client book state in its history.
-* `VersionedClientBook#undo()` -- Restores the previous client book state from its history.
-* `VersionedClientBook#redo()` -- Restores a previously undone client book state from its history.
-
-These operations are exposed in the `Model` interface as `Model#commitClientBook()`, `Model#undoClientBook()` and `Model#redoClientBook()` respectively.
-
-Given below is an example usage scenario and how the undo/redo mechanism behaves at each step.
-
-Step 1. The user launches the application for the first time. The `VersionedClientBook` will be initialized with the initial client book state, and the `currentStatePointer` pointing to that single client book state.
-
-<puml src="diagrams/UndoRedoState0.puml" alt="UndoRedoState0" />
-
-Step 2. The user executes `delete 5` command to delete the 5th person in the client book. The `delete` command calls `Model#commitClientBook()`, causing the modified state of the client book after the `delete 5` command executes to be saved in the `clientBookStateList`, and the `currentStatePointer` is shifted to the newly inserted client book state.
-
-<puml src="diagrams/UndoRedoState1.puml" alt="UndoRedoState1" />
-
-Step 3. The user executes `add n/David …​` to add a new person. The `add` command also calls `Model#commitClientBook()`, causing another modified client book state to be saved into the `clientBookStateList`.
-
-<puml src="diagrams/UndoRedoState2.puml" alt="UndoRedoState2" />
-
-<box type="info" seamless>
-
-**Note:** If a command fails its execution, it will not call `Model#commitClientBook()`, so the client book state will not be saved into the `clientBookStateList`.
-</box>
-
-Step 4. The user now decides that adding the person was a mistake, and decides to undo that action by executing the `undo` command. The `undo` command will call `Model#undoClientBook()`, which will shift the `currentStatePointer` once to the left, pointing it to the previous client book state, and restores the client book to that state.
-
-<puml src="diagrams/UndoRedoState3.puml" alt="UndoRedoState3" />
-
-
-<box type="info" seamless>
-
-**Note:** If the `currentStatePointer` is at index 0, pointing to the initial ClientBook state, then there are no previous ClientBook states to restore. The `undo` command uses `Model#canUndoClientBook()` to check if this is the case. If so, it will return an error to the user rather
-than attempting to perform the undo.
-</box>
-
-The following sequence diagram shows how an undo operation goes through the `Logic` component:
-
-<puml src="diagrams/UndoSequenceDiagram-Logic.puml" alt="UndoSequenceDiagram-Logic" />
-
-<box type="info" seamless>
-
-**Note:** The lifeline for `UndoCommand` should end at the destroy marker (X), but due to a limitation of PlantUML, it continues to the end of the diagram.
-</box>
-
-Similarly, how an undo operation goes through the `Model` component is shown below:
-
-<puml src="diagrams/UndoSequenceDiagram-Model.puml" alt="UndoSequenceDiagram-Model" />
-
-The `redo` command does the opposite — it calls `Model#redoClientBook()`, which shifts the `currentStatePointer` once to the right, pointing to the previously undone state, and restores the client book to that state.
-
-<box type="info" seamless>
-
-**Note:** If the `currentStatePointer` is at index `clientBookStateList.size() - 1`, pointing to the latest client book state, then there are no undone ClientBook states to restore. The `redo` command uses `Model#canRedoClientBook()` to check if this is the case. If so, it will return an error to the user rather than attempting to perform the redo.
-</box>
-
-Step 5. The user then decides to execute the command `list`. Commands that do not modify the client book, such as `list`, will usually not call `Model#commitClientBook()`, `Model#undoClientBook()` or `Model#redoClientBook()`. Thus, the `clientBookStateList` remains unchanged.
-
-<puml src="diagrams/UndoRedoState4.puml" alt="UndoRedoState4" />
-
-Step 6. The user executes `clear`, which calls `Model#commitClientBook()`. Since the `currentStatePointer` is not pointing at the end of the `clientBookStateList`, all client book states after the `currentStatePointer` will be purged. Reason: It no longer makes sense to redo the `add n/David …` command. This is the behavior that most modern desktop applications follow.
-
-<puml src="diagrams/UndoRedoState5.puml" alt="UndoRedoState5" />
-
-The following activity diagram summarizes what happens when a user executes a new command:
-
-<puml src="diagrams/CommitActivityDiagram.puml" width="250" />
-
-#### Design considerations:
-
-**Aspect: How undo & redo execute:**
-
-* **Alternative 1 (current choice):** Saves the entire client book.
-  * Pros: Easy to implement.
-  * Cons: May have performance issues in terms of memory usage.
-
-* **Alternative 2:** Individual command knows how to undo/redo by
-  itself.
-  * Pros: Will use less memory (e.g. for `delete`, just save the person being deleted).
-  * Cons: We must ensure that the implementation of each individual command is correct.
-
-_{more aspects and alternatives to be added}_
-
-### \[Proposed\] Data archiving
-
-_{Explain here how the data archiving feature will be implemented}_
-
+`RestoreCommand` first reads and validates the backup through `Storage#readClientBook(Path)`. Only after a valid `ReadOnlyClientBook` is available does it save those records to the main data file, replace the temporary model's client book, and reset the active filter to show all persons. It marks the result as already saved so `LogicManager` does not write the restored records again. A missing, invalid, or unreadable backup leaves the in-memory records unchanged.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -749,7 +716,6 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | --- | --- | --- | --- |
 | * * * | As a financial consultant | add a client or prospect with their basic contact details | keep a record of every professional relationship I manage. |
 | * * * | As a financial consultant | view all active clients and prospects | see the relationships currently under my care. |
-| * * | As a financial consultant preparing to contact someone | view one person's complete profile | recall the relevant relationship context before the conversation. |
 | * * | As a financial consultant | update a person's contact details | keep the record accurate when their information changes. |
 | * * * | As a financial consultant | delete a record that I created by mistake | prevent incorrect entries from cluttering my records. |
 
@@ -758,9 +724,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | Priority | As a … | I want to … | So that I can … |
 | --- | --- | --- | --- |
 | * * | As a financial consultant handling different kinds of relationships | assign one or more meaningful tags to a person | organise contacts according to how I work. |
-| * * * | As a financial consultant managing a relationship pipeline | record whether a person is a prospect, active client, or inactive client | tell what kind of attention each relationship needs. |
-| * * | As a financial consultant who relies on personal rapport | record a person's preferences and interests | make future conversations more relevant and personal. |
-| * * | As a financial consultant | record important dates shared by a client | remember occasions that matter to the relationship. |
+| * * * | As a financial consultant managing a relationship pipeline | record whether a person is a prospect or an active client | tell what kind of attention each relationship needs. |
 | * * | As a financial consultant | record a person's preferred contact channel and timing | approach them in a way that is convenient for them. |
 | * * * | As a financial consultant | record a client's high-level financial needs, priorities, and areas of interest | continue the business discussion from the correct context. |
 
@@ -792,17 +756,23 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | * * | As a financial consultant focusing on a segment of contacts | filter people by client or prospect relationship status | work with only the relevant group. |
 | * * | As a financial consultant planning the order of work | sort contacts by next follow-up or last interaction date | prioritise relationships using timely information. |
 | * | As a financial consultant maintaining long-term relationships | identify people I have not contacted recently | notice relationships that may otherwise be neglected. |
-| * * | As a busy financial consultant about to meet or call someone | view a concise summary of their preferences, recent interactions, and next action | refresh my memory without reading the entire record. |
 
 #### Long Term Use and Data Continuity
 
 | Priority | As a … | I want to … | So that I can … |
 | --- | --- | --- | --- |
-| * | As a long-time user | move inactive records out of my active view and restore them later | reduce clutter without permanently losing relationship history. |
 | * * | As a financial consultant moving or safeguarding my local data | create a backup copy of my records | protect the relationship information I have accumulated. |
 | * * | As a financial consultant recovering from data loss or changing computers | restore my records from a backup | resume work without rebuilding my relationship history. |
 | * * * | As a long-term user | have my data saved between sessions | continue managing my information without having to re-enter it each time. |
 
+### User Stories to be implemented in the future
+
+| Priority | As a … | I want to … | So that I can … |
+| --- | --- | --- | --- |
+| * * | As a financial consultant preparing to contact someone | view one person's complete profile | recall the relevant relationship context before the conversation. |
+| * * | As a financial consultant who relies on personal rapport | record a person's preferences and interests | make future conversations more relevant and personal. |
+| * * | As a financial consultant | record important dates shared by a client | remember occasions that matter to the relationship. |
+| * * | As a busy financial consultant about to meet or call someone | view a concise summary of their preferences, recent interactions, and next action | refresh my memory without reading the entire record. |
 
 ### Use cases
 
@@ -959,11 +929,12 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case ends.
 
-**Use case: Find clients or prospects by name or relationship**
+**Use case: Find clients or prospects**
 
 **MSS**
 
-1.  User requests to find clients or prospects using one or more name keywords, or a client/prospect relationship.
+1.  User requests to find clients or prospects using one or more name, relationship, tag, or remembered-detail
+    filters.
 2.  ClientBook searches the stored records using the supplied criterion.
 3.  ClientBook displays all matching clients and prospects.
 
@@ -983,11 +954,11 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case resumes at step 1.
 
-* 1c. The user combines name keywords with a relationship filter.
+* 1c. The user combines two or more filter types.
 
-    * 1c1. ClientBook displays an error message explaining the valid command formats.
+    * 1c1. ClientBook requires each result to match every supplied filter type.
 
-      Use case resumes at step 1.
+      Use case resumes at step 2.
 
 * 3a. No record matches the supplied criterion.
 
@@ -1047,17 +1018,79 @@ testers are expected to do more *exploratory* testing.
 
    1. Download the JAR file and copy it into an empty folder.
 
-   2. Double-click the JAR file.<br>
-      Expected: The GUI opens with a set of sample contacts. The window size may not be optimal.
+   2. Run the following command:
+
+      ```sh
+      java -jar clientbook.jar
+      ```
+
+      Expected: The GUI opens without any contacts. The window size may not be optimal.
 
 2. Saving window preferences
 
    1. Resize the window to an optimal size. Move the window to a different location. Close the window.
 
-   2. Relaunch the app by double-clicking the JAR file.<br>
-       Expected: The most recent window size and location are retained.
+   2. Run the following command:
 
-3. _{ more test cases … }_
+      ```sh
+      java -jar clientbook.jar
+      ```
+
+      Expected: The most recent window size and location are retained.
+
+### Adding a client/prospect
+
+Use a separate test folder with fictional records.
+
+1. Adding valid records
+
+    1. Prerequisites: Start with an empty client book, or run `clear`.
+
+    2. Test case: `add r/Client n/John Doe e/john@example.com p/91234567 t/referral`<br>
+       Expected: A confirmation beginning with `New person added:` appears. A Client record for John Doe is shown
+       with the supplied email, phone number, and `referral` tag.
+
+    3. Test case: `add r/Prospect n/Jane Tan e/jane@example.com p/98765432`<br>
+       Expected: A confirmation beginning with `New person added:` appears. A Prospect record for Jane Tan is
+       added at index 2.
+
+2. Rejecting duplicate records
+
+    1. Prerequisites: John Doe has been added as above.
+
+    2. Test case: `add r/Client n/John Doe e/john@example.com p/91234567`<br>
+       Expected: `This contact already exists.` is shown and no additional record is created.
+
+3. Rejecting invalid input
+
+    1. Test case: `add r/Client n/John Doe e/john@example.com p/123`<br>
+       Expected: An error message is shown for the invalid phone number and no record is created.
+
+### Editing a client/prospect
+
+Use a separate test folder with fictional records. Add John Doe and Jane Tan as described in the preceding section.
+
+1. Editing a displayed record
+
+    1. Prerequisites: Run `list` so that John Doe is at index 1 and Jane Tan is at index 2.
+
+    2. Test case: `edit 1 r/Prospect e/john.new@example.com p/91234568`<br>
+       Expected: A confirmation beginning with `Edited person:` appears. John Doe is now a Prospect with the new
+       email address and phone number; the existing `referral` tag remains.
+
+2. Editing one field
+
+    1. Test case: `edit 2 r/Client`<br>
+       Expected: A confirmation beginning with `Edited person:` appears. Jane Tan is now a Client and her other
+       details are unchanged.
+
+3. Rejecting invalid edits
+
+    1. Test case: `edit 3 n/Alex Tan`<br>
+       Expected: `The person index provided is invalid.` is shown and neither record changes.
+
+    2. Test case: `edit 1`<br>
+       Expected: `At least one field to edit must be provided.` is shown and John Doe's record does not change.
 
 ### Deleting a client/prospect
 
@@ -1157,7 +1190,48 @@ These cases are covered in `DeleteIntegrationTest`. Parser whitespace and intege
 3. Combined name and relationship filtering
 
    1. Test case: `find Alex r/client`.<br>
-      Expected: Only clients whose names contain the full word `Alex` are displayed. Matching is case-insensitive.
+      Expected: Only clients whose names contain the contiguous text `Alex` are displayed. This includes names such
+      as `Alexander`, and matching is case-insensitive.
+
+4. Tag filtering
+
+   1. Prerequisites: Add persons tagged `friend`, `friends`, `bestfriend`, and `family`.
+
+   2. Test case: `find t/friend`.<br>
+      Expected: The persons tagged `friend`, `friends`, and `bestfriend` are displayed. The person tagged `family`
+      is not displayed.
+
+5. Remembered-detail filtering
+
+   1. Prerequisites: Add a client named Alex with preferred channel `WhatsApp`, financial need `Retirement planning`,
+      an interaction note dated `2026-10-06` containing `Discussed university fund`, and follow-up text
+      `Call about investment review` due on `2026-12-15`. Add another client without those details.
+
+   2. Test cases: `find k/WhatsApp`, `find k/retire`, `find k/university`, `find k/2026-10-06`, and
+      `find k/investment`, `find k/2026-12-15`, and `find k/2026-12`.<br>
+      Expected: Alex is displayed for every search. Matching is case-insensitive and accepts contiguous partial text.
+
+   3. Test case: `find Alex r/client t/priority k/retirement`.<br>
+      Expected: Alex is displayed only if the record also has the `priority` tag, demonstrating `AND` across filter
+      types.
+
+6. Find-result keyboard navigation
+
+   1. Prerequisites: Add enough persons matching the same search to require scrolling in the result list.
+
+   2. Test case: Enter a `find` command that returns multiple persons.<br>
+      Expected: The first result is selected automatically.
+
+   3. Test case: Press the <kbd>Down</kbd> arrow key repeatedly.<br>
+      Expected: Each press selects the next result and scrolls it into view. Selection remains on the last result
+      after the end of the list is reached.
+
+   4. Test case: Press the <kbd>Up</kbd> arrow key repeatedly.<br>
+      Expected: Each press selects the previous result and scrolls it into view. Selection remains on the first
+      result after the start of the list is reached.
+
+   5. Test case: Enter a `find` command with no matches, then press either arrow key.<br>
+      Expected: No person is selected and arrow-key navigation does not occur.
 
 ### Saving data
 

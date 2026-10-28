@@ -80,10 +80,15 @@ public class EmailTest {
         assertEquals(Email.MESSAGE_AT_SIGN, Email.getValidationError("abc.example.com"));
         assertEquals(Email.MESSAGE_LOCAL_PART_DOTS, Email.getValidationError("a..b@example.com"));
         assertEquals(Email.MESSAGE_LOCAL_PART_CHARACTERS, Email.getValidationError("a,b@example.com"));
-        assertEquals(Email.MESSAGE_DOMAIN_DOT, Email.getValidationError("a@localhost"));
-        assertEquals(Email.MESSAGE_DOMAIN_EMPTY_LABEL, Email.getValidationError("a@example..com"));
-        assertEquals(Email.MESSAGE_DOMAIN_LABEL_LENGTH, Email.getValidationError("a@" + "b".repeat(64) + ".com"));
-        assertEquals(Email.MESSAGE_DOMAIN_LABEL, Email.getValidationError("a@-example.com"));
+        assertEquals("The email domain must contain at least one dot.",
+                Email.getValidationError("a@localhost"));
+        assertEquals("The email domain cannot start, end, or contain consecutive dots.",
+                Email.getValidationError("a@example..com"));
+        assertEquals("Each email domain label cannot exceed 63 characters.",
+                Email.getValidationError("a@" + "b".repeat(64) + ".com"));
+        assertEquals("Each email domain label must use letters, digits, or hyphens, and cannot start or "
+                + "end with a hyphen.",
+                Email.getValidationError("a@-example.com"));
     }
 
     @Test
