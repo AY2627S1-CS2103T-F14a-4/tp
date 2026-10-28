@@ -24,8 +24,6 @@ public class ResultDisplay extends UiPart<Region> {
     @FXML
     private TextArea resultDisplay;
 
-    private final double[] preferredHeightsByRowCount = new double[MAXIMUM_ROW_COUNT + 1];
-
     /** Creates a result display that remains hidden until feedback is available. */
     public ResultDisplay() {
         super(FXML);
@@ -65,21 +63,15 @@ public class ResultDisplay extends UiPart<Region> {
 
         Region content = (Region) resultDisplay.lookup(".content");
         ScrollPane scrollPane = (ScrollPane) resultDisplay.lookup(".scroll-pane");
-        Text renderedRows = new Text(displayedRows);
-        renderedRows.setFont(resultDisplay.getFont());
-        renderedRows.setTextOrigin(VPos.TOP);
-        double viewportHeight = Math.ceil(renderedRows.getLayoutBounds().getHeight()
+        int logicalRowCount = commandFeedback.split("\\R", -1).length;
+        double averageRowHeight = createText(commandFeedback).getLayoutBounds().getHeight() / logicalRowCount;
+        double viewportHeight = Math.ceil(averageRowHeight * rowCount
                 + content.getInsets().getTop() + content.getInsets().getBottom() + CONTENT_HEIGHT_PADDING);
         scrollPane.setPrefViewportHeight(viewportHeight);
 
         double preferredHeight = Math.ceil(viewportHeight
                 + resultDisplay.getInsets().getTop() + resultDisplay.getInsets().getBottom()
                 + scrollPane.getInsets().getTop() + scrollPane.getInsets().getBottom());
-        if (preferredHeightsByRowCount[rowCount] == 0) {
-            preferredHeightsByRowCount[rowCount] = preferredHeight;
-        } else {
-            preferredHeight = preferredHeightsByRowCount[rowCount];
-        }
         resultDisplay.setMinHeight(preferredHeight);
         resultDisplay.setPrefHeight(preferredHeight);
         resultDisplay.setMaxHeight(preferredHeight);
