@@ -253,89 +253,79 @@ The following sequence shows the confirmation gate before selected tags are dele
 
 ### Contact preferences (US12)
 
-`ContactCommandParser` accepts `contact INDEX [ch/CHANNEL|-] [tm/TIMING|-]` in either prefix order. It reuses
-duplicate-prefix checks and `ParserUtil.parseIndex`, but retains raw preference values using the same ordinary-space
-prefix boundaries as `ArgumentTokenizer`. `ClientBookParser` passes the original contact arguments so its initial
-trimming cannot change marker recognition. The shared tokenizer is unchanged.
+`ContactCommandParser` accepts `contact INDEX [ch/CHANNEL|-] [tm/TIMING|-]`. It requires a positive index
+and at least one preference, and rejects duplicate prefixes. Prefixes are case-sensitive and begin after an
+ordinary space. Other slash-containing text remains part of a value. The parser retains raw arguments so
+only an exact `-`, padded with ordinary spaces, means clear. A tab-padded hyphen is normal text and can become
+a stored `-` after trimming. `PreferredContactChannel` and `PreferredContactTiming` are immutable free-text
+values with a 1–200 UTF-16-code-unit limit after surrounding whitespace is removed; internal text is preserved.
 
-Only an exact `-` surrounded by ordinary spaces clears a preference. Non-marker values retain the existing trimming
-and validation through immutable `PreferredContactChannel` and `PreferredContactTiming`. Thus a tab-padded hyphen is
-normal text, not a clear operation. Free text, Unicode, punctuation and the 1-200-character limit remain supported.
+The parser also performs targeted, case-sensitive malformed-prefix detection after ordinary spaces:
+`/ch` and `/tm` followed by whitespace, `/`, or the end of input, and the exact prefixes `cch/`, `chh/`,
+`ttm/`, `tmm/` are rejected, including inside values. Index validation comes first, followed by duplicate checks
+and malformed-prefix detection, so genuinely invalid indices retain their index error. Other slash-containing
+text, such as `Phone/WhatsApp`, `AM/PM` or `xx/After 6 pm`, remains valid; arbitrary typo detection would
+incorrectly reject free text.
 
-`ContactDescriptor` holds a specified flag and nullable value for each preference: omitted means preserve,
-specified non-null means replace, and specified null means clear. `ContactCommand` defensively copies the descriptor
-and rejects an empty descriptor. It calls `Command#getVisiblePersonAtIndex` to resolve the original full-list index
-and verify that the person is visible in the current filtered results. Search results retain their original indices,
-matching the numbers shown by the UI. It then constructs a replacement `Person` with the resolved preferences and
-calls `Model#setPerson`. `Person#withContactPreferences` retains its original null-means-keep
-contract for other callers. All unrelated fields and the active filter are preserved. `edit`, `info`, `note`, `withNextAction` and
-`PersonBuilder` also copy both preferences. `PersonCard` hides absent values and wraps recorded values.
-`JsonAdaptedPerson` persists optional `preferredContactChannel` and `preferredContactTiming` strings; missing or
-null properties mean absence, while invalid non-null values produce `IllegalValueException`.
-Clearing uses this existing absence representation without changing the JSON format. Clearing absent fields and
-repeating clears are safe. Tests cover set/clear combinations, raw markers, invalid-input atomicity, filtered indices,
-unrelated-field preservation, descriptor equality/copying, JSON save/reload after clearing, and live card label hiding.
+`ContactDescriptor` distinguishes three states per preference: omitted (preserve), specified non-null (replace),
+and specified null (clear). `ContactCommand` defensively copies the descriptor. It constructs a replacement
+`Person` rather than using `Person#withContactPreferences`, whose null arguments mean preserve and therefore
+cannot express clearing. All unrelated fields are copied unchanged.
 
-The following sequence shows a successful update; parser validation and index checks precede model mutation.
+`Command#getVisiblePersonAtIndex` first checks the index against the **complete** person list, selects that
+person, and then checks membership in the filtered list. It does not interpret the index as a filtered-list
+position. Thus a sole result labelled `2` requires index `2`; index `1` is rejected if that person is hidden.
+
+Both `contact` and `info` use the existing `LogicManager` transaction flow. After parsing, it creates a temporary
+`ModelManager` from the live client book and preferences, and applies the current filter. The command replaces
+the person in this temporary model. If the data changed, `LogicManager` saves it through `Storage` before
+committing the temporary client book and filter to the live model. Parse or command failures leave the live
+model untouched; save failures prevent the commit. Unchanged data, including repeated clears, needs no save.
+The sequence below shows a successful change; individual getters and replacement-person construction are omitted.
 
 <puml src="diagrams/ContactSequenceDiagram.puml" alt="Contact preference update sequence" />
 
+`JsonAdaptedPerson` persists optional `preferredContactChannel` and `preferredContactTiming` strings.
+Missing or null properties load as absent, preserving compatibility with older files; invalid non-null values
+are rejected. Clearing reuses this absence representation. The card hides absent preferences and wraps recorded
+values. Parser, command and storage tests cover set/omit/clear combinations, filtered indices, preservation of
+unrelated fields and save/reload compatibility.
+
 ### Financial information (US13)
 
-`FinancialNeed`, `Priority` and `AreaOfInterest` are immutable value objects, independently optional on `Person`.
-Normal values contain 1-200 characters after trimming ordinary spaces; internal spaces are preserved. Validation
-accepts Unicode letters (`\p{L}`), combining marks (`\p{M}`), decimal digits, spaces and the punctuation
-`. , ' ( ) & - $ % + /`; blanks, tabs, line breaks and other characters are rejected.
-Combining marks support decomposed accents and scripts such as Tamil. No Unicode normalization is performed:
-stored text and equality retain the supplied representation after ordinary-space trimming. The existing
-200-character limit uses `String.length()` (UTF-16 code units), including combining marks.
-`Priority` stores validated text rather than a fixed enumeration.
+`InfoCommandParser` accepts `info INDEX [fn/VALUE|-] [pr/VALUE|-] [ai/VALUE|-]`, requiring a positive index
+and at least one field. Prefixes may appear in any order at whitespace boundaries; duplicates, slash-first
+parameters (including the former `/fn`, `/pr`, `/ai` syntax), and reserved near misses are rejected.
+Only lowercase `fn/`, `pr/`, `ai/` are valid. Their case variants and the explicit near misses `fnn/`, `prr/`,
+`aii/` (also case-insensitive) produce an invalid-parameter error.
 
-`ClientBookParser` routes `info INDEX [fn/VALUE|-] [pr/VALUE|-] [ai/VALUE|-]` to `InfoCommandParser`.
-The parser requires a positive index and at least one financial prefix, accepts any prefix order, and rejects
-duplicates. A prefix starts only at the beginning of the arguments or after whitespace.
-The local scanner reserves only `fn/`, `pr/`, `ai/`, their case variants, and the explicit near misses
-`fnn/`, `prr/`, `aii/` (also case-insensitive). Only the three exact lowercase prefixes are valid;
-the other reserved forms report an invalid parameter. This deliberately small reservation avoids a broad
-edit-distance or generic `NAME/` heuristic that would reject ordinary financial text. For example,
-`fn/Planning CPF/SRS`, `fn/Save $3000/month`, `ai/Planning Life/Health insurance`, and
-`fn/ CPF/SRS` preserve their complete values. Slash-first tokens (including legacy `/fn`, `/pr`, `/ai`
-and a bare `/`) still produce the invalid-parameter diagnostic. No shared tokenizer changes are needed.
+This targeted detection preserves financial notation such as `fn/Planning CPF/SRS` and `fn/Save $3000/month`.
+A generic `NAME/` scan is confined to the preamble, where value text cannot occur; the preceding index is
+validated before reporting an unknown parameter. Inside values, arbitrary forms such as `xyz/Value` remain
+text because they are indistinguishable from ordinary slash-containing words. Recognised prefixes always
+start fields: `fn/Review pr/High options` sets two fields. There is no quoting or escaping, so users must
+rephrase literal prefix-like text. The UG documents this restriction and the limited typo detection.
 
-A separate scan of the preamble rejects any unknown `NAME/` token before the first field: value text cannot
-occur there. The preceding index is validated first, preserving invalid-index diagnostics. Inside a field,
-unknown forms such as `xyz/Value`, `fna/Value`, or `fnValue/Value` are ordinary value text, subject to the
-usual character and length validation. They cannot reliably be distinguished from `CPF/SRS` or `$3000/month`.
-The explicit near-miss reservations above also cannot be used literally at token boundaries within values;
-users must rephrase them. Recognised prefixes and slash-first tokens retain their existing scan precedence
-over index validation. Parser, command atomicity, and save/reload regression tests cover these rules.
+`FinancialNeed`, `Priority` and `AreaOfInterest` are immutable, independently optional values on `Person`.
+They accept Unicode letters, combining marks, decimal digits, ordinary spaces and `. , ' ( ) & - $ % + /`.
+Validation trims only ordinary spaces, rejects blanks, controls and unsupported characters, and limits each
+value to 200 UTF-16 code units. No Unicode normalization occurs; combining marks count separately.
+`Priority` is free text rather than an enumeration. The parser reports all invalid supplied fields together
+in financial-need, priority, area-of-interest order, before returning a command.
 
-There is an unavoidable ambiguity between a new parameter and literal prefix-like text within free text:
-`fn/Review pr/High options` sets financial need to `Review` and priority to `High options`.
-Every whitespace-delimited known prefix starts a field; duplicate prefixes fail. Quoting and escaping are
-not supported, so users must rephrase literal prefix-like text. This restriction is also in the User Guide
-and covered by parser regression tests. Attached `fn/pr/High` stores literal `pr/High` as financial need.
-
-The parser recognizes an exact `-` surrounded only by ordinary spaces before calling
-`ParserUtil` to validate normal values. Bare prefixes remain invalid. `InfoDescriptor` stores a specified flag
-and nullable value per field: omitted means unchanged, specified non-null means replace, and specified null
-means explicitly clear. `InfoCommand` defensively copies this descriptor, including its flags.
-
-`InfoCommand#execute` resolves the visible person against its index in the complete list before mutation.
-It constructs a replacement `Person` using the resolved financial fields and calls `Model#setPerson`.
-Name, phone, email, relationship, tags, interaction notes, next action, preferred contact channel and preferred
-contact timing are copied unchanged; the active filter is preserved. Clearing an absent field is idempotent.
-
-`LogicManager` saves through the existing storage pipeline after execution. `JsonAdaptedPerson` persists optional
-`financialNeed`, `priority` and `areaOfInterest` strings; missing or null properties load as absent, supporting
-older files. Non-null values are validated on loading. `PersonCard` shows present values in wrapped labels prefixed
-with `Financial need:`, `Priority:` and `Area of interest:`; absent labels are invisible and unmanaged.
-Automated tests cover parser validation and boundaries, set/clear combinations, descriptor copying, filtered indices,
-unrelated-field preservation, JSON compatibility, save/reload after clearing, and UI hiding/wrapping.
-
-The following sequence shows `info 1 pr/High ai/-`; validation and index resolution precede model mutation.
+`InfoDescriptor` uses specified flags and nullable values to distinguish omission, replacement and clearing,
+just as the contact descriptor does. Only a raw `-` surrounded by ordinary spaces clears a field.
+`InfoCommand` copies the descriptor, resolves the original full-list index and checks visibility through
+`Command#getVisiblePersonAtIndex`, then replaces the person with all unrelated fields preserved.
+`LogicManager` uses the same temporary-model, save-before-commit flow described above; the active filter is retained.
+The sequence below shows priority replacement and area-of-interest clearing in one command.
 
 <puml src="diagrams/InfoSequenceDiagram.puml" alt="Financial information update sequence" />
+
+`JsonAdaptedPerson` saves optional `financialNeed`, `priority` and `areaOfInterest` strings. Missing or null
+properties load as absent, while non-null values are validated. Clearing therefore needs no JSON-format change.
+Present values appear on the card; absent labels are hidden. Regression tests cover financial notation and Unicode,
+validation and atomicity, descriptor states, original filtered indices, and persistence after setting or clearing.
 
 ### Dated interaction notes (US14)
 
@@ -965,6 +955,53 @@ testers are expected to do more *exploratory* testing.
        Expected: The most recent window size and location are retained.
 
 3. _{ more test cases … }_
+
+### Financial information and contact preferences
+
+Use a separate test folder with fictional records. Repeat this setup before testing **each** feature below;
+`clear` removes all records in that test copy. Enter each line as a separate command.
+
+```text
+clear
+add r/Client n/Alex Teo e/alex@example.com p/91234567
+add r/Prospect n/Jamie Lim e/jamie@example.com p/98765432
+info 1 fn/Education pr/Low ai/Savings
+contact 1 ch/Email tm/Weekends
+info 2 fn/Retirement pr/Medium ai/Insurance
+contact 2 ch/Email tm/Weekends
+```
+
+#### Financial information: `info`
+
+1. Set values with financial notation and reversed field order:
+   `info 2 ai/Planning Life/Health insurance pr/High fn/Save $3000/month + CPF/SRS`.<br>
+   Expected: Jamie's three financial fields match the supplied text. Contact preferences remain Email and Weekends;
+   Alex and all unrelated details are unchanged. Also try accented text such as `info 2 fn/épargne CPF/SRS`.
+2. Run `info 2 fn/- ai/-`.<br>
+   Expected: Financial need and area of interest disappear; priority remains High. Repeat the command: it remains safe.
+3. Try `info 2 pr/- fn/`, `info 2 pr/Low pr/High`, `info 2 /pr Low`, and `info 0 pr/Low` separately.<br>
+   Expected: Each reports an error. Priority stays High and the cleared fields stay absent; no partial update occurs.
+4. Run `find Jamie`, then `info 2 pr/Protect family income`.<br>
+   Expected: Jamie remains the sole result at index 2 and their priority changes. `info 1 pr/High` and `info 3 pr/High`
+   both fail. Run `list`: Alex still has Education, Low, Savings and their original contact preferences.
+   Run `exit`, reopen the same test copy and check Jamie: the new priority and cleared fields are retained.
+
+#### Contact preferences: `contact`
+
+1. Run `contact 2 tm/Weekdays AM/PM ch/Phone/WhatsApp`.<br>
+   Expected: Jamie's timing and channel match the supplied text. Financial information remains Retirement, Medium,
+   Insurance; Alex and all unrelated details are unchanged.
+2. Run `contact 2 ch/Phone tm/-`.<br>
+   Expected: Channel changes to Phone and timing disappears. Then run `contact 2 tm/-`: Phone remains unchanged.
+3. Try `contact 2 ch/- tm/`, `contact 2 ch/Email ch/Phone`, and `contact 0 ch/Email` separately.<br>
+   Expected: Each reports an error; channel stays Phone and timing stays absent.
+   Also try `contact 2 /ch Email` and `contact 2 ch/WhatsApp tmm/Evenings` separately.<br>
+   Expected: Both report `Invalid contact parameter. Use ch/CHANNEL or tm/TIMING; use - to clear a preference.`
+   Displayed and saved preferences remain Phone with no timing; neither rejected command changes them.
+4. Run `find Jamie`, then `contact 2 tm/Lunch break`.<br>
+   Expected: Jamie stays visible at index 2 with Phone and Lunch break. `contact 1 ch/WhatsApp` and
+   `contact 3 ch/WhatsApp` both fail. Run `list`: Alex's details remain unchanged.
+   Run `exit`, reopen the same test copy and confirm Jamie's Phone and Lunch break preferences remain.
 
 ### Deleting a client/prospect
 

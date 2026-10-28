@@ -184,99 +184,73 @@ Examples:
 
 ### Updating client financial information: `info`
 
-Adds, updates, or clears a person's financial need, priority, and area of interest. Present fields appear on the person's card as
-`Financial need: VALUE`, `Priority: VALUE`, and `Area of interest: VALUE`. Absent fields are hidden.
+Record a client's or prospect's financial need (`fn/`), priority (`pr/`), and area of interest (`ai/`).
+These details appear on their card; cleared fields are hidden.
 
 Format: `info INDEX [fn/VALUE|-] [pr/VALUE|-] [ai/VALUE|-]`
 
-* `INDEX` is the original index shown on the person's card, including after filtering. It must be a positive
-  integer referring to a currently visible person. Filtering retains original indices; a sole result labelled `2`
-  requires `info 2`, not `info 1`.
-* At least one of `fn/`, `pr/`, or `ai/` is required. Each parameter may be supplied at most once, in any order.
-* Normal supplied values replace existing values. Omitted fields remain unchanged.
-* An exact `-` value clears only that field. Surrounding ordinary spaces are ignored, so `pr/   -   ` also clears
-  priority. Clearing an already absent field is safe. A hyphen in a larger value, such as `Long-term`, remains text.
-* Each value must contain 1-200 characters after leading and trailing ordinary spaces are ignored. Internal spaces are
-  preserved. Empty values and bare prefixes (for example, `info 1 pr/`) remain invalid; clearing requires explicit `-`.
-* Allowed characters are Unicode letters and combining marks, digits, spaces, periods (`.`), commas (`,`),
-  apostrophes (`'`), hyphens (`-`),
-  parentheses (`(` and `)`), ampersands (`&`), dollar signs (`$`), percent signs (`%`), plus signs (`+`),
-  and forward slashes (`/`). Tabs and line breaks are not allowed.
-  Both precomposed and decomposed accents, and scripts such as Tamil, are accepted. Text is saved as entered
-  after trimming ordinary spaces; it is not Unicode-normalized. The 200-character limit counts UTF-16 code units,
-  so combining marks count separately from their base letters.
-* Prefixes are case-sensitive and must begin a whitespace-separated token (or the command arguments).
-  Ordinary slash-containing text is accepted anywhere in a value: `fn/Planning CPF/SRS`,
-  `fn/Save $3000/month`, and `ai/Planning Life/Health insurance` work, as do `fn/CPF/SRS`
-  and `fn/ CPF/SRS`.
-  Tokens beginning with `/`, including the old syntax and a bare slash, are rejected.
-* The specific near misses `fnn/`, `prr/`, and `aii/`, and case variants of these or the three valid prefixes
-  (such as `FN/`), are reserved and rejected with an invalid-parameter error at token boundaries.
-  Unknown slash-style parameters before the first field are also rejected. Inside values, arbitrary forms
-  such as `xyz/Value` or `fna/Value` are preserved as text because they cannot reliably be distinguished
-  from financial notation. Check spelling carefully: not every mistyped prefix can be detected.
-* **Free-text restriction:** `fn/Review pr/High options` sets financial need to `Review` and priority to
-  `High options`. There is no quoting or escape syntax: a whitespace-separated `fn/`, `pr/`, or `ai/`
-  always starts a parameter, even inside a value. Rephrase literal prefix-like text, for example
-  `fn/Review priority High options`, to avoid updating another field. Repeating a prefix is an error.
-* The former `/fn VALUE`, `/pr VALUE`, and `/ai VALUE` syntax is no longer accepted. For example,
-  `info 2 /pr High` reports an invalid parameter; use `info 2 pr/High`.
+* Use the positive index shown on the person's card. Search results keep their original full-list indices:
+  if the only result is labelled `2`, use `info 2`. The person must be visible in the current results.
+* Supply at least one field, each at most once, in any order. Separate fields with spaces and use lowercase prefixes.
+* A supplied value replaces that field; omitted fields and other person details stay unchanged.
+  Use an exact `-` to clear a field. Spaces around `-` are allowed; `Long-term` remains ordinary text.
+* Values must contain 1–200 characters after surrounding ordinary spaces are removed. Internal spaces are kept.
+  Unicode letters, including accented text, digits, and `. , ' ( ) & - $ % + /` are accepted.
+  Tabs, line breaks, blank values and other punctuation (such as `!` or `:`) are rejected.
+  Slash-containing text can appear anywhere in a value, including `Planning CPF/SRS` and `Save $3000/month`.
+* Updates are saved automatically. If any supplied field is invalid, none of the fields change.
 
 Examples:
 
-* `info 1 fn/retirement planning`
-* `info 1 fn/Retire on $3000 monthly pr/Target 6% return ai/CPF/SRS + insurance`
-* `info 2 fn/Planning CPF/SRS pr/High`
-* `info 2 fn/Save $3000/month ai/Planning Life/Health insurance`
-* `info 2 pr/protect family income ai/life insurance`
-* `info 1 ai/investment products fn/wealth accumulation pr/preserve capital`
-* `info 1 pr/-` clears only priority.
-* `info 1 fn/- ai/-` clears financial need and area of interest, leaving priority unchanged.
-* `info 1 pr/High ai/-` sets priority to `High` and clears area of interest, leaving financial need unchanged.
+* `info 2 fn/Save $3000/month + CPF/SRS pr/High ai/Planning Life/Health insurance` records all three fields.
+* `info 2 ai/Insurance pr/Protect family income` updates two fields, keeping the financial need.
+* `info 2 pr/High ai/-` updates priority and clears the area of interest.
+* `info 2 fn/- pr/- ai/-` clears all financial information.
+
+**Prefix restrictions:** A space-separated `fn/`, `pr/`, or `ai/` always starts a field, even inside text.
+For example, `fn/Review pr/High options` stores financial need `Review` and priority `High options`.
+There is no quoting or escaping; rephrase literal prefix-like text as `fn/Review priority High options`.
+The old `/fn VALUE`, `/pr VALUE`, `/ai VALUE` syntax and tokens starting with `/` are rejected.
+Common mistakes `fnn/`, `prr/`, `aii/` and case variants such as `FN/` are also rejected at token boundaries.
+Other misspellings inside a value, such as `xyz/Value`, may be saved as text, so check the displayed result.
+Unknown slash-style parameters before the first field are rejected.
 
 ### Recording preferred contact channel and timing: `contact`
 
-Records or clears how and when a client or prospect prefers to be contacted.
+Record how and when a client or prospect prefers to be contacted. Recorded preferences appear on their card;
+cleared preferences are hidden.
 
 Format: `contact INDEX [ch/CHANNEL|-] [tm/TIMING|-]`
 
-* `INDEX` is the positive integer shown on the person's card. Search results retain their original indices from
-  the full contact list. For example, if Bob is contact 2, use `contact 2 ch/WhatsApp` after `find Bob`.
-  The person must be visible in the current results; an index belonging to a hidden person is rejected.
-* Supply at least one of `ch/` or `tm/`, each at most once, in either order. Separate prefixes with spaces.
-* Each supplied value replaces the previous value; omitted preferences and all other person details remain unchanged.
-* Values must contain 1–200 characters after surrounding whitespace is trimmed. Internal spaces and case are preserved.
-  Free text, Unicode and punctuation are accepted, for example `WhatsApp` and `Weekdays 6:30–8 pm`.
-* An exact `-` clears the supplied preference. Surrounding ordinary spaces are allowed, so `ch/   -   ` also clears
-  the channel. Clearing an absent preference is safe. Omitted preferences remain unchanged.
-* Larger values such as `Phone-call`, `-Phone`, `Phone-`, and `--` remain normal text.
-  Tabs and other control characters around a hyphen do not form a clearing marker; they follow normal value handling.
-* Empty or whitespace-only values remain invalid; clearing requires an explicit `-`.
-* The person's card displays each recorded preference, wrapping long values. Unset preferences are hidden.
-* Preferences are saved automatically. Older data files without these fields load with no preferences.
+* Use the positive index shown on the person's card. Search results keep their original full-list indices:
+  if Bob is labelled `2` after `find Bob`, use `contact 2`. The person must be visible in the current results.
+* Supply at least one preference, each at most once, in either order. Use lowercase `ch/` and `tm/`,
+  separated from preceding text by ordinary spaces.
+* A supplied value replaces that preference; omitted preferences and other person details stay unchanged.
+  An exact `-`, optionally surrounded by ordinary spaces, clears a preference. Clearing an absent preference is safe.
+  Type `-` directly to clear; a larger value such as `Phone-call` remains text.
+* Each value must contain 1–200 characters after surrounding whitespace is removed. Internal spaces and case
+  are kept. Free text, Unicode and punctuation are accepted, including `Phone/WhatsApp` and `Weekdays 6:30–8 pm`.
+  Empty or whitespace-only values are invalid.
+* Preferences are saved automatically. If either supplied preference is invalid, neither changes.
+  Cleared preferences remain absent after restarting the application.
 
 Examples:
 
-* `contact 1 ch/WhatsApp tm/Weekdays after 6 pm`
-* `contact 2 tm/Lunch break ch/Phone call`
-* `contact 1 tm/Weekends 10 am to noon` (keeps the existing channel)
-* `contact 1 ch/-` clears only the channel.
-* `contact 1 tm/-` clears only the timing.
-* `contact 1 ch/- tm/-` clears both preferences.
-* `contact 1 ch/WhatsApp tm/-` sets the channel and clears the timing.
-* `contact 1 ch/- tm/Weekends` clears the channel and sets the timing. Either prefix order is accepted.
+* `contact 2 ch/WhatsApp tm/Weekdays after 6 pm` records both preferences.
+* `contact 2 tm/Lunch break ch/Phone call` updates both preferences in the opposite order.
+* `contact 2 ch/Email tm/-` changes the channel and clears the timing.
+* `contact 2 ch/-` clears only the channel, keeping any recorded timing.
 
-If either supplied preference is invalid, neither preference is changed. Cleared values stay absent after restarting
-the application, and their labels are hidden on the person's card.
-
-Success message: `Updated contact preferences for PERSON_NAME.`
-
-Missing or invalid indices produce `Index must be a positive integer.` An index outside the full contact list or
-belonging to a person hidden by the current filter
-produces `The person index provided is invalid.` Missing fields produce `At least one of ch/ or tm/ is required.`
-Duplicate `ch/` or `tm/` prefixes are rejected. These recognized prefixes, when preceded by a space,
-are delimiters and cannot be included literally in values. Other slash-containing text, such as `AM/PM`
-or `Phone/WhatsApp`, is preserved as part of the value.
+**Prefix restrictions:** A `ch/` or `tm/` preceded by a space always starts a preference, even inside text;
+there is no quoting or escaping. Other slash-containing text, such as `Weekdays AM/PM`, is preserved.
+Malformed parameters `/ch` and `/tm` (including `/ch/VALUE` and `/tm/VALUE`) and the exact typos
+`cch/`, `chh/`, `ttm/`, and `tmm/` are rejected after an ordinary space, even inside a preference.
+For example, `contact 2 /ch Email` and `contact 2 ch/WhatsApp tmm/Evenings` report:
+`Invalid contact parameter. Use ch/CHANNEL or tm/TIMING; use - to clear a preference.`
+Neither command changes the stored preferences. Detection is limited to these patterns; other misspellings
+may be saved as text. For example, `ch/Email xx/After 6 pm` records the entire text as the channel,
+without setting a timing.
 
 ### Adding a dated interaction note: `note`
 

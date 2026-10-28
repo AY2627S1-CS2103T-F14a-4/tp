@@ -2,77 +2,63 @@
 !include style.puml
 skinparam ArrowFontStyle plain
 
-actor User USER_COLOR
-
 box Logic LOGIC_COLOR_T1
 participant ":LogicManager" as Logic LOGIC_COLOR
 participant ":ClientBookParser" as Parser LOGIC_COLOR
-participant ":InfoCommandParser" as InfoParser LOGIC_COLOR
+participant ":InfoCommandParser" as FeatureParser LOGIC_COLOR
 participant "command:InfoCommand" as Command LOGIC_COLOR
 end box
 
 box Model MODEL_COLOR_T1
-participant "model:Model" as Model MODEL_COLOR
-participant "original:Person" as Original MODEL_COLOR
-participant "updated:Person" as Updated MODEL_COLOR
+participant "live:Model" as Live MODEL_COLOR
+participant "temporary:ModelManager" as Temp MODEL_COLOR
 end box
 
 box Storage STORAGE_COLOR_T1
 participant ":Storage" as Storage STORAGE_COLOR
 end box
 
-User -> Logic : execute("info 1 pr/High ai/-")
+[-> Logic : execute("info 2 pr/High ai/-")
 activate Logic
 Logic -> Parser : parseCommand(commandText)
 activate Parser
-Parser -> InfoParser : parse(arguments)
-activate InfoParser
-note right of InfoParser
-Validate positive index syntax, required financial prefixes,
-duplicate/unknown parameters and normal field values.
-Build InfoDescriptor with specified flags and nullable values:
-omitted field -> preserved; normal value -> replaced; '-' -> cleared.
-For this command: priority = High, areaOfInterest = null,
-both specified; financialNeed remains unspecified.
-end note
+Parser -> FeatureParser : parse(arguments)
+activate FeatureParser
+note right of FeatureParser : Validate index syntax and fields;\nbuild set/omit/clear descriptor.
 create Command
-InfoParser -> Command : new InfoCommand(index, descriptor)
-note right of Command : Constructor defensively copies the descriptor and its flags.
-InfoParser --> Parser : command
-deactivate InfoParser
+FeatureParser -> Command : new InfoCommand(index, descriptor)
+FeatureParser --> Parser : command
+deactivate FeatureParser
 Parser --> Logic : command
 deactivate Parser
-Logic -> Command : execute(model)
+
+Logic -> Live : getClientBook(), getUserPrefs(),\ngetFilteredPersonPredicate()
+Live --> Logic : data, preferences, predicate
+create Temp
+Logic -> Temp : new ModelManager(data, preferences)
+Logic -> Temp : updateFilteredPersonList(predicate)
+Logic -> Command : execute(temporary, storage)
 activate Command
-Command -> Model : getFilteredPersonList()
-Model --> Command : displayedPersons
-note right of Command
-Check index against displayedPersons.size(), then select original.
-Reject out-of-range indices before constructing or replacing a person.
-end note
-Command -> Original : getName()
-Original --> Command : name
-note right of Original
-Other getters supply phone, email, relationship, tags,
-interaction notes, next action and both contact preferences.
-These unrelated fields are preserved.
-end note
-Command -> Original : getFinancialNeed()
-Original --> Command : existingFinancialNeed
-create Updated
-Command -> Updated : new Person(preserved details, resolved financial fields)
-note right of Updated
-Financial need preserved, priority replaced with High,
-area of interest cleared. All validation and index checks passed.
-end note
-Command -> Model : setPerson(original, updated)
-note right of Model : Observable list updates the PersonCard; the filter remains active.
+Command -> Temp : getClientBook().getPersonList()
+Temp --> Command : complete list
+note right of Command : Check full-list bounds;\nselect person at original index 2.
+Command -> Temp : getFilteredPersonList()
+Temp --> Command : visible persons
+note right of Command : Reject if selected person is hidden.\nConstruct replacement only after checks.
+Command -> Temp : setPerson(original, updated)
+note right of Temp : Priority replaced; area of interest cleared.\nFinancial need and unrelated fields preserved.
 Command --> Logic : CommandResult
 deactivate Command
-Logic -> Model : getClientBook()
-Model --> Logic : clientBook
-Logic -> Storage : saveClientBook(clientBook)
-Storage --> Logic
-Logic --> User : CommandResult
+
+Logic -> Temp : getClientBook()
+Temp --> Logic : updated client book
+opt client book changed
+    Logic -> Storage : saveClientBook(updated client book)
+    Storage --> Logic : save completed
+end
+note over Logic, Live : Save failure returns an error without committing.\nUnchanged data skips saving.
+Logic -> Live : setClientBook(updated client book)
+Logic -> Live : updateFilteredPersonList(predicate)
+[<-- Logic : CommandResult
 deactivate Logic
 @enduml
