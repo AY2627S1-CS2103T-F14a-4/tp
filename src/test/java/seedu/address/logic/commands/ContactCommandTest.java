@@ -25,6 +25,7 @@ import seedu.address.commons.core.index.Index;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.ContactCommand.ContactDescriptor;
 import seedu.address.logic.parser.ClientBookParser;
+import seedu.address.logic.parser.ContactCommandParser;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.ClientBook;
 import seedu.address.model.Model;
@@ -138,6 +139,22 @@ public class ContactCommandTest {
         model.updateFilteredPersonList(person -> false);
         assertCommandFailure(parser.parseCommand("contact 1 tm/-"), model,
                 Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+    }
+
+    @Test
+    public void parse_mistypedParameters_noMutation() {
+        Person original = new PersonBuilder(model.getFilteredPersonList().get(1))
+                .withPreferredContactChannel("Email").withPreferredContactTiming("Weekends")
+                .withFinancialNeed("Retirement").withPriority("High").withAreaOfInterest("Insurance").build();
+        model.setPerson(model.getFilteredPersonList().get(1), original);
+        List<Person> expectedPersons = List.copyOf(model.getClientBook().getPersonList());
+        for (String fields : List.of("/ch sms", "/tm Evenings", "ch/WhatsApp tmm/Evenings",
+                "tm/Evenings chh/Phone", "ch/- tmm/Evenings", "tm/- cch/Phone",
+                "ch/Phone tm/Evenings ttm/Weekends")) {
+            assertThrows(ParseException.class, ContactCommandParser.MESSAGE_INVALID_PARAMETER, () ->
+                    parser.parseCommand("contact 2 " + fields).execute(model, null));
+            assertEquals(expectedPersons, model.getClientBook().getPersonList());
+        }
     }
 
     @Test

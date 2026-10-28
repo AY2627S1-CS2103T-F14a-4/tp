@@ -5,6 +5,7 @@ import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailur
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
+import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
 
 import java.util.List;
 
@@ -215,9 +216,71 @@ public class ContactCommandParserTest {
     }
 
     @Test
+    public void parse_malformedContactParameters_helpfulError() {
+        String message = "Invalid contact parameter. Use ch/CHANNEL or tm/TIMING; use - to clear a preference.";
+        for (String parameter : List.of("/ch sms", "/tm Evenings", "/ch/sms", "/tm/Evenings", "/ch", "/tm")) {
+            assertParseFailure(parser, "2 " + parameter, message);
+            assertParseFailure(parser, "2 " + parameter + " ch/Phone", message);
+            assertParseFailure(parser, "2 ch/Phone " + parameter, message);
+        }
+        assertParseFailure(parser, "1 /ch Email", message);
+    }
+
+    @Test
+    public void parse_repeatedLetterPrefixes_helpfulError() {
+        String message = "Invalid contact parameter. Use ch/CHANNEL or tm/TIMING; use - to clear a preference.";
+        for (String prefix : List.of("cch/", "chh/", "ttm/", "tmm/")) {
+            assertParseFailure(parser, "2 " + prefix + "Evenings", message);
+            assertParseFailure(parser, "2 ch/WhatsApp " + prefix + "Evenings", message);
+            assertParseFailure(parser, "2 tm/Evenings " + prefix + "Phone", message);
+            assertParseFailure(parser, "2 ch/- " + prefix + "Evenings", message);
+            assertParseFailure(parser, "2 ch/Phone tm/Evenings " + prefix, message);
+        }
+    }
+
+    @Test
+    public void parse_duplicatesWithParameterMistakes_duplicateError() {
+        assertParseFailure(parser, "2 ch/Phone ch/Email tmm/Evenings",
+                Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_CONTACT_CHANNEL));
+        assertParseFailure(parser, "2 tm/Weekends tm/Evenings chh/Phone",
+                Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_CONTACT_TIMING));
+    }
+
+    @Test
+    public void parse_invalidIndexWithParameterMistakes_indexError() {
+        for (String index : List.of("0", "abc", "2147483648", "-1", "1.5", "1 2")) {
+            for (String fields : List.of("/ch sms", "ch/WhatsApp tmm/Evenings", "tmm/Evenings")) {
+                assertParseFailure(parser, index + " " + fields, ParserUtil.MESSAGE_INVALID_INDEX);
+            }
+        }
+        assertParseFailure(parser, "/ch sms", ParserUtil.MESSAGE_INVALID_INDEX);
+    }
+
+    @Test
+    public void parse_slashValuesAndBothFields_preservesFreeText() {
+        assertParseSuccess(parser, "2 ch/Phone/WhatsApp", new ContactCommand(
+                INDEX_SECOND_PERSON, new PreferredContactChannel("Phone/WhatsApp"),
+                null));
+        assertParseSuccess(parser, "2 tm/Weekdays AM/PM", new ContactCommand(
+                INDEX_SECOND_PERSON, null,
+                new PreferredContactTiming("Weekdays AM/PM")));
+        assertParseSuccess(parser, "2 ch/Email xx/After 6 pm", new ContactCommand(
+                INDEX_SECOND_PERSON,
+                new PreferredContactChannel("Email xx/After 6 pm"), null));
+        assertParseSuccess(parser, "2 ch/WhatsApp tm/Evenings", new ContactCommand(
+                INDEX_SECOND_PERSON, new PreferredContactChannel("WhatsApp"),
+                new PreferredContactTiming("Evenings")));
+        for (String value : List.of("Email mt/Evenings", "Email hc/Phone", "Email tmmm/Evenings",
+                "Email TM/Evenings", "Contact/channel", "Email newtmm/Evenings")) {
+            assertParseSuccess(parser, "1 ch/" + value,
+                    new ContactCommand(INDEX_FIRST_PERSON, new PreferredContactChannel(value), null));
+        }
+    }
+
+    @Test
     public void parse_missingFieldsOrMalformedPrefixes_failure() {
         assertParseFailure(parser, " 1", ContactCommand.MESSAGE_NO_FIELDS);
-        for (String input : List.of(" 1 xx/Email", " 1 /ch Email", " 1 chEmail", " 1 tm Evenings ch/Email")) {
+        for (String input : List.of(" 1 xx/Email", " 1 chEmail", " 1 tm Evenings ch/Email")) {
             assertParseFailure(parser, input, ParserUtil.MESSAGE_INVALID_INDEX);
         }
         assertThrows(NullPointerException.class, () -> parser.parse(null));
