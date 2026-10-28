@@ -435,13 +435,16 @@ Format: `next INDEX a/ACTION d/yyyy-MM-dd`
   Separate the index and prefixes with spaces.
 * The action must contain 1–200 characters after surrounding whitespace is removed.
 * The due date must be a real date in years `0001` to `9999`, with exactly four year digits
-  and two month/day digits. Past dates are accepted. For example, `0000-01-01`, `2026-02-30`
+  and two month/day digits. The date must be today or later, using your computer's local date
+  when the command executes. This applies both when creating and replacing a follow-up.
+  For example, `0000-01-01`, `2026-02-30`
   and `2026-2-03` are rejected.
 * Each person has at most one next action. Running `next` again replaces the previous action and date,
   and resets its status to pending, even if the previous action was completed.
 * The person's contact details, financial information, tags and interaction notes are preserved.
 
-Example: `next 1 a/Send retirement proposal d/2026-10-20`
+Example, if today is `2026-10-26`: `next 1 a/Send retirement proposal d/2026-11-02`.
+When trying examples, use today or a future date from your computer's local calendar.
 
 The success message is `Next action for NAME has been updated successfully.`
 The card shows the description, due date and a text status: `Pending`, `Overdue`, or `Completed`.
@@ -458,6 +461,7 @@ Input | Error message
 `next 99 a/Call d/2026-10-20` when fewer than 99 people are displayed | `The person index provided is invalid.`
 `next 1 a/ d/2026-10-20` or an action over 200 characters | `Next action must contain 1 to 200 characters.`
 `next 1 a/Call d/2026-02-30` | `Due date must be a valid date in yyyy-MM-dd format.`
+`next 1 a/Call d/2026-10-25` when today is `2026-10-26` | `Follow-up date cannot be before today.`
 
 Repeated `a/` or `d/` prefixes produce the standard duplicate-prefix error. Space-prefixed `a/` and `d/`
 are reserved delimiters and cannot appear literally within the description. URLs such as `https://example.com`
@@ -528,7 +532,9 @@ Shows every client or prospect whose incomplete next action is due today or earl
 
 Format: `due`
 
-* Includes actions due today and overdue actions, using your computer's local date.
+* Includes actions due today and overdue actions, using your computer's local date. Previously
+  saved follow-ups are retained as they become overdue; the new-date restriction in `next` does
+  not prevent loading them or showing them here.
 * Excludes completed actions, future actions and people without a next action.
 * Replaces any previous `find` filter. Results are sorted by due date ascending (most overdue first).
   Equal dates are ordered alphabetically by name, ignoring case; exact spelling breaks case-only ties.
@@ -638,7 +644,7 @@ Action     | Format, Examples
 **Restore** | `restore`<br> e.g., `restore`
 **Tag**    | `tag INDEX TAG [MORE_TAGS...]`<br> e.g., `tag 1 priority referral`
 **Tag delete** | `tagdelete INDEX [TAG...]`<br> e.g., `tagdelete 1 friend referral`
-**Next**   | `next INDEX a/ACTION d/yyyy-MM-dd`<br> e.g., `next 1 a/Call d/2026-10-20`
+**Next**   | `next INDEX a/ACTION d/yyyy-MM-dd`<br> e.g., `next 1 a/Call d/2026-11-02` (use today or later)
 **Reschedule** | `reschedule INDEX d/yyyy-MM-dd [a/ACTION]`<br> e.g., `reschedule 1 d/2026-11-02`
 **Done**   | `done INDEX`<br> e.g., `done 1`
 **Due**    | `due`

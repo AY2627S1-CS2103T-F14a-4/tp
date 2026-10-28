@@ -419,17 +419,26 @@ The parser validates the index through `ParserUtil#parseIndex`, rejects duplicat
 missing action/date fields. `NextAction` strips surrounding description whitespace and checks a length of
 1–200 Java string characters. Its date parser enforces the four-digit-year/two-digit-month/two-digit-day shape
 and strict calendar validation. Both parsing and model construction restrict the year to 1–9999;
-year zero is rejected, including when loading JSON. Backdated follow-ups within this range are valid.
+year zero is rejected, including when loading JSON. Calendar parsing and the model continue to
+accept historical dates so existing saved follow-ups remain loadable as they become overdue.
 
 `NextCommand` resolves the visible person against its index in the complete list, rejects invalid indices,
-then passes the replacement person to `Model#setPerson`. Both new and replacement actions have
+and checks the requested date against `LocalDate.now(clock)` before any mutation. Both new and
+replacement follow-ups must be dated today or later; past dates produce
+`Follow-up date cannot be before today.`. The default clock uses `Clock.systemDefaultZone()`;
+tests inject a fixed clock to cover today, tomorrow, yesterday, and local-zone boundaries.
+Validation belongs to the command rather than the date value or storage adapter so previously
+saved overdue follow-ups continue to load and appear in `due`. The parser remains responsible for
+strict date format/calendar validation. The command then passes the replacement person to
+`Model#setPerson`. Both new and replacement actions have
 `completed = false`. The observable list updates the card. `LogicManager` then saves through the existing
 storage pipeline; the command itself does not write files.
 
 <puml src="diagrams/NextSequenceDiagram.puml" alt="Next command sequence diagram" />
 
 Diagram source: [NextSequenceDiagram.puml](diagrams/NextSequenceDiagram.puml).
-The diagram shows the successful path. Parser failures and invalid displayed indices stop before mutation;
+The diagram shows the successful path, assuming the example date is today or later.
+Parser failures, invalid displayed indices and past replacement dates stop before mutation;
 save failures follow the existing `LogicManager` error handling.
 
 #### Completing an action (US20)
@@ -531,8 +540,10 @@ there is no background midnight timer. Restarting the app refreshes all card lab
 
 US18 tests cover missing/duplicate prefixes, zero/negative/non-integer/overflow indices, displayed-list bounds,
 empty and whitespace-only actions, 200/201-character descriptions, trimming, invalid dates (`2026-02-30`),
-leap days, past dates, replacement reset, filtered indices, preservation of unrelated fields, old JSON,
-invalid stored values, completion round trips and card display/wrapping.
+leap days, rejection of newly scheduled past dates without mutation, today/future acceptance,
+local clock-zone boundaries, replacement reset, filtered indices, preservation of unrelated fields,
+old JSON, historical follow-ups remaining visible in `due`, invalid stored values, completion round
+trips and card display/wrapping.
 
 ### \[Proposed\] Undo/redo feature
 

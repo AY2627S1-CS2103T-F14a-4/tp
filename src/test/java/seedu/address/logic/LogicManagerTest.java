@@ -26,6 +26,7 @@ import seedu.address.logic.commands.BackupCommand;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.NextCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.Model;
@@ -68,7 +69,7 @@ public class LogicManagerTest {
         logic.execute("edit 1 p/81234567");
         logic.execute("info 1 /pr Protection");
         logic.execute("note 1 d/2000-01-01 n/Discussed plans");
-        logic.execute("next 1 a/Call d/2000-01-02");
+        logic.execute("next 1 a/Call d/" + LocalDate.now().plusDays(2));
         logic.execute("done 1");
         Person beforeInvalidInput = model.getFilteredPersonList().getFirst();
         assertThrows(ParseException.class, () -> logic.execute("contact 1 ch/Phone tm/"));
@@ -78,6 +79,13 @@ public class LogicManagerTest {
         Person restored = reopened.readClientBook().orElseThrow().getPersonList().getFirst();
         assertEquals("WhatsApp", restored.getPreferredContactChannel().orElseThrow().value);
         assertEquals("Weekdays after 6 pm", restored.getPreferredContactTiming().orElseThrow().value);
+    }
+
+    @Test
+    public void execute_nextWithPastDate_rejectsWithoutReplacingExistingFollowup() {
+        NextAction original = new NextAction("Call", LocalDate.of(2000, 1, 1), true);
+        model.addPerson(new PersonBuilder(AMY).withNextAction(original).build());
+        assertCommandException("next 1 a/Email d/" + LocalDate.now().minusDays(1), NextCommand.MESSAGE_PAST_DATE);
     }
 
     @Test

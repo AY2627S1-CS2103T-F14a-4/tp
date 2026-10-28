@@ -13,7 +13,10 @@ import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BOB;
 import static seedu.address.testutil.TypicalPersons.getTypicalClientBook;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -229,7 +232,8 @@ public class ContactCommandTest {
         assertEquals(expected, model.getFilteredPersonList().getFirst());
         NextAction action = new NextAction("Email", LocalDate.of(2000, 1, 3), false);
         expected = new PersonBuilder(expected).withNextAction(action).build();
-        parser.parseCommand("next 1 a/Email d/2000-01-03").execute(model, null);
+        new NextCommand(INDEX_FIRST_PERSON, action,
+                Clock.fixed(Instant.parse("2000-01-03T04:00:00Z"), ZoneOffset.UTC)).execute(model, null);
         assertEquals(expected, model.getFilteredPersonList().getFirst());
         parser.parseCommand("done 1").execute(model, null);
         assertEquals(new PersonBuilder(expected).withNextAction(action.markCompleted()).build(),

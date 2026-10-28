@@ -78,3 +78,23 @@ For manual checks, use disposable records and a separate data file:
 6. Close and reopen the app using the same data file. Confirm the entries, order and duplicates remain.
 7. Try an impossible date, blank note and out-of-range index. Confirm clear errors and unchanged records.
 8. Load an older valid JSON file without `interactionNotes`. Confirm its records load with no note entries.
+
+### Follow-up date validation (#115)
+
+Use fictional records in a separate test folder. Replace `TODAY`, `TOMORROW` and `YESTERDAY`
+with those dates from your computer's local calendar in `yyyy-MM-dd` format; they are placeholders,
+not literal command arguments. Ensure the displayed person at index 1 exists before each command.
+
+1. Run `next 1 a/Call d/TODAY`. Expect success and a pending follow-up due today.
+2. Run `next 1 a/Email d/YESTERDAY`. Expect `Follow-up date cannot be before today.`;
+   the description, date, completion status and current filter must remain unchanged.
+3. Run `done 1`, then `next 1 a/Email d/YESTERDAY`. Expect the same rejection and the existing
+   follow-up to remain completed. Use `list` first if the completed person disappeared from `due`.
+4. Run `next 1 a/Email d/TOMORROW`. Expect success, the replacement description/date, and a pending status.
+5. In a saved test file containing a valid incomplete follow-up dated before today, restart the app
+   and run `due`. Expect that overdue follow-up to load and appear. Do not edit production data.
+6. A malformed calendar date such as `next 1 a/Call d/2026-02-30` must still report the existing
+   date-format validation error and leave the record unchanged.
+
+Automated command tests use fixed clocks; a JSON round-trip regression confirms that the restriction
+on new commands does not reject historical stored follow-ups or hide them from `due`.
