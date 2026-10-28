@@ -123,6 +123,38 @@ public class StringUtilTest {
         assertTrue(StringUtil.containsWordIgnoreCase("AAA bBb ccc  bbb", "bbB"));
     }
 
+    //---------------- Tests for containsSubstringIgnoreCase --------------------------------------
+
+    @Test
+    public void containsSubstringIgnoreCase_nullSubstring_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () ->
+                StringUtil.containsSubstringIgnoreCase("typical sentence", null));
+    }
+
+    @Test
+    public void containsSubstringIgnoreCase_emptySubstring_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, "Substring parameter cannot be empty", () ->
+                StringUtil.containsSubstringIgnoreCase("typical sentence", "  "));
+    }
+
+    @Test
+    public void containsSubstringIgnoreCase_nullSentence_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () ->
+                StringUtil.containsSubstringIgnoreCase(null, "abc"));
+    }
+
+    @Test
+    public void containsSubstringIgnoreCase_validInputs_correctResult() {
+        assertFalse(StringUtil.containsSubstringIgnoreCase("", "abc"));
+        assertFalse(StringUtil.containsSubstringIgnoreCase("Alexander", "Alexz"));
+        assertFalse(StringUtil.containsSubstringIgnoreCase("Anne-Marie", "AnMarie"));
+
+        assertTrue(StringUtil.containsSubstringIgnoreCase("Alexander", "Alex"));
+        assertTrue(StringUtil.containsSubstringIgnoreCase("Anne-Marie Tan", "Marie"));
+        assertTrue(StringUtil.containsSubstringIgnoreCase("Anne-Marie Tan", "mARie"));
+        assertTrue(StringUtil.containsSubstringIgnoreCase("Alexander", "  Alex  "));
+    }
+
     //---------------- Tests for getDetails --------------------------------------
 
     /*

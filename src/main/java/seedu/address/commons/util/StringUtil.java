@@ -6,6 +6,7 @@ import static seedu.address.commons.util.AppUtil.checkArgument;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Arrays;
+import java.util.Locale;
 
 /**
  * Helper functions for handling strings.
@@ -36,6 +37,23 @@ public class StringUtil {
 
         return Arrays.stream(wordsInPreppedSentence)
                 .anyMatch(preppedWord::equalsIgnoreCase);
+    }
+
+    /**
+     * Returns true if {@code sentence} contains {@code substring}, ignoring case.
+     * Leading and trailing whitespace in {@code substring} is ignored.
+     *
+     * @param sentence cannot be null
+     * @param substring cannot be null or empty
+     */
+    public static boolean containsSubstringIgnoreCase(String sentence, String substring) {
+        requireNonNull(sentence);
+        requireNonNull(substring);
+
+        String preppedSubstring = substring.trim();
+        checkArgument(!preppedSubstring.isEmpty(), "Substring parameter cannot be empty");
+
+        return sentence.toLowerCase(Locale.ROOT).contains(preppedSubstring.toLowerCase(Locale.ROOT));
     }
 
     /**
