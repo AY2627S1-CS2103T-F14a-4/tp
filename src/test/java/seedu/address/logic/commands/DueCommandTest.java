@@ -150,6 +150,44 @@ public class DueCommandTest {
     }
 
     @Test
+    public void execute_reminderDates_ignoreCompletedAndFutureActionDatesWhenSorting() throws Exception {
+        Person early = new PersonBuilder(NO_ACTION).withRecurringReminders(
+                new RecurringReminder("Birthday", MonthDay.of(10, 25))).build();
+        Person middle = new PersonBuilder(COMPLETED).withRecurringReminders(
+                new RecurringReminder("Renewal", MonthDay.of(11, 4))).build();
+        Person late = new PersonBuilder(DUE_TOMORROW).withRecurringReminders(
+                new RecurringReminder("Later", MonthDay.of(11, 15)),
+                new RecurringReminder("Earlier", MonthDay.of(11, 9))).build();
+        Model reminders = new ModelManager(new ClientBookBuilder().withPerson(late).withPerson(middle)
+                .withPerson(early).build(), new UserPrefs());
+
+        command.execute(reminders, null);
+
+        assertEquals(List.of(early, middle, late), reminders.getFilteredPersonList());
+        assertEquals(List.of(late, middle, early), reminders.getClientBook().getPersonList());
+        new RemindCommand(Index.fromOneBased(1),
+                new RecurringReminder("Earlier", MonthDay.of(10, 21))).execute(reminders, null);
+        Person updated = reminders.getClientBook().getPersonList().getFirst();
+        assertEquals(List.of(updated, early, middle), reminders.getFilteredPersonList());
+        new UnremindCommand(Index.fromOneBased(1), "Earlier").execute(reminders, null);
+        updated = reminders.getClientBook().getPersonList().getFirst();
+        assertEquals(List.of(early, middle, updated), reminders.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_actionAndReminderOnSameDate_sortsByName() throws Exception {
+        Person reminder = new PersonBuilder(NO_ACTION).withName("Alpha").withRecurringReminders(
+                new RecurringReminder("Birthday", MonthDay.of(10, 20))).build();
+        Person action = new PersonBuilder(DUE_TODAY).withName("Zulu").build();
+        Model tied = new ModelManager(new ClientBookBuilder().withPerson(action).withPerson(reminder).build(),
+                new UserPrefs());
+
+        command.execute(tied, null);
+
+        assertEquals(List.of(reminder, action), tied.getFilteredPersonList());
+    }
+
+    @Test
     public void equals() {
         assertEquals(command, command);
         assertEquals(command, new DueCommand(Clock.fixed(CLOCK.instant(), CLOCK.getZone())));
