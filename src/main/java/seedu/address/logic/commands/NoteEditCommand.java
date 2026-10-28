@@ -66,7 +66,8 @@ public class NoteEditCommand extends Command {
                 original.getRelationship(), original.getFinancialNeed().orElse(null),
                 original.getPriority().orElse(null), original.getAreaOfInterest().orElse(null), notes,
                 original.getNextAction().orElse(null),
-                original.getPreferredContactChannel().orElse(null), original.getPreferredContactTiming().orElse(null));
+                original.getPreferredContactChannel().orElse(null), original.getPreferredContactTiming().orElse(null),
+                original.getRecurringReminders());
         model.setPerson(original, updated);
         return new CommandResult(String.format(MESSAGE_SUCCESS, noteIndex.getOneBased(), original.getName().fullName));
     }

@@ -9,6 +9,7 @@ import static seedu.address.testutil.TypicalPersons.BENSON;
 import static seedu.address.testutil.TypicalPersons.getTypicalClientBook;
 
 import java.time.LocalDate;
+import java.time.MonthDay;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -36,6 +37,7 @@ import seedu.address.model.UserPrefs;
 import seedu.address.model.person.InteractionNote;
 import seedu.address.model.person.NextAction;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.RecurringReminder;
 import seedu.address.testutil.PersonBuilder;
 
 public class PersonCardTest {
@@ -201,6 +203,31 @@ public class PersonCardTest {
                     assertTrue(label.getHeight() > 30, "Maximum-length action must wrap in a narrow card");
                     assertTrue(label.getBoundsInParent().getMaxX() <= card.getWidth());
                 }
+                checked.complete(null);
+            } catch (Throwable error) {
+                checked.completeExceptionally(error);
+            }
+        });
+        checked.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void recurringReminders_hiddenWhenAbsent_showsUpcomingDateAndWrappedLabel() throws Exception {
+        CompletableFuture<Void> checked = new CompletableFuture<>();
+        Platform.runLater(() -> {
+            try {
+                VBox absent = (VBox) new PersonCard(ALICE, 1).getRoot().lookup("#recurringReminders");
+                assertFalse(absent.isVisible());
+                assertFalse(absent.isManaged());
+                RecurringReminder reminder = new RecurringReminder("A".repeat(50), MonthDay.of(2, 29));
+                Region card = new PersonCard(ALICE.withRecurringReminder(reminder), 1).getRoot();
+                VBox reminders = (VBox) card.lookup("#recurringReminders");
+                assertTrue(reminders.isVisible());
+                assertTrue(reminders.isManaged());
+                Label label = (Label) reminders.getChildren().getFirst();
+                assertEquals("Yearly | " + reminder.nextOccurrence(LocalDate.now()) + ": " + reminder.getLabel(),
+                        label.getText());
+                assertTrue(label.isWrapText());
                 checked.complete(null);
             } catch (Throwable error) {
                 checked.completeExceptionally(error);

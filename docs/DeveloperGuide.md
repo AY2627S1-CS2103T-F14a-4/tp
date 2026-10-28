@@ -491,21 +491,50 @@ missing follow-ups, date-only and description changes, reopening completed actio
 past dates without mutation, local-zone date boundaries and due-filter updates. Model and JSON
 round-trip tests verify immutable rescheduling, pending status and preservation of optional fields.
 
+#### Yearly recurring reminders (US22)
+
+`ClientBookParser` dispatches `remind INDEX a/LABEL d/MM-dd` to `RemindCommandParser`, which reuses
+`ParserUtil.parseIndex` and the existing action/date prefixes. It rejects duplicate/missing prefixes and
+constructs an immutable `RecurringReminder`. Labels are stripped, limited to 50 characters and reject
+control characters and slashes. The date is a strictly formatted `MonthDay`; no year or general recurrence
+rule is stored.
+
+`RemindCommand` resolves the displayed index and uses `Person.withRecurringReminder` through
+`Model.setPerson`. Exact case-sensitive label matching updates a reminder in place; otherwise it appends.
+`Person` defensively copies its reminder list, enforces unique labels, and includes it in equality, hashing
+and every copy path. Existing `edit`, `info` and note mutation commands pass the list through their person
+copies. `add` syntax and existing constructors are unchanged; older constructors default to an empty list.
+
+`JsonAdaptedRecurringReminder` stores `{ "label": "Birthday", "date": "02-29" }` within the person's
+`recurringReminders` array. `JsonAdaptedPerson` validates each element and rejects null elements or duplicate
+labels. A missing, null or empty array loads as an empty list, preserving compatibility with old JSON.
+Persistence uses the existing `LogicManager`/storage path, including backup and restore.
+
+`RecurringReminder.nextOccurrence(today)` computes this year's occurrence or next year's if it has passed.
+`MonthDay.atYear` maps February 29 to February 28 in non-leap years. `NextActionDuePredicate` retains its
+existing incomplete due-action condition and additionally accepts a next occurrence 0–30 days from its
+captured execution date. The 30-day horizon uses `ChronoUnit.DAYS`, supports year rollover, and has no
+accumulated overdue annual occurrence. `PersonCard` shows labels and next dates in the existing card;
+`done` still changes only `NextAction`.
+
 #### Viewing due actions (US19)
 
 `ClientBookParser` routes argument-free `due` to `DueCommand`; any arguments are rejected with
 `The due command takes no arguments.`. On each execution, `DueCommand` obtains today's date using
 `LocalDate.now(clock)` and calls `Model#updateFilteredPersonList` with a new `NextActionDuePredicate`.
-The predicate includes only people with an incomplete next action whose date is today or earlier.
+The predicate includes people with an incomplete next action whose date is today or earlier, or a yearly
+reminder whose next occurrence is within 30 days inclusive (US22).
 This replaces any previous search filter without changing stored people. Completing an action through
-`done` replaces the person, so the observable filtered list automatically excludes that person.
+`done` replaces the person, so the observable filtered list automatically excludes that person unless
+an upcoming yearly reminder still qualifies.
 
 The default constructor uses `Clock.systemDefaultZone()`. Tests inject a `Clock.fixed` with an explicit
 zone to make the date boundary deterministic. The predicate captures the execution date; rerunning `due`
-refreshes it after midnight. Empty results report `No follow-ups are due.`; otherwise the command reports
-the number of matching follow-ups.
+refreshes it after midnight. Empty results report `No follow-ups are due and no yearly reminders are upcoming.`;
+otherwise the command reports the number of matching people, counting a person only once.
 
-The due view is sorted by due date ascending, then name ignoring case, with exact spelling as a final
+The due view is sorted by the earliest qualifying action or yearly-reminder date ascending, then name
+ignoring case, with exact spelling as a final
 tie-breaker (#138). `ModelManager` exposes a `SortedList` over its existing `FilteredList`, so sorting
 does not mutate or persist the backing contact order. The model stores both its current predicate and
 comparator. `LogicManager` carries both across its temporary-model execution and successful commit;
