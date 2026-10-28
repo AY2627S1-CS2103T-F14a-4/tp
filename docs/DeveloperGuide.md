@@ -312,18 +312,18 @@ The following sequence shows `info 1 /pr High /ai -`; validation and index resol
 
 ### Dated interaction notes (US14)
 
-`note INDEX d/yyyy-MM-dd n/NOTE` appends an interaction note to the person at the index in the currently displayed
-list. It works for clients and prospects, preserves the current filter, and does not replace earlier entries.
+`note INDEX d/yyyy-MM-dd [t/TYPE] [o/OUTCOME] n/NOTE` appends an interaction note to the person at the displayed
+client index. It works for clients and prospects, preserves the current filter, and does not replace earlier entries.
 
 #### Model and command flow
 
-1. `ClientBookParser` routes the command to `NoteCommandParser`. The parser reads the index and date before `n/`,
-   then treats the entire remaining body as text. URLs, slashes and further prefix-like strings remain note content.
-2. `InteractionNote` stores an immutable `LocalDate` and nonblank text. Date parsing checks the `yyyy-MM-dd` shape
+1. `ClientBookParser` routes the command to `NoteCommandParser`. The parser reads the index, date and optional
+   interaction metadata before the first `n/`, then treats the entire remaining body as text. URLs, slashes and further prefix-like strings remain note content.
+2. `InteractionNote` stores an immutable `LocalDate`, nonblank text, `InteractionType` and `InteractionOutcome`. Date parsing checks the `yyyy-MM-dd` shape
    and uses strict ISO calendar validation. Past dates are allowed. Surrounding text whitespace is stripped;
    internal content and case are preserved without a character whitelist or maximum length.
 3. `NoteCommand` checks the displayed index and rejects an exact duplicate in that person's history using
-   `InteractionNote.equals()` before making changes. Otherwise, it copies the history, appends the new entry and calls
+   `InteractionNote.hasSameContent()` (date and stripped text) before making changes. Otherwise, it copies the history, appends the new entry and calls
    `Model#setPerson` with a replacement `Person`. Other fields remain unchanged. The same date with different text,
    or the same text with different dates, is allowed. `Person` stably sorts its defensive copy by date, oldest first,
    preserving order for equal dates.
@@ -337,8 +337,9 @@ their replacement persons. `PersonBuilder` also preserves it when copying a pers
 #### Persistence and display
 
 `JsonAdaptedPerson` stores an `interactionNotes` array of `JsonAdaptedInteractionNote` objects, each containing
-`date` and `text`. Missing or null arrays in older JSON files become empty histories. Loading validates stored
-dates and note text; serialization preserves entry order and duplicates.
+`date`, `text`, `type` and `outcome`. Missing or null arrays in older JSON files become empty histories.
+Missing or null metadata fields default independently to `UNSPECIFIED`; unknown or blank stored enum values
+raise `IllegalValueException`. Loading validates dates and note text; serialization preserves entry order and duplicates.
 
 `PersonCard` displays dated, wrapped labels in the existing card's interaction-note container. Empty histories are
 hidden and unmanaged. Labels have a zero minimum/preferred width and an unbounded maximum width so the parent
@@ -351,21 +352,63 @@ measurement. No fixed card height or forced list refresh is needed.
 The parser distinguishes missing index, date and note prefix; malformed calendar dates and blank text have specific
 errors. Execution rejects indices outside the currently displayed list before changing the model.
 
-This feature provides adding, displaying, editing and deleting dated notes. Chronological sorting,
-structured interaction outcomes and note search remain separate user stories.
+This feature provides adding, displaying, editing and deleting dated notes, with chronological sorting and
+structured type/outcome metadata. Searching interaction notes (US16) remains outside this feature.
 
-#### Editing note text
+#### Interaction type and outcome (US15)
 
-`noteedit CONTACT_INDEX NOTE_INDEX n/NEW_NOTE_CONTENT` is routed to `NoteEditCommandParser`.
-The parser requires two positive indices followed by `n/` and nonblank text. As with `note`, everything after
-the prefix is treated as note content, including further prefix-like strings.
+`InteractionType` contains `MEETING`, `CALL`, `MESSAGE`, `OTHER`, and `UNSPECIFIED`.
+`InteractionOutcome` contains `SUCCESSFUL`, `UNSUCCESSFUL`, `PENDING`, and `UNSPECIFIED`.
+The explicit unspecified states represent absent information without inventing historical interaction details.
+Both the legacy two-argument `InteractionNote` constructor and old JSON use these defaults.
+The four-argument constructor rejects null metadata. Full value equality and hashing include both fields,
+so changes to metadata participate in person equality and persistence; duplicate-note detection deliberately
+continues to compare only date and text, preserving the existing rule regardless of metadata.
+
+`NoteCommandParser` retains the date-first syntax and splits at the first whitespace-delimited `n/`.
+It tokenizes only the header with `PREFIX_DUE_DATE`, `PREFIX_INTERACTION_TYPE` (`t/`) and
+`PREFIX_INTERACTION_OUTCOME` (`o/`), using the existing `ArgumentTokenizer` and duplicate-prefix validation.
+Header whitespace is normalized for tokenization; the body is preserved independently.
+The optional metadata fields can appear in either order after the date. Enum parsers strip surrounding
+whitespace and use `Locale.ROOT` for case-insensitive input, returning field-specific validation errors.
+The `t/` spelling is shared with tags but interpreted only by each command's own parser; `find` and tag commands
+retain their existing meaning. Prefix-like strings after `n/` remain content, keeping URLs and old note bodies compatible.
+
+`NoteCommand` still appends through immutable person replacement and the existing `LogicManager` transaction.
+`JsonAdaptedInteractionNote` writes uppercase enum names, accepts case-insensitive stored values, and preserves
+its two-argument constructor for existing callers. No file migration or dependency is required. Missing/null
+fields are backward compatible; invalid supplied values are rejected rather than silently discarded.
+`PersonCard` already renders each note through `InteractionNote.toString()`, which now produces
+`DATE [Type: TYPE; Outcome: OUTCOME]: TEXT`; wrapping, numbering and chronological ordering are unchanged.
+`NoteEditCommand` copies the selected note's metadata when replacing date or text. Deletion removes only the
+selected note; `edit`, `info`, contact preferences, tags and follow-up mutations carry the immutable history through.
+`noteedit` does not expose metadata editing; its existing date/text syntax remains unchanged.
+
+Enums were chosen over free text to enforce a small, consistent vocabulary. `UNSPECIFIED` was chosen over
+`OTHER`/`PENDING` defaults because those values assert details the user may never have recorded. Full value equality
+is separate from the date/text duplicate rule to avoid both missed persistence changes and duplicate-rule regressions.
+Keeping metadata before `n/`, rather than scanning the entire command, protects existing free-form note content.
+
+Tests cover all enum values, mixed-case parsing under a Turkish default locale, independent optional fields,
+malformed/missing/duplicate prefixes, literal prefixes in the body, explicit defaults, invalid/null values,
+JSON round-trips and legacy fields. Logic/storage integration tests exercise original filtered indexes,
+chronological ties, unchanged duplicate rejection, note editing/deletion, unrelated contact mutations,
+backup/restore and reopening saved records. JavaFX tests assert the exact canonical and unspecified display text.
+
+#### Editing note date and text
+
+`noteedit CONTACT_INDEX NOTE_INDEX [d/DATE] [n/NEW_NOTE_CONTENT]` is routed to `NoteEditCommandParser`.
+The parser requires two positive indices and at least one editable field. When supplied, the date comes before
+`n/` and is calendar-validated; explicitly supplied future dates are rejected during execution. As with `note`,
+everything after `n/` is treated as note content, including further prefix-like strings.
 
 `NoteEditCommand` resolves the contact against the filtered list and the note against its chronologically ordered
 history, using one-based indices. It rejects out-of-range indices (including empty histories) before mutation.
-It copies the history and replaces just the selected entry with an `InteractionNote` containing the original
-date and updated text. It then calls `Model#setPerson` with a replacement person preserving all other fields,
-including contact preferences and the next action. The current filter remains active. `LogicManager` persists the change through the
-existing JSON pipeline; no schema changes or note IDs are needed.
+It copies the history and replaces just the selected entry with an `InteractionNote` containing the supplied
+date/text (preserving omitted values), original type and original outcome. Date changes trigger chronological reordering.
+It then calls `Model#setPerson` with a replacement person preserving all other fields, including contact preferences
+and the next action. The current filter remains active. `LogicManager` persists the change through the existing
+JSON pipeline; no additional schema changes or note IDs are needed for editing.
 
 `NoteEditCommandTest` and `NoteEditCommandParserTest` cover validation, filtered lists, duplicate notes,
 date and contact-field preservation, command routing, and saving/reloading an edit through `LogicManager`.

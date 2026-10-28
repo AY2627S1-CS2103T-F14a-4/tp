@@ -11,9 +11,55 @@ import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.commands.NoteCommand;
 import seedu.address.model.person.InteractionNote;
+import seedu.address.model.person.InteractionOutcome;
+import seedu.address.model.person.InteractionType;
 
 public class NoteCommandParserTest {
     private final NoteCommandParser parser = new NoteCommandParser();
+
+    @Test
+    public void parse_optionalMetadata_acceptsEitherOrderAndCaseWithoutParsingBodyPrefixes() {
+        LocalDate date = LocalDate.of(2000, 1, 1);
+        assertParseSuccess(parser, "1 d/2000-01-01 t/cAlL o/unSUCCESSFUL n/No answer t/OTHER o/PENDING",
+                new NoteCommand(INDEX_FIRST_PERSON, new InteractionNote(date, "No answer t/OTHER o/PENDING",
+                        InteractionType.CALL, InteractionOutcome.UNSUCCESSFUL)));
+        assertParseSuccess(parser, "1 d/2000-01-01 o/pending t/meeting n/Text",
+                new NoteCommand(INDEX_FIRST_PERSON, new InteractionNote(date, "Text",
+                        InteractionType.MEETING, InteractionOutcome.PENDING)));
+        assertParseSuccess(parser, "1 d/2000-01-01\tt/message n/Text",
+                new NoteCommand(INDEX_FIRST_PERSON, new InteractionNote(date, "Text",
+                        InteractionType.MESSAGE, InteractionOutcome.UNSPECIFIED)));
+        assertParseSuccess(parser, "1 d/2000-01-01 o/successful n/Text",
+                new NoteCommand(INDEX_FIRST_PERSON, new InteractionNote(date, "Text",
+                        InteractionType.UNSPECIFIED, InteractionOutcome.SUCCESSFUL)));
+    }
+
+    @Test
+    public void parse_invalidMetadataAndMalformedPrefixes_rejected() {
+        for (String type : List.of("", "PHONE", "CALL MEETING", "CALL o=PENDING")) {
+            assertParseFailure(parser, "1 d/2000-01-01 t/" + type + " n/Text",
+                    InteractionType.MESSAGE_CONSTRAINTS);
+        }
+        for (String outcome : List.of("", "FAILED", "SUCCESSFUL PENDING")) {
+            assertParseFailure(parser, "1 d/2000-01-01 o/" + outcome + " n/Text",
+                    InteractionOutcome.MESSAGE_CONSTRAINTS);
+        }
+        assertParseFailure(parser, "1 d/2000-01-01 t=CALL n/Text", InteractionNote.MESSAGE_INVALID_DATE);
+        assertParseFailure(parser, "1 d/2000-01-01 t/CALL o/PENDING", NoteCommandParser.MESSAGE_NOTE_REQUIRED);
+        assertParseFailure(parser, "1 t/CALL n/Text", NoteCommandParser.MESSAGE_DATE_REQUIRED);
+        assertParseFailure(parser, "t/CALL n/Text", NoteCommandParser.MESSAGE_INDEX_REQUIRED);
+        assertParseFailure(parser, "o/PENDING n/Text", NoteCommandParser.MESSAGE_INDEX_REQUIRED);
+        assertParseFailure(parser, "1 d/2000-01-01 t/CALL n/ ", InteractionNote.MESSAGE_BLANK);
+    }
+
+    @Test
+    public void parse_duplicateHeaderPrefixes_rejected() {
+        for (Prefix prefix : List.of(CliSyntax.PREFIX_DUE_DATE, CliSyntax.PREFIX_INTERACTION_TYPE,
+                CliSyntax.PREFIX_INTERACTION_OUTCOME)) {
+            assertParseFailure(parser, "1 d/2000-01-01 t/CALL o/PENDING " + prefix.getPrefix() + "CALL n/Text",
+                    seedu.address.logic.Messages.getErrorMessageForDuplicatePrefixes(prefix));
+        }
+    }
 
     @Test
     public void parse_boundaryYears_success() {
