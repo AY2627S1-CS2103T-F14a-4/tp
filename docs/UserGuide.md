@@ -85,8 +85,6 @@ Adds a person to the client book.
 
 Format: `add r/RELATIONSHIP n/NAME e/EMAIL p/PHONE_NUMBER [t/TAG]...`
 
-<box type="tip" seamless>
-
 * `RELATIONSHIP` must be either `Client` or `Prospect`.
 * `NAME` must contain 1–100 characters after leading and trailing whitespace is removed. It may include letters,
   spaces, hyphens (`-`), apostrophes (`'`), and the relationship markers `s/o`, `d/o`, or `w/o`.
@@ -104,7 +102,6 @@ Format: `add r/RELATIONSHIP n/NAME e/EMAIL p/PHONE_NUMBER [t/TAG]...`
   multiple numbers are entered.
 * Parameters may be entered in any order.
 * Each optional `TAG` must contain only letters and numbers, with no spaces. Use `t/` before every tag.
-</box>
 
 Examples:
 * `add r/Client n/John Doe e/john.doe@example.com p/91234567`
