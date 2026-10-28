@@ -87,6 +87,8 @@ public class ResultDisplayTest {
                                 double fourRowHeight = display.getRoot().getHeight();
                                 assertTrue(fourRowHeight > twoRowHeight);
                                 assertFalse(getVerticalScrollBar(textArea).isVisible());
+                                assertEquals(ScrollPane.ScrollBarPolicy.NEVER,
+                                        getScrollPane(textArea).getVbarPolicy());
 
                                 display.setFeedbackToUser("test", "Line 1\nLine 2\nLine 3\nLine 4");
                                 layout.layout();
@@ -95,6 +97,8 @@ public class ResultDisplayTest {
                                         layout.layout();
                                         assertEquals(fourRowHeight, display.getRoot().getHeight());
                                         assertTrue(getVerticalScrollBar(textArea).isVisible());
+                                        assertEquals(ScrollPane.ScrollBarPolicy.AS_NEEDED,
+                                                getScrollPane(textArea).getVbarPolicy());
                                         assertViewportFitsFourRowsButNotFive(textArea);
                                         assertEquals("Command: test\nLine 1\nLine 2\nLine 3\nLine 4",
                                                 textArea.getText());
@@ -153,6 +157,8 @@ public class ResultDisplayTest {
                                 assertTrue(textArea.isWrapText());
                                 assertFalse(getScrollBar(textArea, Orientation.HORIZONTAL).isVisible());
                                 assertFalse(getVerticalScrollBar(textArea).isVisible());
+                                assertEquals(ScrollPane.ScrollBarPolicy.NEVER,
+                                        getScrollPane(textArea).getVbarPolicy());
 
                                 stage.setWidth(1400);
                                 layout.resize(1400, 300);
@@ -204,7 +210,7 @@ public class ResultDisplayTest {
     }
 
     private void assertViewportFitsFourRowsButNotFive(TextArea textArea) {
-        ScrollPane scrollPane = (ScrollPane) textArea.lookup(".scroll-pane");
+        ScrollPane scrollPane = getScrollPane(textArea);
         Region content = (Region) textArea.lookup(".content");
         String fourRows = String.join("\n", textArea.getParagraphs().subList(0, 4));
         double fourRowContentHeight = measureRenderedTextHeight(textArea, fourRows)
@@ -217,6 +223,10 @@ public class ResultDisplayTest {
         assertTrue(viewportHeight >= fourRowContentHeight);
         assertTrue(viewportHeight <= Math.ceil(fourRowContentHeight) + 14.0);
         assertTrue(viewportHeight < fiveRowContentHeight);
+    }
+
+    private ScrollPane getScrollPane(TextArea textArea) {
+        return (ScrollPane) textArea.lookup(".scroll-pane");
     }
 
     private double measureRenderedTextHeight(TextArea textArea, String text) {

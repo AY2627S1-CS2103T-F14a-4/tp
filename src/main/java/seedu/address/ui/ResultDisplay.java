@@ -6,6 +6,7 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.VPos;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.Region;
 import javafx.scene.text.Text;
@@ -42,7 +43,9 @@ public class ResultDisplay extends UiPart<Region> {
         String commandFeedback = formatCommandFeedback(commandText, feedbackToUser);
         getRoot().setManaged(true);
         getRoot().setVisible(true);
-        setDisplayedRows(commandFeedback, calculateDisplayedRowCount(commandFeedback));
+        int rowCount = commandFeedback.split("\\R", -1).length;
+        setDisplayedRows(commandFeedback, Math.clamp(rowCount, MINIMUM_ROW_COUNT, MAXIMUM_ROW_COUNT),
+                rowCount > MAXIMUM_ROW_COUNT);
         Platform.runLater(this::resizeToWrappedText);
     }
 
@@ -52,7 +55,7 @@ public class ResultDisplay extends UiPart<Region> {
         return Math.clamp(rowCount, MINIMUM_ROW_COUNT, MAXIMUM_ROW_COUNT);
     }
 
-    private void setDisplayedRows(String commandFeedback, int rowCount) {
+    private void setDisplayedRows(String commandFeedback, int rowCount, boolean isScrollable) {
         String displayedRows = "X\n".repeat(rowCount - 1) + "X";
         resultDisplay.setText(displayedRows);
         resultDisplay.setMinHeight(Region.USE_COMPUTED_SIZE);
@@ -63,6 +66,7 @@ public class ResultDisplay extends UiPart<Region> {
 
         Region content = (Region) resultDisplay.lookup(".content");
         ScrollPane scrollPane = (ScrollPane) resultDisplay.lookup(".scroll-pane");
+        scrollPane.setVbarPolicy(isScrollable ? ScrollBarPolicy.AS_NEEDED : ScrollBarPolicy.NEVER);
         int logicalRowCount = commandFeedback.split("\\R", -1).length;
         double averageRowHeight = createText(commandFeedback).getLayoutBounds().getHeight() / logicalRowCount;
         double viewportHeight = Math.ceil(averageRowHeight * rowCount
@@ -98,7 +102,8 @@ public class ResultDisplay extends UiPart<Region> {
                 - unwrappedText.getLayoutBounds().getHeight();
         int additionalRowCount = (int) Math.ceil(wrappedRowsHeight / averageRowHeight - 0.01);
         int wrappedRowCount = logicalRowCount + additionalRowCount;
-        setDisplayedRows(resultDisplay.getText(), Math.clamp(wrappedRowCount, MINIMUM_ROW_COUNT, MAXIMUM_ROW_COUNT));
+        setDisplayedRows(resultDisplay.getText(), Math.clamp(wrappedRowCount, MINIMUM_ROW_COUNT, MAXIMUM_ROW_COUNT),
+                wrappedRowCount > MAXIMUM_ROW_COUNT);
     }
 
     private Text createText(String text) {
