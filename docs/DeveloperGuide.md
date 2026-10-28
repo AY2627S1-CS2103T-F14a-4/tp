@@ -349,9 +349,11 @@ list. It works for clients and prospects, preserves the current filter, and does
 2. `InteractionNote` stores an immutable `LocalDate` and nonblank text. Date parsing checks the `yyyy-MM-dd` shape
    and uses strict ISO calendar validation. Past dates are allowed. Surrounding text whitespace is stripped;
    internal content and case are preserved without a character whitelist or maximum length.
-3. `NoteCommand` checks the displayed index, copies the selected person's history, appends the new entry and calls
-   `Model#setPerson` with a replacement `Person`. Other fields remain unchanged. Same-date and identical entries
-   are retained in insertion order.
+3. `NoteCommand` checks the displayed index and rejects an exact duplicate in that person's history using
+   `InteractionNote.equals()` before making changes. Otherwise, it copies the history, appends the new entry and calls
+   `Model#setPerson` with a replacement `Person`. Other fields remain unchanged. The same date with different text,
+   or the same text with different dates, is allowed. `Person` stably sorts its defensive copy by date, oldest first,
+   preserving order for equal dates.
 4. The observable list updates the corresponding `PersonListViewCell`. `LogicManager` saves the client book through
    the existing storage pipeline and returns `Added interaction note for NAME.` on success.
 
@@ -385,7 +387,7 @@ structured interaction outcomes and note search remain separate user stories.
 The parser requires two positive indices followed by `n/` and nonblank text. As with `note`, everything after
 the prefix is treated as note content, including further prefix-like strings.
 
-`NoteEditCommand` resolves the contact against the filtered list and the note against its insertion-ordered
+`NoteEditCommand` resolves the contact against the filtered list and the note against its chronologically ordered
 history, using one-based indices. It rejects out-of-range indices (including empty histories) before mutation.
 It copies the history and replaces just the selected entry with an `InteractionNote` containing the original
 date and updated text. It then calls `Model#setPerson` with a replacement person preserving all other fields,
@@ -406,20 +408,20 @@ second interaction note from the first contact in the currently filtered list.
 positive integer indices using `ParserUtil.parseIndex`.
 
 `NoteDeleteCommand` resolves the contact against the currently filtered list and the note against that
-contact's insertion-ordered history. Both indices are one-based. Out-of-range indices, including an empty
+contact's chronologically ordered history. Both indices are one-based. Out-of-range indices, including an empty
 history, are rejected before changing the model. The command copies the history and removes the selected
 entry by position, preserving duplicates and the order of remaining entries. Subsequent note positions shift
 down by one. It calls `Model#setPerson` with a replacement person preserving all other fields, including
 contact preferences and the next action, and retains the current filter.
 
-`PersonCard` prefixes each note label with its one-based insertion-order position, matching command indices.
+`PersonCard` prefixes each note label with its one-based chronological position, matching command indices.
 Replacing the person rebuilds the card through the existing observable list, so remaining notes are renumbered
 and an empty history is hidden without forcing a refresh or changing stored notes.
 
 Deletion feedback uses the `InteractionNote` returned by positional removal, including its actual date and text.
 Only the feedback excerpt has whitespace collapsed. It is limited to 80 Unicode code points using
 `offsetByCodePoints`, followed by `…` when truncated, without splitting surrogate pairs or changing stored content.
-Command and UI tests cover excerpt boundaries, supplementary Unicode characters, duplicate notes, insertion
+Command and UI tests cover excerpt boundaries, supplementary Unicode characters, duplicate notes, chronological
 order, automatic renumbering and hiding the last deleted note's history.
 
 `LogicManager` saves the replacement through the existing JSON pipeline. No storage schema or model API
@@ -444,17 +446,26 @@ The parser validates the index through `ParserUtil#parseIndex`, rejects duplicat
 missing action/date fields. `NextAction` strips surrounding description whitespace and checks a length of
 1–200 Java string characters. Its date parser enforces the four-digit-year/two-digit-month/two-digit-day shape
 and strict calendar validation. Both parsing and model construction restrict the year to 1–9999;
-year zero is rejected, including when loading JSON. Backdated follow-ups within this range are valid.
+year zero is rejected, including when loading JSON. Calendar parsing and the model continue to
+accept historical dates so existing saved follow-ups remain loadable as they become overdue.
 
 `NextCommand` resolves the visible person against its index in the complete list, rejects invalid indices,
-then passes the replacement person to `Model#setPerson`. Both new and replacement actions have
+and checks the requested date against `LocalDate.now(clock)` before any mutation. Both new and
+replacement follow-ups must be dated today or later; past dates produce
+`Follow-up date cannot be before today.`. The default clock uses `Clock.systemDefaultZone()`;
+tests inject a fixed clock to cover today, tomorrow, yesterday, and local-zone boundaries.
+Validation belongs to the command rather than the date value or storage adapter so previously
+saved overdue follow-ups continue to load and appear in `due`. The parser remains responsible for
+strict date format/calendar validation. The command then passes the replacement person to
+`Model#setPerson`. Both new and replacement actions have
 `completed = false`. The observable list updates the card. `LogicManager` then saves through the existing
 storage pipeline; the command itself does not write files.
 
 <puml src="diagrams/NextSequenceDiagram.puml" alt="Next command sequence diagram" />
 
 Diagram source: [NextSequenceDiagram.puml](diagrams/NextSequenceDiagram.puml).
-The diagram shows the successful path. Parser failures and invalid displayed indices stop before mutation;
+The diagram shows the successful path, assuming the example date is today or later.
+Parser failures, invalid displayed indices and past replacement dates stop before mutation;
 save failures follow the existing `LogicManager` error handling.
 
 #### Completing an action (US20)
@@ -479,22 +490,102 @@ Tests cover the immutable completed copy, preserved description/date and person 
 indices, out-of-range indices, absent actions, repeated completion, unchanged data on errors, command equality,
 string representation, parser validation and routing through `ClientBookParser`.
 
+#### Rescheduling existing follow-ups (US21)
+
+`ClientBookParser` routes `reschedule INDEX d/yyyy-MM-dd [a/ACTION]` to
+`RescheduleCommandParser`. It reuses the existing `a/` and `d/` prefixes, index parsing,
+`NextAction.parseDate` and description validation. The parser validates calendar dates and format;
+`RescheduleCommand` resolves the client with `Command.getVisiblePersonAtIndex`, using its original
+full-list index and rejecting clients hidden by the current filter, as `next` and `done` do.
+It additionally rejects dates before today at execution with
+`Follow-up date cannot be before today.`. Its default clock uses the system's local zone, with an
+injectable `Clock` for deterministic tests. Duplicate prefixes, missing dates, invalid inputs and
+past replacement dates fail before model mutation. `NextAction.parseDate` remains a calendar
+validator, so existing stored overdue follow-ups remain loadable.
+
+A separate minimal command keeps `next` creation/replacement semantics unchanged while permitting
+an omitted description and requiring an existing follow-up. `RescheduleCommand` resolves the displayed
+index, rejects a person without a follow-up, then calls `NextAction.reschedule` and
+`Person.withNextAction` before `Model#setPerson`. The immutable copy always resets `completed`
+to `false`, so rescheduling completed work reopens it. A follow-up rescheduled for today is included
+when `due` is run again; a future follow-up remains pending and is excluded until its due date.
+All other person fields and the active filter are preserved. A due action moved into the future
+is therefore automatically removed from that filtered view.
+
+`LogicManager` persists the updated person through the existing `JsonAdaptedNextAction`; no JSON
+schema change or migration is required. Parser/command tests cover invalid inputs, displayed indices,
+missing follow-ups, date-only and description changes, reopening completed actions, rejection of
+past dates without mutation, local-zone date boundaries and due-filter updates. Model and JSON
+round-trip tests verify immutable rescheduling, pending status and preservation of optional fields.
+
+#### Yearly recurring reminders (US22)
+
+`ClientBookParser` dispatches `remind INDEX a/LABEL d/MM-dd` to `RemindCommandParser`, which reuses
+`ParserUtil.parseIndex` and the existing action/date prefixes. It rejects duplicate/missing prefixes and
+constructs an immutable `RecurringReminder`. Labels are stripped, limited to 50 characters and reject
+control characters and slashes. The date is a strictly formatted `MonthDay`; no year or general recurrence
+rule is stored.
+
+`RemindCommand` resolves the client through `Command.getVisiblePersonAtIndex`, retaining the original
+full-list index after filtering and rejecting hidden clients. It uses `Person.withRecurringReminder` through
+`Model.setPerson`. Case-insensitive label matching updates a reminder in place and retains the existing
+label's display spelling; otherwise it appends with the supplied spelling. `equalsIgnoreCase` performs
+lookup for upserts and deletion, and `TreeSet(String.CASE_INSENSITIVE_ORDER)` enforces the same equivalence
+for model and storage uniqueness. This policy is locale-independent and does not lowercase saved labels.
+Reminder value equality retains display spelling as metadata.
+
+`Person` defensively copies its reminder list, enforces unique labels ignoring case, and includes it in equality, hashing
+and every copy path. Existing `edit`, `info` and note mutation commands pass the list through their person
+copies. `add` syntax and existing constructors are unchanged; older constructors default to an empty list.
+
+`JsonAdaptedRecurringReminder` stores `{ "label": "Birthday", "date": "02-29" }` within the person's
+`recurringReminders` array. `JsonAdaptedPerson` validates each element and rejects null elements or duplicate
+labels, including case variants such as `Birthday` and `birthday`. A missing, null or empty array loads
+as an empty list, preserving compatibility with old JSON.
+Persistence uses the existing `LogicManager`/storage path, including backup and restore.
+
+`ClientBookParser` separately dispatches `unremind INDEX a/LABEL` to `UnremindCommandParser`, which reuses
+`RecurringReminder.parseLabel` for the same label validation as creation. `UnremindCommand` uses the
+same `getVisiblePersonAtIndex` helper, then finds the label ignoring case before any mutation. A missing match (including an empty
+reminder list) reports a `CommandException`. `Person.withoutRecurringReminder` creates an immutable copy
+without that label and preserves every other field. `Model.setPerson` re-evaluates the active due filter;
+removing the last qualifying yearly reminder hides the person unless a due action still qualifies.
+The existing persistence path saves deletions. `remind` continues to require a valid nonempty date;
+its empty date syntax is not overloaded for deletion, consistent with the separate `notedelete` command.
+
+`RecurringReminder.nextOccurrence(today)` computes this year's occurrence or next year's if it has passed.
+`MonthDay.atYear` maps February 29 to February 28 in non-leap years. `NextActionDuePredicate` retains its
+existing incomplete due-action condition and additionally accepts a next occurrence 0–30 days from its
+captured execution date. The 30-day horizon uses `ChronoUnit.DAYS`, supports year rollover, and has no
+accumulated overdue annual occurrence. `PersonCard` shows labels and next dates in the existing card;
+`done` still changes only `NextAction`.
+
 #### Viewing due actions (US19)
 
 `ClientBookParser` routes argument-free `due` to `DueCommand`; any arguments are rejected with
 `The due command takes no arguments.`. On each execution, `DueCommand` obtains today's date using
 `LocalDate.now(clock)` and calls `Model#updateFilteredPersonList` with a new `NextActionDuePredicate`.
-The predicate includes only people with an incomplete next action whose date is today or earlier.
+The predicate includes people with an incomplete next action whose date is today or earlier, or a yearly
+reminder whose next occurrence is within 30 days inclusive (US22).
 This replaces any previous search filter without changing stored people. Completing an action through
-`done` replaces the person, so the observable filtered list automatically excludes that person.
+`done` replaces the person, so the observable filtered list automatically excludes that person unless
+an upcoming yearly reminder still qualifies.
 
 The default constructor uses `Clock.systemDefaultZone()`. Tests inject a `Clock.fixed` with an explicit
 zone to make the date boundary deterministic. The predicate captures the execution date; rerunning `due`
-refreshes it after midnight. Empty results report `No follow-ups are due.`; otherwise the command reports
-the number of matching follow-ups.
+refreshes it after midnight. Empty results report `No follow-ups are due and no yearly reminders are upcoming.`;
+otherwise the command reports the number of matching people, counting a person only once.
 
-In v1.4 this feature only filters and preserves the existing list order. Sorting is a separate user story;
-keeping it outside US19 avoids changes to the shared model and existing `find`/`list` behaviour.
+The due view is sorted by the earliest qualifying action or yearly-reminder date ascending, then name
+ignoring case, with exact spelling as a final
+tie-breaker (#138). `ModelManager` exposes a `SortedList` over its existing `FilteredList`, so sorting
+does not mutate or persist the backing contact order. The model stores both its current predicate and
+comparator. `LogicManager` carries both across its temporary-model execution and successful commit;
+indexed commands continue to use the displayed client indices from the complete client book,
+independent of sorted row positions. Replacing a person
+updates the active order automatically. The original single-argument filter update clears sorting,
+so `list` and `find` retain their original contact-order behaviour. Tests cover date/name ties, stored
+order, live updates, and indexed commands through the complete logic/storage path.
 
 #### Persistence and card display
 
@@ -521,8 +612,10 @@ there is no background midnight timer. Restarting the app refreshes all card lab
 
 US18 tests cover missing/duplicate prefixes, zero/negative/non-integer/overflow indices, displayed-list bounds,
 empty and whitespace-only actions, 200/201-character descriptions, trimming, invalid dates (`2026-02-30`),
-leap days, past dates, replacement reset, filtered indices, preservation of unrelated fields, old JSON,
-invalid stored values, completion round trips and card display/wrapping.
+leap days, rejection of newly scheduled past dates without mutation, today/future acceptance,
+local clock-zone boundaries, replacement reset, filtered indices, preservation of unrelated fields,
+old JSON, historical follow-ups remaining visible in `due`, invalid stored values, completion round
+trips and card display/wrapping.
 
 ### \[Proposed\] Undo/redo feature
 

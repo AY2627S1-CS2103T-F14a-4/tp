@@ -16,14 +16,22 @@ import seedu.address.model.person.PreferredContactTiming;
 
 /** Parses a displayed index and one or both contact preferences. */
 public class ContactCommandParser implements Parser<ContactCommand> {
+    public static final String MESSAGE_INVALID_PARAMETER =
+            "Invalid contact parameter. Use ch/CHANNEL or tm/TIMING; use - to clear a preference.";
+
     private static final Pattern CONTACT_PREFIX = Pattern.compile("(?<= )(ch/|tm/)");
+    private static final Pattern MISTYPED_PREFIX = Pattern.compile(
+            "(?<= )(?:/(?:ch|tm)(?=\\s|/|$)|cch/|chh/|ttm/|tmm/)");
 
     @Override
     public ContactCommand parse(String args) throws ParseException {
         requireNonNull(args);
         ArgumentMultimap fields = tokenizeRawValues(" " + args);
-        Index index = ParserUtil.parseIndex(fields.getPreamble());
+        Index index = parseContactIndex(fields.getPreamble());
         fields.verifyNoDuplicatePrefixesFor(PREFIX_CONTACT_CHANNEL, PREFIX_CONTACT_TIMING);
+        if (MISTYPED_PREFIX.matcher(" " + args).find()) {
+            throw new ParseException(MESSAGE_INVALID_PARAMETER);
+        }
         if (fields.getValue(PREFIX_CONTACT_CHANNEL).isEmpty() && fields.getValue(PREFIX_CONTACT_TIMING).isEmpty()) {
             throw new ParseException(ContactCommand.MESSAGE_NO_FIELDS);
         }
@@ -41,6 +49,13 @@ public class ContactCommandParser implements Parser<ContactCommand> {
         } catch (IllegalArgumentException e) {
             throw new ParseException(e.getMessage(), e);
         }
+    }
+
+    /** Validates the index before reporting a recognized parameter mistake in the preamble. */
+    private static Index parseContactIndex(String preamble) throws ParseException {
+        String text = " " + preamble;
+        Matcher matcher = MISTYPED_PREFIX.matcher(text);
+        return ParserUtil.parseIndex(matcher.find() ? text.substring(0, matcher.start()) : text);
     }
 
     /** Retains raw values for marker recognition, using the shared tokenizer's prefix boundaries. */

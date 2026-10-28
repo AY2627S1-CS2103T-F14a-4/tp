@@ -78,7 +78,8 @@ public class LogicManager implements Logic {
 
     private CommandResult executeCommand(Command command) throws CommandException {
         Model temporaryModel = new ModelManager(model.getClientBook(), model.getUserPrefs());
-        temporaryModel.updateFilteredPersonList(model.getFilteredPersonPredicate());
+        temporaryModel.updateFilteredPersonList(model.getFilteredPersonPredicate(),
+                model.getFilteredPersonComparator());
         CommandResult commandResult = command.execute(temporaryModel, storage);
 
         if (!commandResult.isModelSaved()
@@ -100,7 +101,8 @@ public class LogicManager implements Logic {
     /** Replaces the visible model with a command result that has been successfully persisted. */
     private void commitModel(Model temporaryModel) {
         model.setClientBook(temporaryModel.getClientBook());
-        model.updateFilteredPersonList(temporaryModel.getFilteredPersonPredicate());
+        model.updateFilteredPersonList(temporaryModel.getFilteredPersonPredicate(),
+                temporaryModel.getFilteredPersonComparator());
     }
 
     @Override

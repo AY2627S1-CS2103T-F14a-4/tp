@@ -47,7 +47,7 @@ public class InfoCommand extends Command {
                         : original.getAreaOfInterest().orElse(null),
                 original.getInteractionNotes(), original.getNextAction().orElse(null),
                 original.getPreferredContactChannel().orElse(null),
-                original.getPreferredContactTiming().orElse(null));
+                original.getPreferredContactTiming().orElse(null), original.getRecurringReminders());
         model.setPerson(original, updated);
         return new CommandResult(String.format(MESSAGE_SUCCESS, original.getName().fullName));
     }

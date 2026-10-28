@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -20,6 +21,7 @@ import seedu.address.model.person.Phone;
 import seedu.address.model.person.PreferredContactChannel;
 import seedu.address.model.person.PreferredContactTiming;
 import seedu.address.model.person.Priority;
+import seedu.address.model.person.RecurringReminder;
 import seedu.address.model.person.Relationship;
 import seedu.address.model.tag.Tag;
 
@@ -40,6 +42,7 @@ class JsonAdaptedPerson {
     private final JsonAdaptedNextAction nextAction;
     private final String preferredContactChannel;
     private final String preferredContactTiming;
+    private final List<JsonAdaptedRecurringReminder> recurringReminders = new ArrayList<>();
     private final List<JsonAdaptedTag> tags = new ArrayList<>();
     private final List<JsonAdaptedInteractionNote> interactionNotes = new ArrayList<>();
 
@@ -78,6 +81,15 @@ class JsonAdaptedPerson {
                 interactionNotes, nextAction, null, null);
     }
 
+    /** Retains callers without recurring reminders. */
+    public JsonAdaptedPerson(String name, String phone, String email, List<JsonAdaptedTag> tags,
+            String relationship, String financialNeed, String priority, String areaOfInterest,
+            List<JsonAdaptedInteractionNote> interactionNotes, JsonAdaptedNextAction nextAction,
+            String preferredContactChannel, String preferredContactTiming) {
+        this(name, phone, email, tags, relationship, financialNeed, priority, areaOfInterest,
+                interactionNotes, nextAction, preferredContactChannel, preferredContactTiming, null);
+    }
+
     /** Missing optional information in older files is treated as absent. */
     @JsonCreator
     public JsonAdaptedPerson(@JsonProperty("name") String name, @JsonProperty("phone") String phone,
@@ -88,7 +100,8 @@ class JsonAdaptedPerson {
             @JsonProperty("interactionNotes") List<JsonAdaptedInteractionNote> interactionNotes,
             @JsonProperty("nextAction") JsonAdaptedNextAction nextAction,
             @JsonProperty("preferredContactChannel") String preferredContactChannel,
-            @JsonProperty("preferredContactTiming") String preferredContactTiming) {
+            @JsonProperty("preferredContactTiming") String preferredContactTiming,
+            @JsonProperty("recurringReminders") List<JsonAdaptedRecurringReminder> recurringReminders) {
         this.name = name;
         this.phone = phone;
         this.email = email;
@@ -99,6 +112,9 @@ class JsonAdaptedPerson {
         this.nextAction = nextAction;
         this.preferredContactChannel = preferredContactChannel;
         this.preferredContactTiming = preferredContactTiming;
+        if (recurringReminders != null) {
+            this.recurringReminders.addAll(recurringReminders);
+        }
         if (tags != null) {
             this.tags.addAll(tags);
         }
@@ -113,6 +129,8 @@ class JsonAdaptedPerson {
     public JsonAdaptedPerson(Person source) {
         preferredContactChannel = source.getPreferredContactChannel().map(value -> value.value).orElse(null);
         preferredContactTiming = source.getPreferredContactTiming().map(value -> value.value).orElse(null);
+        source.getRecurringReminders().stream().map(JsonAdaptedRecurringReminder::new)
+                .forEach(recurringReminders::add);
         nextAction = source.getNextAction().map(JsonAdaptedNextAction::new).orElse(null);
         name = source.getName().fullName;
         phone = source.getPhone().value;
@@ -217,9 +235,21 @@ class JsonAdaptedPerson {
             }
             modelNotes.add(note.toModelType());
         }
+        List<RecurringReminder> modelReminders = new ArrayList<>();
+        Set<String> reminderLabels = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        for (JsonAdaptedRecurringReminder reminder : recurringReminders) {
+            if (reminder == null) {
+                throw new IllegalValueException("Recurring reminder cannot be null.");
+            }
+            RecurringReminder modelReminder = reminder.toModelType();
+            if (!reminderLabels.add(modelReminder.getLabel())) {
+                throw new IllegalValueException("Recurring reminder labels must be unique ignoring case.");
+            }
+            modelReminders.add(modelReminder);
+        }
         return new Person(modelName, modelPhone, modelEmail, modelTags, modelRelationship,
                 modelFinancialNeed, modelPriority, modelAreaOfInterest, modelNotes,
-                nextAction == null ? null : nextAction.toModelType(), modelChannel, modelTiming);
+                nextAction == null ? null : nextAction.toModelType(), modelChannel, modelTiming, modelReminders);
     }
 
     private static Relationship parseRelationship(String relationship) throws IllegalValueException {

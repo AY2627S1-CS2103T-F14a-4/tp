@@ -7,18 +7,24 @@ import static seedu.address.logic.commands.CommandTestUtil.showPersonAtIndex;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
+import static seedu.address.testutil.TypicalIndexes.INDEX_THIRD_PERSON;
 import static seedu.address.testutil.TypicalPersons.getTypicalClientBook;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import seedu.address.logic.LogicManager;
 import seedu.address.logic.Messages;
+import seedu.address.logic.commands.exceptions.CommandException;
+import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
+import seedu.address.model.ReadOnlyClientBook;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.InteractionNote;
 import seedu.address.model.person.NextAction;
@@ -35,6 +41,160 @@ public class NoteEditCommandTest {
     public Path temporaryFolder;
 
     private final Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
+
+    @Test
+    public void execute_explicitFutureDate_preservesRecordsAndFilter() {
+        Person original = new PersonBuilder(model.getFilteredPersonList().get(1))
+                .withFinancialNeed("Retirement").withPriority("High").withAreaOfInterest("Insurance")
+                .withPreferredContactChannel("Phone").withPreferredContactTiming("Evenings")
+                .withInteractionNotes(NOTE, NOTE).build();
+        model.setPerson(model.getFilteredPersonList().get(1), original);
+        showPersonAtIndex(model, INDEX_SECOND_PERSON);
+        LocalDate future = LocalDate.now().plusDays(1);
+
+        assertCommandFailure(new NoteEditCommand(INDEX_SECOND_PERSON, INDEX_SECOND_PERSON, future, null),
+                model, NoteEditCommand.MESSAGE_FUTURE_DATE);
+        assertCommandFailure(new NoteEditCommand(INDEX_SECOND_PERSON, INDEX_SECOND_PERSON, future, "Changed text"),
+                model, NoteEditCommand.MESSAGE_FUTURE_DATE);
+    }
+
+    @Test
+    public void execute_todayAndPastDates_acceptsDateOnlyAndCombinedEdits() throws Exception {
+        Person original = model.getFilteredPersonList().get(0);
+        model.setPerson(original, new PersonBuilder(original).withInteractionNotes(NOTE, NOTE).build());
+        LocalDate today = LocalDate.now();
+        for (LocalDate date : List.of(today, today.minusDays(1))) {
+            new NoteEditCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON, date, null).execute(model, null);
+            assertEquals(new PersonBuilder(original).withInteractionNotes(
+                    new InteractionNote(date, NOTE.getText()), NOTE).build(), model.getFilteredPersonList().get(0));
+            model.setPerson(model.getFilteredPersonList().get(0),
+                    new PersonBuilder(original).withInteractionNotes(NOTE, NOTE).build());
+            new NoteEditCommand(INDEX_FIRST_PERSON, INDEX_SECOND_PERSON, date, "Updated").execute(model, null);
+            assertEquals(new PersonBuilder(original).withInteractionNotes(NOTE,
+                    new InteractionNote(date, "Updated")).build(), model.getFilteredPersonList().get(0));
+            // Restore the original history before testing the next date.
+            model.setPerson(model.getFilteredPersonList().get(0),
+                    new PersonBuilder(original).withInteractionNotes(NOTE, NOTE).build());
+        }
+    }
+
+    @Test
+    public void execute_textOnlyEdit_preservesExistingFutureDate() throws Exception {
+        LocalDate future = LocalDate.now().plusDays(1);
+        Person original = new PersonBuilder(model.getFilteredPersonList().get(0))
+                .withInteractionNotes(new InteractionNote(future, "Existing text"), NOTE).build();
+        model.setPerson(model.getFilteredPersonList().get(0), original);
+
+        new NoteEditCommand(INDEX_FIRST_PERSON, INDEX_SECOND_PERSON, "Updated").execute(model, null);
+
+        assertEquals(new PersonBuilder(original).withInteractionNotes(new InteractionNote(future, "Updated"), NOTE)
+                .build(), model.getFilteredPersonList().get(0));
+    }
+
+    @Test
+    public void execute_dateOnlyAndBothFields_reordersNotesAndPreservesContactDetails() throws Exception {
+        Person original = new PersonBuilder(model.getFilteredPersonList().get(1))
+                .withTags("client").withFinancialNeed("Retirement").withPriority("High")
+                .withAreaOfInterest("Insurance").withPreferredContactChannel("Phone")
+                .withPreferredContactTiming("Evenings")
+                .withNextAction(new NextAction("Call", LocalDate.of(2026, 10, 20), false))
+                .withInteractionNotes(NOTE, NOTE, NOTE).build();
+        model.setPerson(model.getFilteredPersonList().get(1), original);
+        Person untouched = model.getFilteredPersonList().get(0);
+        showPersonAtIndex(model, INDEX_SECOND_PERSON);
+        LocalDate replacement = NOTE.getDate().plusDays(1);
+
+        new NoteEditCommand(INDEX_SECOND_PERSON, INDEX_SECOND_PERSON, replacement, null).execute(model, null);
+        assertEquals(new PersonBuilder(original).withInteractionNotes(NOTE,
+                new InteractionNote(replacement, NOTE.getText()), NOTE).build(), model.getFilteredPersonList().get(0));
+
+        new NoteEditCommand(INDEX_SECOND_PERSON, INDEX_THIRD_PERSON, replacement, "Corrected").execute(model, null);
+        assertEquals(new PersonBuilder(original).withInteractionNotes(NOTE,
+                new InteractionNote(replacement, "Corrected"), NOTE).build(), model.getFilteredPersonList().get(0));
+        assertEquals(1, model.getFilteredPersonList().size());
+        assertEquals(untouched, model.getClientBook().getPersonList().get(0));
+    }
+
+    @Test
+    public void execute_throughLogic_dateEditsPersistAndInvalidInputsPreserveRecords() throws Exception {
+        Person original = model.getFilteredPersonList().get(0);
+        model.setPerson(original, new PersonBuilder(original).withInteractionNotes(NOTE, NOTE, NOTE).build());
+        JsonClientBookStorage storage = new JsonClientBookStorage(temporaryFolder.resolve("clientBook.json"));
+        LogicManager logic = new LogicManager(model, new StorageManager(storage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json"))));
+
+        logic.execute("noteedit 1 2 d/2000-03-01");
+        assertEquals(new PersonBuilder(original).withInteractionNotes(NOTE,
+                new InteractionNote(LocalDate.of(2000, 3, 1), NOTE.getText()), NOTE).build(),
+                storage.readClientBook().orElseThrow().getPersonList().get(0));
+        logic.execute("noteedit 1 3 d/2000-01-01 n/Corrected");
+        assertEquals(new PersonBuilder(original).withInteractionNotes(NOTE,
+                new InteractionNote(LocalDate.of(2000, 1, 1), "Corrected"), NOTE).build(),
+                storage.readClientBook().orElseThrow().getPersonList().get(0));
+        assertEquals(model.getClientBook(), storage.readClientBook().orElseThrow());
+        showPersonAtIndex(model, INDEX_FIRST_PERSON);
+        ReadOnlyClientBook saved = storage.readClientBook().orElseThrow();
+        List<Person> displayed = List.copyOf(model.getFilteredPersonList());
+        String savedJson = Files.readString(storage.getClientBookFilePath());
+        for (String suffix : List.of("", " n/Changed text")) {
+            assertThrows(CommandException.class, NoteEditCommand.MESSAGE_FUTURE_DATE, () ->
+                    logic.execute("noteedit 1 2 d/" + LocalDate.now().plusDays(1) + suffix));
+            assertEquals(saved, model.getClientBook());
+            assertEquals(displayed, model.getFilteredPersonList());
+            assertEquals(savedJson, Files.readString(storage.getClientBookFilePath()));
+            assertEquals(saved, storage.readClientBook().orElseThrow());
+        }
+        for (String fields : List.of("d/2026-02-30", "d/2026-2-01 n/Text", "d/", "d/2000-01-01 n/", "")) {
+            assertThrows(ParseException.class, () -> logic.execute("noteedit 1 2 " + fields));
+            assertEquals(saved, model.getClientBook());
+            assertEquals(displayed, model.getFilteredPersonList());
+            assertEquals(saved, storage.readClientBook().orElseThrow());
+        }
+    }
+
+    @Test
+    public void execute_throughLogic_chronologicalIndicesAndStableTiesSurviveReopening() throws Exception {
+        Person original = new PersonBuilder(model.getFilteredPersonList().get(1))
+                .withTags("friend").withFinancialNeed("Retirement").withPriority("High")
+                .withAreaOfInterest("Insurance").withPreferredContactChannel("Phone")
+                .withPreferredContactTiming("Evenings")
+                .withNextAction(new NextAction("Call", LocalDate.of(2026, 10, 20), false)).build();
+        model.setPerson(model.getFilteredPersonList().get(1), original);
+        Person untouched = model.getFilteredPersonList().get(0);
+        showPersonAtIndex(model, INDEX_SECOND_PERSON);
+        JsonClientBookStorage storage = new JsonClientBookStorage(temporaryFolder.resolve("clientBook.json"));
+        LogicManager logic = new LogicManager(model, new StorageManager(storage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json"))));
+        InteractionNote older = new InteractionNote(LocalDate.of(2026, 10, 10), "Older");
+        InteractionNote middle = new InteractionNote(LocalDate.of(2026, 10, 15), "Middle");
+        InteractionNote sameDate = new InteractionNote(middle.getDate(), "Same date");
+        InteractionNote newer = new InteractionNote(LocalDate.of(2026, 10, 20), "Newer");
+
+        // Filtering preserves the contact's original index 2.
+        logic.execute("note 2 d/2026-10-20 n/Newer");
+        logic.execute("note 2 d/2026-10-10 n/Older");
+        logic.execute("note 2 d/2026-10-15 n/Middle");
+        logic.execute("note 2 d/2026-10-15 n/Same date");
+        Model reopened = new ModelManager(storage.readClientBook().orElseThrow(), new UserPrefs());
+        assertEquals(List.of(older, middle, sameDate, newer),
+                reopened.getFilteredPersonList().get(1).getInteractionNotes());
+        assertEquals(untouched, reopened.getFilteredPersonList().get(0));
+
+        showPersonAtIndex(reopened, INDEX_SECOND_PERSON);
+        LogicManager reopenedLogic = new LogicManager(reopened, new StorageManager(storage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json"))));
+        reopenedLogic.execute("noteedit 2 2 n/Corrected middle");
+        InteractionNote edited = new InteractionNote(middle.getDate(), "Corrected middle");
+        assertEquals(List.of(older, edited, sameDate, newer),
+                reopened.getFilteredPersonList().get(0).getInteractionNotes());
+        reopenedLogic.execute("notedelete 2 3");
+        assertEquals(List.of(older, edited, newer), reopened.getFilteredPersonList().get(0).getInteractionNotes());
+        assertEquals(new PersonBuilder(original).withInteractionNotes(older, edited, newer).build(),
+                reopened.getFilteredPersonList().get(0));
+        assertEquals(1, reopened.getFilteredPersonList().size());
+        assertEquals(untouched, reopened.getClientBook().getPersonList().get(0));
+        assertEquals(reopened.getClientBook(), storage.readClientBook().orElseThrow());
+    }
 
     @Test
     public void execute_existingFutureDatedNote_preservesDateAndEditsText() throws Exception {
@@ -127,6 +287,8 @@ public class NoteEditCommandTest {
 
     @Test
     public void constructor_invalidArguments_rejected() {
+        assertThrows(IllegalArgumentException.class, NoteEditCommand.MESSAGE_NO_FIELDS, () ->
+                new NoteEditCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON, null, null));
         assertThrows(NullPointerException.class, () -> new NoteEditCommand(null, INDEX_FIRST_PERSON, "Text"));
         assertThrows(NullPointerException.class, () -> new NoteEditCommand(INDEX_FIRST_PERSON, null, "Text"));
         assertThrows(NullPointerException.class, () ->
@@ -145,5 +307,10 @@ public class NoteEditCommandTest {
         assertNotEquals(command, new NoteEditCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON, "Other"));
         assertNotEquals(command, null);
         assertNotEquals(command, "Text");
+        LocalDate date = LocalDate.of(2026, 10, 19);
+        assertNotEquals(command, new NoteEditCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON, date, "Text"));
+        NoteEditCommand dateOnly = new NoteEditCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON, date, null);
+        assertEquals(dateOnly, new NoteEditCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON, date, null));
+        assertNotEquals(dateOnly, new NoteEditCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON, date.plusDays(1), null));
     }
 }
