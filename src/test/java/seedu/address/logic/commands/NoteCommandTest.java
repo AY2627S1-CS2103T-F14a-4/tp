@@ -206,7 +206,7 @@ public class NoteCommandTest {
         parser.parseCommand("edit 1 p/81234567").execute(model, null);
         assertEquals(notes, model.getFilteredPersonList().get(0).getInteractionNotes());
         assertEquals("81234567", model.getFilteredPersonList().get(0).getPhone().value);
-        parser.parseCommand("info 1 /fn Retirement").execute(model, null);
+        parser.parseCommand("info 1 fn/Retirement").execute(model, null);
         assertEquals(notes, model.getFilteredPersonList().get(0).getInteractionNotes());
         assertEquals("Retirement", model.getFilteredPersonList().get(0).getFinancialNeed().orElseThrow().value);
     }

@@ -85,13 +85,15 @@ Adds a person to the client book.
 
 Format: `add r/RELATIONSHIP n/NAME e/EMAIL p/PHONE_NUMBER [t/TAG]...`
 
+<box type="tip" seamless>
+
 * `RELATIONSHIP` must be either `Client` or `Prospect`.
 * `NAME` must contain 1–100 characters after leading and trailing whitespace is removed. It may include letters,
   spaces, hyphens (`-`), apostrophes (`'`), and the relationship markers `s/o`, `d/o`, or `w/o`.
-* A name must not duplicate another contact's name. Name comparison ignores letter case and repeated spaces.
-* `EMAIL` must contain one `@`, no whitespace, text in both the local and domain parts, and at least one dot in the
-  domain. Its local part may use common characters such as `.`, `_`, `+`, and `-`; each domain label may use
-  letters, digits, and hyphens, and cannot exceed 63 characters.
+* A name must not duplicate another contact's name.
+* `EMAIL` must contain 5–254 characters, one `@`, no whitespace, text in both the local and domain parts, and at
+  least one dot in the domain. Its local part may use common characters such as `.`, `_`, `+`, and `-`; each domain
+  label may use letters, digits, and hyphens, and cannot exceed 63 characters.
 * Each phone number must contain 8 to 15 digits, excluding an optional leading `+`, following the E.164 international
   maximum. Spaces, hyphens, parentheses, and periods may separate digits. You can record multiple numbers in one
   value by separating them with labels, for example, `home: 92849584 ph: 02848594`.
@@ -102,6 +104,7 @@ Format: `add r/RELATIONSHIP n/NAME e/EMAIL p/PHONE_NUMBER [t/TAG]...`
   multiple numbers are entered.
 * Parameters may be entered in any order.
 * Each optional `TAG` must contain only letters and numbers, with no spaces. Use `t/` before every tag.
+</box>
 
 Examples:
 * `add r/Client n/John Doe e/john.doe@example.com p/91234567`
@@ -164,15 +167,20 @@ Edits an existing person in the client book.
 
 Format: `edit INDEX [r/RELATIONSHIP] [n/NAME] [p/PHONE] [e/EMAIL]`
 
+<box type="tip" seamless>
+
 * Edits the person at the specified `INDEX`. The index refers to the index number shown in the displayed person list. The index **must be a positive integer** 1, 2, 3, ...
 * At least one of the optional fields must be provided.
 * Existing values will be updated to the input values.
 * `RELATIONSHIP` must be either `Client` or `Prospect`.
-* The edited name must not duplicate another contact's name. Name comparison ignores letter case and repeated spaces.
-* `EMAIL` must meet the same format requirements as `add`, including a maximum of 63 characters for each domain label.
+* The edited name must not duplicate another contact's name.
+* `EMAIL` must meet the same format requirements as `add`, including a total length of 5–254 characters and a
+  maximum of 63 characters for each domain label.
 * The edited email address and phone number must not duplicate those of another contact. Phone numbers use the same
   formatting-insensitive, multiple-number comparison as `add`; for example, `9999 9999` and `99999999` conflict.
   Email-domain casing is also ignored, so `alice@example.com` conflicts with `alice@EXAMPLE.COM`.
+
+</box>
 
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.
@@ -181,102 +189,118 @@ Examples:
 
 ### Updating client financial information: `info`
 
-Adds, updates, or clears a person's financial need, priority, and area of interest. Present fields appear on the person's card as
-`Financial need: VALUE`, `Priority: VALUE`, and `Area of interest: VALUE`. Absent fields are hidden.
+Record a client's or prospect's financial need (`fn/`), priority (`pr/`), and area of interest (`ai/`).
+These details appear on their card; cleared fields are hidden.
 
-Format: `info INDEX [/fn VALUE|-] [/pr VALUE|-] [/ai VALUE|-]`
+Format: `info INDEX [fn/VALUE|-] [pr/VALUE|-] [ai/VALUE|-]`
 
-* `INDEX` refers to the index in the currently displayed list, including filtered search results. It must be a positive
-  integer (1, 2, 3, ...) corresponding to an existing person in that list.
-* At least one of `/fn`, `/pr`, or `/ai` is required. Each parameter may be supplied at most once, in any order.
-* Normal supplied values replace existing values. Omitted fields remain unchanged.
-* An exact `-` value clears only that field. Surrounding ordinary spaces are ignored, so `/pr   -   ` also clears
-  priority. Clearing an already absent field is safe. A hyphen in a larger value, such as `Long-term`, remains text.
-* Each value must contain 1-200 characters after leading and trailing ordinary spaces are ignored. Internal spaces are
-  preserved. Empty values and bare prefixes (for example, `info 1 /pr`) remain invalid; clearing requires explicit `-`.
-* Allowed characters are Unicode letters and combining marks, digits, spaces, periods (`.`), commas (`,`),
-  apostrophes (`'`), hyphens (`-`),
-  parentheses (`(` and `)`), ampersands (`&`), dollar signs (`$`), percent signs (`%`), plus signs (`+`),
-  and forward slashes (`/`). Tabs and line breaks are not allowed.
-  Both precomposed and decomposed accents, and scripts such as Tamil, are accepted. Text is saved as entered
-  after trimming ordinary spaces; it is not Unicode-normalized. The 200-character limit counts UTF-16 code units,
-  so combining marks count separately from their base letters.
-* Slashes within a word, such as `Life/Health` or `CPF/SRS`, are accepted. A slash at the start of a
-  whitespace-separated token is reserved for parameters: only `/fn`, `/pr`, and `/ai` are recognized.
-  Unknown parameters such as `/fnn` and `/xyz`, and a bare slash, are rejected. Use `Life/Health`,
-  rather than `Life / Health` or `Life /Health`.
+* Use the positive index shown on the person's card. Search results keep their original full-list indices:
+  if the only result is labelled `2`, use `info 2`. The person must be visible in the current results.
+* Supply at least one field, each at most once, in any order. Separate fields with spaces and use lowercase prefixes.
+* A supplied value replaces that field; omitted fields and other person details stay unchanged.
+  Use an exact `-` to clear a field. Spaces around `-` are allowed; `Long-term` remains ordinary text.
+* Values must contain 1–200 characters after surrounding ordinary spaces are removed. Internal spaces are kept.
+  Unicode letters, including accented text, digits, and `. , ' ( ) & - $ % + /` are accepted.
+  Tabs, line breaks, blank values and other punctuation (such as `!` or `:`) are rejected.
+  Slash-containing text can appear anywhere in a value, including `Planning CPF/SRS` and `Save $3000/month`.
+* Updates are saved automatically. If any supplied field is invalid, none of the fields change.
 
 Examples:
 
-* `info 1 /fn retirement planning`
-* `info 1 /fn Retire on $3000 monthly /pr Target 6% return /ai CPF/SRS + insurance`
-* `info 2 /pr protect family income /ai life insurance`
-* `info 1 /ai investment products /fn wealth accumulation /pr preserve capital`
-* `info 1 /pr -` clears only priority.
-* `info 1 /fn - /ai -` clears financial need and area of interest, leaving priority unchanged.
-* `info 1 /pr High /ai -` sets priority to `High` and clears area of interest, leaving financial need unchanged.
+* `info 2 fn/Save $3000/month + CPF/SRS pr/High ai/Planning Life/Health insurance` records all three fields.
+* `info 2 ai/Insurance pr/Protect family income` updates two fields, keeping the financial need.
+* `info 2 pr/High ai/-` updates priority and clears the area of interest.
+* `info 2 fn/- pr/- ai/-` clears all financial information.
+
+**Prefix restrictions:** A space-separated `fn/`, `pr/`, or `ai/` always starts a field, even inside text.
+For example, `fn/Review pr/High options` stores financial need `Review` and priority `High options`.
+There is no quoting or escaping; rephrase literal prefix-like text as `fn/Review priority High options`.
+The old `/fn VALUE`, `/pr VALUE`, `/ai VALUE` syntax and tokens starting with `/` are rejected.
+Common mistakes `fnn/`, `prr/`, `aii/` and case variants such as `FN/` are also rejected at token boundaries.
+Other misspellings inside a value, such as `xyz/Value`, may be saved as text, so check the displayed result.
+Unknown slash-style parameters before the first field are rejected.
 
 ### Recording preferred contact channel and timing: `contact`
 
-Records or clears how and when a client or prospect prefers to be contacted.
+Record how and when a client or prospect prefers to be contacted. Recorded preferences appear on their card;
+cleared preferences are hidden.
 
 Format: `contact INDEX [ch/CHANNEL|-] [tm/TIMING|-]`
 
-* `INDEX` is the positive integer shown on the person's card. Search results retain their original indices from
-  the full contact list. For example, if Bob is contact 2, use `contact 2 ch/WhatsApp` after `find Bob`.
-  The person must be visible in the current results; an index belonging to a hidden person is rejected.
-* Supply at least one of `ch/` or `tm/`, each at most once, in either order. Separate prefixes with spaces.
-* Each supplied value replaces the previous value; omitted preferences and all other person details remain unchanged.
-* Values must contain 1–200 characters after surrounding whitespace is trimmed. Internal spaces and case are preserved.
-  Free text, Unicode and punctuation are accepted, for example `WhatsApp` and `Weekdays 6:30–8 pm`.
-* An exact `-` clears the supplied preference. Surrounding ordinary spaces are allowed, so `ch/   -   ` also clears
-  the channel. Clearing an absent preference is safe. Omitted preferences remain unchanged.
-* Larger values such as `Phone-call`, `-Phone`, `Phone-`, and `--` remain normal text.
-  Tabs and other control characters around a hyphen do not form a clearing marker; they follow normal value handling.
-* Empty or whitespace-only values remain invalid; clearing requires an explicit `-`.
-* The person's card displays each recorded preference, wrapping long values. Unset preferences are hidden.
-* Preferences are saved automatically. Older data files without these fields load with no preferences.
+* Use the positive index shown on the person's card. Search results keep their original full-list indices:
+  if Bob is labelled `2` after `find Bob`, use `contact 2`. The person must be visible in the current results.
+* Supply at least one preference, each at most once, in either order. Use lowercase `ch/` and `tm/`,
+  separated from preceding text by ordinary spaces.
+* A supplied value replaces that preference; omitted preferences and other person details stay unchanged.
+  An exact `-`, optionally surrounded by ordinary spaces, clears a preference. Clearing an absent preference is safe.
+  Type `-` directly to clear; a larger value such as `Phone-call` remains text.
+* Each value must contain 1–200 characters after surrounding whitespace is removed. Internal spaces and case
+  are kept. Free text, Unicode and punctuation are accepted, including `Phone/WhatsApp` and `Weekdays 6:30–8 pm`.
+  Empty or whitespace-only values are invalid.
+* Preferences are saved automatically. If either supplied preference is invalid, neither changes.
+  Cleared preferences remain absent after restarting the application.
 
 Examples:
 
-* `contact 1 ch/WhatsApp tm/Weekdays after 6 pm`
-* `contact 2 tm/Lunch break ch/Phone call`
-* `contact 1 tm/Weekends 10 am to noon` (keeps the existing channel)
-* `contact 1 ch/-` clears only the channel.
-* `contact 1 tm/-` clears only the timing.
-* `contact 1 ch/- tm/-` clears both preferences.
-* `contact 1 ch/WhatsApp tm/-` sets the channel and clears the timing.
-* `contact 1 ch/- tm/Weekends` clears the channel and sets the timing. Either prefix order is accepted.
+* `contact 2 ch/WhatsApp tm/Weekdays after 6 pm` records both preferences.
+* `contact 2 tm/Lunch break ch/Phone call` updates both preferences in the opposite order.
+* `contact 2 ch/Email tm/-` changes the channel and clears the timing.
+* `contact 2 ch/-` clears only the channel, keeping any recorded timing.
 
-If either supplied preference is invalid, neither preference is changed. Cleared values stay absent after restarting
-the application, and their labels are hidden on the person's card.
-
-Success message: `Updated contact preferences for PERSON_NAME.`
+**Prefix restrictions:** A `ch/` or `tm/` preceded by a space always starts a preference, even inside text;
+there is no quoting or escaping. Other slash-containing text, such as `Weekdays AM/PM`, is preserved.
+Malformed parameters `/ch` and `/tm` (including `/ch/VALUE` and `/tm/VALUE`) and the exact typos
+`cch/`, `chh/`, `ttm/`, and `tmm/` are rejected after an ordinary space, even inside a preference.
+For example, `contact 2 /ch Email` and `contact 2 ch/WhatsApp tmm/Evenings` report:
+`Invalid contact parameter. Use ch/CHANNEL or tm/TIMING; use - to clear a preference.`
+Neither command changes the stored preferences. Detection is limited to these patterns; other misspellings
+may be saved as text. For example, `ch/Email xx/After 6 pm` records the entire text as the channel,
+without setting a timing.
 
 ### Adding a dated interaction note: `note`
 
 Adds a dated note to a client or prospect. Notes appear on the person's card in ascending date order (oldest first).
 
-Format: `note INDEX d/DATE n/NOTE`
+Format: `note INDEX d/DATE [t/TYPE] [o/OUTCOME] n/NOTE`
 
 * `INDEX` refers to the currently displayed list, including search results.
 * `DATE` must be a real calendar date in `yyyy-MM-dd` format, with a year from `0001` to `9999`.
   Year `0000` is rejected with `Interaction date must be a valid date in yyyy-MM-dd format.`
   Today's date and past dates are accepted.
   Future dates are rejected with `Interaction date cannot be in the future.` using the computer's local date.
-* Put the date before `n/`. Everything after `n/` is note text, including URLs, punctuation and prefix-like text.
+* Put `d/DATE` first, then any optional `t/` and `o/` fields in either order, before `n/`.
+  Everything after `n/` is note text, including URLs, punctuation and prefix-like text.
+* `TYPE` describes the interaction: `MEETING`, `CALL`, `MESSAGE`, or `OTHER`.
+  `OUTCOME` records its result: `SUCCESSFUL`, `UNSUCCESSFUL`, or `PENDING`.
+  Values ignore case and are saved and displayed in uppercase. For example, `t/call` means `CALL`.
+* Both fields are optional and independent. An omitted field is `UNSPECIFIED`, meaning no detail was recorded;
+  this does not imply `OTHER`, a successful interaction, or a pending result. You may also supply `UNSPECIFIED`
+  explicitly. Existing commands without either field still work, and older saved notes load with these defaults.
+* Each header prefix (`d/`, `t/`, `o/`) may appear only once. Blank or unsupported metadata values are rejected.
 * Note text cannot be blank. Surrounding whitespace is removed; case and internal text are preserved.
 * Adding a note keeps all previous notes. An exact duplicate (same date and text) for the same contact is rejected
   with `This interaction note already exists for this contact.` Existing records remain unchanged.
+* Changing type or outcome does not bypass the same-date-and-text duplicate check.
 * Notes with the same date but different text, or the same text but different dates, are allowed.
   Text comparison is case-sensitive and preserves internal spaces; surrounding whitespace is removed as usual.
   Identical notes for different contacts are allowed.
 * Notes are saved automatically and preserved when using `edit` or `info`.
-* Each entry shows its date and text under **Interaction notes:** on the person's card. Long text wraps, and the
+* Each entry shows its date, type, outcome and text under **Interaction notes:** on the person's card. Long text wraps, and the
   card grows to fit its contents immediately. Scroll the client list to read longer histories.
 * There is no maximum note length imposed by this command. Enter a note on one command line.
 
 Example: `note 1 d/2026-10-06 n/Discussed retirement planning and agreed to follow up next month.`
+
+Example with interaction details:
+
+`note 1 d/2026-10-28 t/CALL o/UNSUCCESSFUL n/Client did not answer`
+
+The card displays `1. 2026-10-28 [Type: CALL; Outcome: UNSUCCESSFUL]: Client did not answer`
+if this is the first note. Use today's date or a past date when trying the example.
+
+Partial metadata is supported: `note 1 d/2026-10-28 t/MESSAGE n/Sent policy details` displays
+`[Type: MESSAGE; Outcome: UNSPECIFIED]`. With neither field, the display shows
+`[Type: UNSPECIFIED; Outcome: UNSPECIFIED]`.
 
 Success message: `Added interaction note for PERSON_NAME.`
 
@@ -285,7 +309,16 @@ Examples of other accepted notes:
 * `note 1 d/2020-02-29 n/Reviewed the client's long-term goals.` (Backdated entry.)
 * `note 1 d/2026-10-06 n/Shared https://example.com/plans/retirement; discussed option A/B.`
 
-Invalid input leaves existing notes unchanged.
+Missing indices, dates or note prefixes produce an error. Dates such as `2026-02-30` are rejected with
+`Interaction date must be a valid date in yyyy-MM-dd format.` Blank note text produces
+`Interaction note cannot be empty.` An index outside the displayed list produces
+`The person index provided is invalid.` These input errors leave the stored records unchanged.
+
+Unsupported or empty `t/` values report
+`Interaction type must be MEETING, CALL, MESSAGE, OTHER, or UNSPECIFIED.` Unsupported or empty `o/` values report
+`Interaction outcome must be SUCCESSFUL, UNSUCCESSFUL, PENDING, or UNSPECIFIED.` Repeated header prefixes
+produce the standard duplicate-prefix error. Use lowercase prefixes with a slash (`t/CALL`, not `t=CALL`).
+Metadata written after `n/` remains literal note text and does not set type or outcome.
 
 Backdated notes are placed in chronological order. Notes with the same date retain their existing order;
 new notes with that date appear after them. Displayed note numbers update to match this order.
@@ -311,6 +344,8 @@ Format: `noteedit CONTACT_INDEX NOTE_INDEX [d/DATE] [n/NEW_NOTE_CONTENT]`
   Notes with identical dates retain their relative order. Other notes and all other contact information are preserved.
 * New text cannot be blank. Surrounding whitespace is removed; case and internal text are preserved.
   Everything after `n/` is note text, including URLs and prefix-like strings. Enter it on one command line.
+* Type and outcome are preserved when changing either date or text. `noteedit` does not change these fields;
+  `t/` and `o/` after `n/` are literal note text.
 * Changes are saved automatically.
 
 Example: `noteedit 1 2 n/Discussed insurance renewal`
@@ -322,7 +357,11 @@ Other examples:
 This updates the second note of the first displayed contact. Success message:
 `Updated interaction note 2 for PERSON_NAME.`
 
-Invalid input does not change existing records.
+Missing arguments, missing both editable fields, invalid indices, invalid dates, and blank supplied text produce an error
+without changing records. Invalid dates produce `Interaction date must be a valid date in yyyy-MM-dd format.`
+An out-of-range contact index produces `The person index provided is invalid.` An out-of-range note index,
+including when the contact has no notes, produces `The interaction note index provided is invalid.`
+Blank text produces `Interaction note cannot be empty.`
 
 ### Deleting a dated interaction note: `notedelete`
 
@@ -345,7 +384,13 @@ Example: `notedelete 1 2`
 This deletes the second note of the first displayed contact. Success message:
 `Deleted interaction note 2 for PERSON_NAME (2026-10-18): Client interested in investment`
 
-Deletion cannot be undone. Invalid input does not change existing records.
+The message includes the deleted note's original date and an excerpt of its content. Whitespace in the excerpt
+is collapsed to single spaces. At most 80 Unicode code points of content are shown, followed by `…` if truncated.
+This formatting does not change stored note content. Deletion cannot be undone.
+
+Missing or extra arguments and invalid indices produce an error without changing records.
+An out-of-range contact index produces `The person index provided is invalid.` An out-of-range note index,
+including when the contact has no notes, produces `The interaction note index provided is invalid.`
 
 ### Locating persons by name, relationship, tags or remembered details: `find`
 
@@ -464,9 +509,22 @@ The success message is `Next action for NAME has been updated successfully.`
 The card shows the description, due date and a text status: `Pending`, `Overdue`, or `Completed`.
 An incomplete action becomes overdue when its date is earlier than the computer's current local date.
 An action due today is pending. Cards without a next action do not show this area.
-If the app stays open overnight, restart it to refresh all card labels.
+Status is calculated when a card is rendered. If the app stays open overnight, restart it to refresh all card labels.
 
-Rejected commands leave the person's data unchanged.
+Input | Error message
+------|--------------
+`next` | `Person index is required.`
+`next 1 d/2026-10-20` | `Next action is required: use a/ACTION.`
+`next 1 a/Call` or `next 1 a/Call d/` | `Due date is required: use d/yyyy-MM-dd.`
+`next 0 a/Call d/2026-10-20` or a negative/non-integer index | `Index must be a positive integer.`
+`next 99 a/Call d/2026-10-20` when fewer than 99 people are displayed | `The person index provided is invalid.`
+`next 1 a/ d/2026-10-20` or an action over 200 characters | `Next action must contain 1 to 200 characters.`
+`next 1 a/Call d/2026-02-30` | `Due date must be a valid date in yyyy-MM-dd format.`
+`next 1 a/Call d/2026-10-25` when today is `2026-10-26` | `Follow-up date cannot be before today.`
+
+Repeated `a/` or `d/` prefixes produce the standard duplicate-prefix error. Space-prefixed `a/` and `d/`
+are reserved delimiters and cannot appear literally within the description. URLs such as `https://example.com`
+and other text are accepted. Rejected commands leave the person's data unchanged.
 
 ### Rescheduling a follow-up: `reschedule`
 
@@ -499,7 +557,7 @@ Examples:
 
 The success message is `Follow-up for NAME has been rescheduled successfully.`.
 Invalid indices, date formats and descriptions report the same validation messages as `next`.
-Changes are saved automatically.
+Changes are saved automatically using the existing follow-up storage format.
 
 ### Completing a follow-up: `done`
 
@@ -517,7 +575,15 @@ If the action is already completed, repeating `done` returns the normal message
 `Next action for NAME is already completed.` without changing the record or current filter.
 Running `next` for that person later replaces the action and resets its status to pending.
 
-If a `done` command is rejected, the record and current filter remain unchanged.
+The command checks these conditions in the order shown; a rejected command leaves all data unchanged:
+
+Condition | Error message
+----------|--------------
+The index is outside the currently displayed list | `The person index provided is invalid.`
+The person has no next action | `NAME has no next action to complete.`
+
+`done` without an index reports `Person index is required.`. Zero, negative numbers, non-integers,
+and extra arguments such as `done 1 2` report `Index must be a positive integer.`.
 
 ### Setting a yearly reminder: `remind`
 
@@ -654,15 +720,9 @@ ClientBook data is saved automatically as a JSON file `[JAR file location]/data/
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, ClientBook starts with an empty client book at the next run. The invalid file remains on disk until you run a command (ClientBook saves after every command). Still, we recommend backing up the file before editing it.<br>
+If your changes make the data file invalid, ClientBook starts with an empty client book at the next run. The invalid file remains on disk until ClientBook next successfully saves record data, for example, after a command that changes records. Still, we recommend backing up the file before editing it.<br>
 Furthermore, certain edits can cause the ClientBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
-
-### Archiving data files `[coming in v2.0]`
-
-_Details coming soon ..._
-
---------------------------------------------------------------------------------------------------------------------
 
 ## FAQ
 
@@ -689,8 +749,8 @@ Action     | Format, Examples
 **Edit**   | `edit INDEX [r/RELATIONSHIP] [n/NAME] [p/PHONE_NUMBER] [e/EMAIL]`<br> e.g.,`edit 2 r/Client n/James Lee e/jameslee@example.com`
 **Find**   | `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...]] [k/DETAIL_KEYWORD [MORE_KEYWORDS...]]`<br> e.g., `find James r/client t/priority referral k/retirement`
 **Contact** | `contact INDEX [ch/CHANNEL\|-] [tm/TIMING\|-]`<br> e.g., `contact 1 ch/WhatsApp tm/-`
-**Info**   | `info INDEX [/fn VALUE\|-] [/pr VALUE\|-] [/ai VALUE\|-]`<br> e.g., `info 1 /fn retirement planning`
-**Note**   | `note INDEX d/DATE n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
+**Info**   | `info INDEX [fn/VALUE\|-] [pr/VALUE\|-] [ai/VALUE\|-]`<br> e.g., `info 1 fn/retirement planning`
+**Note**   | `note INDEX d/DATE [t/TYPE] [o/OUTCOME] n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
 **Note edit** | `noteedit CONTACT_INDEX NOTE_INDEX [d/DATE] [n/NEW_NOTE_CONTENT]`<br> e.g., `noteedit 1 2 d/2026-10-19 n/Discussed insurance renewal`
 **Note delete** | `notedelete CONTACT_INDEX NOTE_INDEX`<br> e.g., `notedelete 1 2`
 **Restore** | `restore`<br> e.g., `restore`

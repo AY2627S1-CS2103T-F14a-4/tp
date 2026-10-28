@@ -5,61 +5,60 @@ skinparam ArrowFontStyle plain
 box Logic LOGIC_COLOR_T1
 participant ":LogicManager" as Logic LOGIC_COLOR
 participant ":ClientBookParser" as Parser LOGIC_COLOR
-participant ":ContactCommandParser" as ContactParser LOGIC_COLOR
+participant ":ContactCommandParser" as FeatureParser LOGIC_COLOR
 participant "command:ContactCommand" as Command LOGIC_COLOR
 end box
 
 box Model MODEL_COLOR_T1
-participant "model:Model" as Model MODEL_COLOR
-participant "updated:Person" as Person MODEL_COLOR
+participant "live:Model" as Live MODEL_COLOR
+participant "temporary:ModelManager" as Temp MODEL_COLOR
 end box
 
 box Storage STORAGE_COLOR_T1
 participant ":Storage" as Storage STORAGE_COLOR
 end box
 
-[-> Logic : execute("contact 1 ch/WhatsApp tm/-")
+[-> Logic : execute("contact 2 ch/WhatsApp tm/-")
 activate Logic
 Logic -> Parser : parseCommand(commandText)
 activate Parser
-Parser -> ContactParser : parse(rawArguments)
-activate ContactParser
-note right of ContactParser
-Validate index syntax, supplied fields and duplicate prefixes.
-Recognize exact raw clearing markers before trimming normal values.
-Build ContactDescriptor: channel supplied, timing explicitly cleared.
-end note
+Parser -> FeatureParser : parse(arguments)
+activate FeatureParser
+note right of FeatureParser : Validate index syntax and fields;\nbuild set/omit/clear descriptor.
 create Command
-ContactParser -> Command : new ContactCommand(index, descriptor)
-note right of Command : Defensively copy descriptor, including specified flags.
-ContactParser --> Parser : command
-deactivate ContactParser
+FeatureParser -> Command : new ContactCommand(index, descriptor)
+FeatureParser --> Parser : command
+deactivate FeatureParser
 Parser --> Logic : command
 deactivate Parser
-Logic -> Command : execute(model)
+
+Logic -> Live : getClientBook(), getUserPrefs(),\ngetFilteredPersonPredicate(), getFilteredPersonComparator()
+Live --> Logic : data, preferences, predicate, comparator
+create Temp
+Logic -> Temp : new ModelManager(data, preferences)
+Logic -> Temp : updateFilteredPersonList(predicate, comparator)
+Logic -> Command : execute(temporary, storage)
 activate Command
-Command -> Model : getClientBook()
-Model --> Command : clientBook
-Command -> Model : getFilteredPersonList()
-Model --> Command : displayedPersons
-note right of Command
-getVisiblePersonAtIndex resolves the original full-list index.
-Reject out-of-range indices and hidden persons before changing data.
-end note
-create Person
-Command -> Person : new Person(..., resolvedChannel, resolvedTiming)
-note right of Person
-Omitted preferences retain their original values.
-Explicit clears become absent; all unrelated fields are preserved.
-end note
-Command -> Model : setPerson(original, updatedPerson)
-note right of Model : Observable list updates the PersonCard.
+Command -> Temp : getClientBook().getPersonList()
+Temp --> Command : complete list
+note right of Command : Check full-list bounds;\nselect person at original index 2.
+Command -> Temp : getFilteredPersonList()
+Temp --> Command : visible persons
+note right of Command : Reject if selected person is hidden.\nConstruct replacement only after checks.
+Command -> Temp : setPerson(original, updated)
+note right of Temp : Channel replaced; timing cleared.\nUnrelated fields preserved.
 Command --> Logic : CommandResult
 deactivate Command
-Logic -> Model : getClientBook()
-Model --> Logic : clientBook
-Logic -> Storage : saveClientBook(clientBook)
-Storage --> Logic
+
+Logic -> Temp : getClientBook()
+Temp --> Logic : updated client book
+opt client book changed
+    Logic -> Storage : saveClientBook(updated client book)
+    Storage --> Logic : save completed
+end
+note over Logic, Live : Save failure returns an error without committing.\nUnchanged data skips saving.
+Logic -> Live : setClientBook(updated client book)
+Logic -> Live : updateFilteredPersonList(predicate, comparator)
 [<-- Logic : CommandResult
 deactivate Logic
 @enduml

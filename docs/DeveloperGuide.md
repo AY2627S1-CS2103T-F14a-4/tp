@@ -115,10 +115,7 @@ How the `Logic` component works:
    Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
 4. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
-`LogicManager` saves the client book only when a command changes its records. Read-only commands, such as `list`,
-`find`, and `due`, update the displayed view from memory without writing to storage. Before saving a changed client
-book, `LogicManager` keeps a copy of the previous records and filtered view. If saving fails, it restores both so the
-application does not display a change that will be lost after restart.
+`LogicManager` executes each command against a temporary model initialized with the current records, preferences and active filter. When a command changes records, it saves the temporary client book before committing it to the main model. Read-only commands, such as `list`, `find`, and `due`, update the displayed view from memory without writing to storage. If saving fails, the main model is never committed, so the application does not display a change that would be lost after restart. Regression tests cover read-only commands avoiding persistence, a failed save retaining the records and active filter, and a subsequent successful `tag` command preserving that filter.
 
 The sequence diagram below shows the corresponding flow for an `edit` command.
 
@@ -264,101 +261,98 @@ The following sequence shows the confirmation gate before selected tags are dele
 
 <puml src="diagrams/TagDeleteSequenceDiagram.puml" alt="Deleting tags with confirmation sequence" />
 
-### Contact preferences
+### Contact preferences (US12)
 
-`ContactCommandParser` accepts `contact INDEX [ch/CHANNEL|-] [tm/TIMING|-]` in either prefix order. It reuses
-duplicate-prefix checks and `ParserUtil.parseIndex`, but retains raw preference values using the same ordinary-space
-prefix boundaries as `ArgumentTokenizer`. `ClientBookParser` passes the original contact arguments so its initial
-trimming cannot change marker recognition. The shared tokenizer is unchanged.
+`ContactCommandParser` accepts `contact INDEX [ch/CHANNEL|-] [tm/TIMING|-]`. It requires a positive index
+and at least one preference, and rejects duplicate prefixes. Prefixes are case-sensitive and begin after an
+ordinary space. Other slash-containing text remains part of a value. The parser retains raw arguments so
+only an exact `-`, padded with ordinary spaces, means clear. A tab-padded hyphen is normal text and can become
+a stored `-` after trimming. `PreferredContactChannel` and `PreferredContactTiming` are immutable free-text
+values with a 1–200 UTF-16-code-unit limit after surrounding whitespace is removed; internal text is preserved.
 
-#### Parameter parsing and validation
+The parser also performs targeted, case-sensitive malformed-prefix detection after ordinary spaces:
+`/ch` and `/tm` followed by whitespace, `/`, or the end of input, and the exact prefixes `cch/`, `chh/`,
+`ttm/`, `tmm/` are rejected, including inside values. Index validation comes first, followed by duplicate checks
+and malformed-prefix detection, so genuinely invalid indices retain their index error. Other slash-containing
+text, such as `Phone/WhatsApp`, `AM/PM` or `xx/After 6 pm`, remains valid; arbitrary typo detection would
+incorrectly reject free text.
 
-Missing or invalid indices produce `Index must be a positive integer.` An index outside the full contact list or
-belonging to a person hidden by the current filter produces `The person index provided is invalid.` Missing fields
-produce `At least one of ch/ or tm/ is required.` Duplicate `ch/` or `tm/` prefixes are rejected. These recognized
-prefixes, when preceded by a space, are delimiters and cannot be included literally in values. Other slash-containing
-text, such as `AM/PM` or `Phone/WhatsApp`, is preserved as part of the value.
+`ContactDescriptor` distinguishes three states per preference: omitted (preserve), specified non-null (replace),
+and specified null (clear). `ContactCommand` defensively copies the descriptor. It constructs a replacement
+`Person` rather than using `Person#withContactPreferences`, whose null arguments mean preserve and therefore
+cannot express clearing. All unrelated fields, including recurring reminders and interaction notes with their
+recorded type and outcome, are copied unchanged.
 
-Reversed parameters `/ch` and `/tm` (including `/ch/VALUE` and `/tm/VALUE`) and repeated-letter prefixes `cch/`,
-`chh/`, `ttm/`, and `tmm/` are rejected when preceded by an ordinary space. The error explains: `Invalid contact
-parameter. Use ch/CHANNEL or tm/TIMING; use - to clear a preference.` These exact forms are treated as parameter
-mistakes even inside a preference. Detection is deliberately limited: other slash-containing text, including
-`Email xx/After 6 pm`, remains valid. Other misspellings may be stored as free text, so check the saved preference
-when unsure.
+`Command#getVisiblePersonAtIndex` first checks the index against the **complete** person list, selects that
+person, and then checks membership in the filtered list. It does not interpret the index as a filtered-list
+position. Thus a sole result labelled `2` requires index `2`; index `1` is rejected if that person is hidden.
 
-Only an exact `-` surrounded by ordinary spaces clears a preference. Non-marker values retain the existing trimming
-and validation through immutable `PreferredContactChannel` and `PreferredContactTiming`. Thus a tab-padded hyphen is
-normal text, not a clear operation. Free text, Unicode, punctuation and the 1-200-character limit remain supported.
-
-`ContactDescriptor` holds a specified flag and nullable value for each preference: omitted means preserve,
-specified non-null means replace, and specified null means clear. `ContactCommand` defensively copies the descriptor
-and rejects an empty descriptor. It calls `Command#getVisiblePersonAtIndex` to resolve the original full-list index
-and verify that the person is visible in the current filtered results. Search results retain their original indices,
-matching the numbers shown by the UI. It then constructs a replacement `Person` with the resolved preferences and
-calls `Model#setPerson`. `Person#withContactPreferences` retains its original null-means-keep
-contract for other callers. All unrelated fields and the active filter are preserved. `edit`, `info`, `note`, `withNextAction` and
-`PersonBuilder` also copy both preferences. `PersonCard` hides absent values and wraps recorded values.
-`JsonAdaptedPerson` persists optional `preferredContactChannel` and `preferredContactTiming` strings; missing or
-null properties mean absence, while invalid non-null values produce `IllegalValueException`.
-Clearing uses this existing absence representation without changing the JSON format. Clearing absent fields and
-repeating clears are safe. Tests cover set/clear combinations, raw markers, invalid-input atomicity, filtered indices,
-unrelated-field preservation, descriptor equality/copying, JSON save/reload after clearing, and live card label hiding.
-
-The following sequence shows a successful update; parser validation and index checks precede model mutation.
+Both `contact` and `info` use the existing `LogicManager` transaction flow. After parsing, it creates a temporary
+`ModelManager` from the live client book and preferences, and applies the current filter and sort comparator.
+The command replaces the person in this temporary model. If the data changed, `LogicManager` saves it through
+`Storage` before committing the temporary client book, filter and comparator to the live model. Parse or command
+failures leave the live model untouched; save failures prevent the commit. Unchanged data, including repeated clears, needs no save.
+The sequence below shows a successful change; individual getters and replacement-person construction are omitted.
 
 <puml src="diagrams/ContactSequenceDiagram.puml" alt="Contact preference update sequence" />
 
-### Financial information
+`JsonAdaptedPerson` persists optional `preferredContactChannel` and `preferredContactTiming` strings.
+Missing or null properties load as absent, preserving compatibility with older files; invalid non-null values
+are rejected. Clearing reuses this absence representation. The card hides absent preferences and wraps recorded
+values. Parser, command and storage tests cover set/omit/clear combinations, filtered indices, preservation of
+unrelated fields and save/reload compatibility.
 
-`FinancialNeed`, `Priority` and `AreaOfInterest` are immutable value objects, independently optional on `Person`.
-Normal values contain 1-200 characters after trimming ordinary spaces; internal spaces are preserved. Validation
-accepts Unicode letters (`\p{L}`), combining marks (`\p{M}`), decimal digits, spaces and the punctuation
-`. , ' ( ) & - $ % + /`; blanks, tabs, line breaks and other characters are rejected.
-Combining marks support decomposed accents and scripts such as Tamil. No Unicode normalization is performed:
-stored text and equality retain the supplied representation after ordinary-space trimming. The existing
-200-character limit uses `String.length()` (UTF-16 code units), including combining marks.
-`Priority` stores validated text rather than a fixed enumeration.
+### Financial information (US13)
 
-`ClientBookParser` routes `info INDEX [/fn VALUE|-] [/pr VALUE|-] [/ai VALUE|-]` to `InfoCommandParser`.
-The parser requires a positive index and at least one financial prefix, accepts any prefix order, and rejects
-duplicate or unknown parameters. Slashes embedded in a value token (for example, `Life/Health` or `CPF/SRS`)
-are value text. Every slash at the start of a whitespace-delimited token is scanned as a parameter, including
-a bare `/`, so malformed parameters cannot silently become values. `Life / Health` and `Life /Health`
-remain invalid; use `Life/Health`. The parser recognizes an exact `-` surrounded only by ordinary spaces before calling
-`ParserUtil` to validate normal values. Bare prefixes remain invalid. `InfoDescriptor` stores a specified flag
-and nullable value per field: omitted means unchanged, specified non-null means replace, and specified null
-means explicitly clear. `InfoCommand` defensively copies this descriptor, including its flags.
+`InfoCommandParser` accepts `info INDEX [fn/VALUE|-] [pr/VALUE|-] [ai/VALUE|-]`, requiring a positive index
+and at least one field. Prefixes may appear in any order at whitespace boundaries; duplicates, slash-first
+parameters (including the former `/fn`, `/pr`, `/ai` syntax), and reserved near misses are rejected.
+Only lowercase `fn/`, `pr/`, `ai/` are valid. Their case variants and the explicit near misses `fnn/`, `prr/`,
+`aii/` (also case-insensitive) produce an invalid-parameter error.
 
-`InfoCommand#execute` resolves the visible person against its index in the complete list before mutation.
-It constructs a replacement `Person` using the resolved financial fields and calls `Model#setPerson`.
-Name, phone, email, relationship, tags, interaction notes, next action, preferred contact channel and preferred
-contact timing are copied unchanged; the active filter is preserved. Clearing an absent field is idempotent.
+This targeted detection preserves financial notation such as `fn/Planning CPF/SRS` and `fn/Save $3000/month`.
+A generic `NAME/` scan is confined to the preamble, where value text cannot occur; the preceding index is
+validated before reporting an unknown parameter. Inside values, arbitrary forms such as `xyz/Value` remain
+text because they are indistinguishable from ordinary slash-containing words. Recognised prefixes always
+start fields: `fn/Review pr/High options` sets two fields. There is no quoting or escaping, so users must
+rephrase literal prefix-like text. The UG documents this restriction and the limited typo detection.
 
-`LogicManager` saves through the existing storage pipeline after execution. `JsonAdaptedPerson` persists optional
-`financialNeed`, `priority` and `areaOfInterest` strings; missing or null properties load as absent, supporting
-older files. Non-null values are validated on loading. `PersonCard` shows present values in wrapped labels prefixed
-with `Financial need:`, `Priority:` and `Area of interest:`; absent labels are invisible and unmanaged.
-Automated tests cover parser validation and boundaries, set/clear combinations, descriptor copying, filtered indices,
-unrelated-field preservation, JSON compatibility, save/reload after clearing, and UI hiding/wrapping.
+`FinancialNeed`, `Priority` and `AreaOfInterest` are immutable, independently optional values on `Person`.
+They accept Unicode letters, combining marks, decimal digits, ordinary spaces and `. , ' ( ) & - $ % + /`.
+Validation trims only ordinary spaces, rejects blanks, controls and unsupported characters, and limits each
+value to 200 UTF-16 code units. No Unicode normalization occurs; combining marks count separately.
+`Priority` is free text rather than an enumeration. The parser reports all invalid supplied fields together
+in financial-need, priority, area-of-interest order, before returning a command.
 
-The following sequence shows `info 1 /pr High /ai -`; validation and index resolution precede model mutation.
+`InfoDescriptor` uses specified flags and nullable values to distinguish omission, replacement and clearing,
+just as the contact descriptor does. Only a raw `-` surrounded by ordinary spaces clears a field.
+`InfoCommand` copies the descriptor, resolves the original full-list index and checks visibility through
+`Command#getVisiblePersonAtIndex`, then replaces the person with all unrelated fields preserved.
+Recurring reminders and interaction-note metadata remain intact. `LogicManager` uses the same temporary-model,
+save-before-commit flow described above; the active filter and sort comparator are retained.
+The sequence below shows priority replacement and area-of-interest clearing in one command.
 
 <puml src="diagrams/InfoSequenceDiagram.puml" alt="Financial information update sequence" />
 
-### Dated interaction notes
+`JsonAdaptedPerson` saves optional `financialNeed`, `priority` and `areaOfInterest` strings. Missing or null
+properties load as absent, while non-null values are validated. Clearing therefore needs no JSON-format change.
+Present values appear on the card; absent labels are hidden. Regression tests cover financial notation and Unicode,
+validation and atomicity, descriptor states, original filtered indices, and persistence after setting or clearing.
 
-`note INDEX d/yyyy-MM-dd n/NOTE` appends an interaction note to the person at the index in the currently displayed
-list. It works for clients and prospects, preserves the current filter, and does not replace earlier entries.
+### Dated interaction notes (US14)
+
+`note INDEX d/yyyy-MM-dd [t/TYPE] [o/OUTCOME] n/NOTE` appends an interaction note to the person at the displayed
+client index. It works for clients and prospects, preserves the current filter, and does not replace earlier entries.
 
 #### Model and command flow
 
-1. `ClientBookParser` routes the command to `NoteCommandParser`. The parser reads the index and date before `n/`,
-   then treats the entire remaining body as text. URLs, slashes and further prefix-like strings remain note content.
-2. `InteractionNote` stores an immutable `LocalDate` and nonblank text. Date parsing checks the `yyyy-MM-dd` shape
+1. `ClientBookParser` routes the command to `NoteCommandParser`. The parser reads the index, date and optional
+   interaction metadata before the first `n/`, then treats the entire remaining body as text. URLs, slashes and further prefix-like strings remain note content.
+2. `InteractionNote` stores an immutable `LocalDate`, nonblank text, `InteractionType` and `InteractionOutcome`. Date parsing checks the `yyyy-MM-dd` shape
    and uses strict ISO calendar validation. Past dates are allowed. Surrounding text whitespace is stripped;
    internal content and case are preserved without a character whitelist or maximum length.
 3. `NoteCommand` checks the displayed index and rejects an exact duplicate in that person's history using
-   `InteractionNote.equals()` before making changes. Otherwise, it copies the history, appends the new entry and calls
+   `InteractionNote.hasSameContent()` (date and stripped text) before making changes. Otherwise, it copies the history, appends the new entry and calls
    `Model#setPerson` with a replacement `Person`. Other fields remain unchanged. The same date with different text,
    or the same text with different dates, is allowed. `Person` stably sorts its defensive copy by date, oldest first,
    preserving order for equal dates.
@@ -372,8 +366,9 @@ their replacement persons. `PersonBuilder` also preserves it when copying a pers
 #### Persistence and display
 
 `JsonAdaptedPerson` stores an `interactionNotes` array of `JsonAdaptedInteractionNote` objects, each containing
-`date` and `text`. Missing or null arrays in older JSON files become empty histories. Loading validates stored
-dates and note text; serialization preserves entry order and duplicates.
+`date`, `text`, `type` and `outcome`. Missing or null arrays in older JSON files become empty histories.
+Missing or null metadata fields default independently to `UNSPECIFIED`; unknown or blank stored enum values
+raise `IllegalValueException`. Loading validates dates and note text; serialization preserves entry order and duplicates.
 
 `PersonCard` displays dated, wrapped labels in the existing card's interaction-note container. Empty histories are
 hidden and unmanaged. Labels have a zero minimum/preferred width and an unbounded maximum width so the parent
@@ -383,32 +378,66 @@ measurement. No fixed card height or forced list refresh is needed.
 
 #### Validation and scope
 
-Missing indices, dates or note prefixes produce an error. Dates such as `2026-02-30` are rejected with
-`Interaction date must be a valid date in yyyy-MM-dd format.` Blank note text produces
-`Interaction note cannot be empty.` An index outside the displayed list produces
-`The person index provided is invalid.` These input errors leave the stored records unchanged.
+The parser distinguishes missing index, date and note prefix; malformed calendar dates and blank text have specific
+errors. Execution rejects indices outside the currently displayed list before changing the model.
 
-This feature provides adding, displaying, editing and deleting dated notes. Chronological sorting,
-structured interaction outcomes and note search remain separate user stories.
+This feature provides adding, displaying, editing and deleting dated notes, with chronological sorting and
+structured type/outcome metadata. Searching interaction notes (US16) remains outside this feature.
 
-#### Editing note text
+#### Interaction type and outcome (US15)
 
-`noteedit CONTACT_INDEX NOTE_INDEX n/NEW_NOTE_CONTENT` is routed to `NoteEditCommandParser`.
-The parser requires two positive indices followed by `n/` and nonblank text. As with `note`, everything after
-the prefix is treated as note content, including further prefix-like strings.
+`InteractionType` contains `MEETING`, `CALL`, `MESSAGE`, `OTHER`, and `UNSPECIFIED`.
+`InteractionOutcome` contains `SUCCESSFUL`, `UNSUCCESSFUL`, `PENDING`, and `UNSPECIFIED`.
+The explicit unspecified states represent absent information without inventing historical interaction details.
+Both the legacy two-argument `InteractionNote` constructor and old JSON use these defaults.
+The four-argument constructor rejects null metadata. Full value equality and hashing include both fields,
+so changes to metadata participate in person equality and persistence; duplicate-note detection deliberately
+continues to compare only date and text, preserving the existing rule regardless of metadata.
 
-Missing arguments, missing both editable fields, invalid indices, invalid dates, and blank supplied text produce an
-error without changing records. Invalid dates produce `Interaction date must be a valid date in yyyy-MM-dd format.`
-An out-of-range contact index produces `The person index provided is invalid.` An out-of-range note index, including
-when the contact has no notes, produces `The interaction note index provided is invalid.` Blank text produces
-`Interaction note cannot be empty.`
+`NoteCommandParser` retains the date-first syntax and splits at the first whitespace-delimited `n/`.
+It tokenizes only the header with `PREFIX_DUE_DATE`, `PREFIX_INTERACTION_TYPE` (`t/`) and
+`PREFIX_INTERACTION_OUTCOME` (`o/`), using the existing `ArgumentTokenizer` and duplicate-prefix validation.
+Header whitespace is normalized for tokenization; the body is preserved independently.
+The optional metadata fields can appear in either order after the date. Enum parsers strip surrounding
+whitespace and use `Locale.ROOT` for case-insensitive input, returning field-specific validation errors.
+The `t/` spelling is shared with tags but interpreted only by each command's own parser; `find` and tag commands
+retain their existing meaning. Prefix-like strings after `n/` remain content, keeping URLs and old note bodies compatible.
+
+`NoteCommand` still appends through immutable person replacement and the existing `LogicManager` transaction.
+`JsonAdaptedInteractionNote` writes uppercase enum names, accepts case-insensitive stored values, and preserves
+its two-argument constructor for existing callers. No file migration or dependency is required. Missing/null
+fields are backward compatible; invalid supplied values are rejected rather than silently discarded.
+`PersonCard` already renders each note through `InteractionNote.toString()`, which now produces
+`DATE [Type: TYPE; Outcome: OUTCOME]: TEXT`; wrapping, numbering and chronological ordering are unchanged.
+`NoteEditCommand` copies the selected note's metadata when replacing date or text. Deletion removes only the
+selected note; `edit`, `info`, contact preferences, tags and follow-up mutations carry the immutable history through.
+`noteedit` does not expose metadata editing; its existing date/text syntax remains unchanged.
+
+Enums were chosen over free text to enforce a small, consistent vocabulary. `UNSPECIFIED` was chosen over
+`OTHER`/`PENDING` defaults because those values assert details the user may never have recorded. Full value equality
+is separate from the date/text duplicate rule to avoid both missed persistence changes and duplicate-rule regressions.
+Keeping metadata before `n/`, rather than scanning the entire command, protects existing free-form note content.
+
+Tests cover all enum values, mixed-case parsing under a Turkish default locale, independent optional fields,
+malformed/missing/duplicate prefixes, literal prefixes in the body, explicit defaults, invalid/null values,
+JSON round-trips and legacy fields. Logic/storage integration tests exercise original filtered indexes,
+chronological ties, unchanged duplicate rejection, note editing/deletion, unrelated contact mutations,
+backup/restore and reopening saved records. JavaFX tests assert the exact canonical and unspecified display text.
+
+#### Editing note date and text
+
+`noteedit CONTACT_INDEX NOTE_INDEX [d/DATE] [n/NEW_NOTE_CONTENT]` is routed to `NoteEditCommandParser`.
+The parser requires two positive indices and at least one editable field. When supplied, the date comes before
+`n/` and is calendar-validated; explicitly supplied future dates are rejected during execution. As with `note`,
+everything after `n/` is treated as note content, including further prefix-like strings.
 
 `NoteEditCommand` resolves the contact against the filtered list and the note against its chronologically ordered
 history, using one-based indices. It rejects out-of-range indices (including empty histories) before mutation.
-It copies the history and replaces just the selected entry with an `InteractionNote` containing the original
-date and updated text. It then calls `Model#setPerson` with a replacement person preserving all other fields,
-including contact preferences and the next action. The current filter remains active. `LogicManager` persists the change through the
-existing JSON pipeline; no schema changes or note IDs are needed.
+It copies the history and replaces just the selected entry with an `InteractionNote` containing the supplied
+date/text (preserving omitted values), original type and original outcome. Date changes trigger chronological reordering.
+It then calls `Model#setPerson` with a replacement person preserving all other fields, including contact preferences
+and the next action. The current filter remains active. `LogicManager` persists the change through the existing
+JSON pipeline; no additional schema changes or note IDs are needed for editing.
 
 `NoteEditCommandTest` and `NoteEditCommandParserTest` cover validation, filtered lists, duplicate notes,
 date and contact-field preservation, command routing, and saving/reloading an edit through `LogicManager`.
@@ -422,10 +451,6 @@ second interaction note from the first contact in the currently filtered list.
 
 `notedelete CONTACT_INDEX NOTE_INDEX` is routed to `NoteDeleteCommandParser`, which requires exactly two
 positive integer indices using `ParserUtil.parseIndex`.
-
-Missing or extra arguments and invalid indices produce an error without changing records. An out-of-range contact
-index produces `The person index provided is invalid.` An out-of-range note index, including when the contact has
-no notes, produces `The interaction note index provided is invalid.`
 
 `NoteDeleteCommand` resolves the contact against the currently filtered list and the note against that
 contact's chronologically ordered history. Both indices are one-based. Out-of-range indices, including an empty
@@ -451,7 +476,7 @@ including an empty history.
 
 Automated and manual regression checks are described in the [Testing guide](Testing.md#us14-interaction-note-regression-checks).
 
-### Follow-ups
+### Follow-ups (US18, US19 and US20)
 
 Each `Person` has zero or one immutable `NextAction`: an action description, a `LocalDate` due date,
 and a boolean completion status. Absence is exposed through `Person#getNextAction()` as an empty `Optional`.
@@ -459,7 +484,7 @@ The value participates in full person equality and hashing, but does not affect 
 `Person#withNextAction` creates a replacement person while preserving all unrelated information.
 `EditCommand`, `InfoCommand` and `NoteCommand` must carry this field into their replacement persons.
 
-#### Recording or replacing an action
+#### Recording or replacing an action (US18)
 
 `ClientBookParser` routes `next` to `NextCommandParser`, which uses `ArgumentTokenizer` for `a/` and `d/`.
 The parser validates the index through `ParserUtil#parseIndex`, rejects duplicate prefixes, and distinguishes
@@ -468,23 +493,6 @@ missing action/date fields. `NextAction` strips surrounding description whitespa
 and strict calendar validation. Both parsing and model construction restrict the year to 1–9999;
 year zero is rejected, including when loading JSON. Calendar parsing and the model continue to
 accept historical dates so existing saved follow-ups remain loadable as they become overdue.
-
-##### Validation errors
-
-Input | Error message
-------|--------------
-`next` | `Person index is required.`
-`next 1 d/2026-10-20` | `Next action is required: use a/ACTION.`
-`next 1 a/Call` or `next 1 a/Call d/` | `Due date is required: use d/yyyy-MM-dd.`
-`next 0 a/Call d/2026-10-20` or a negative/non-integer index | `Index must be a positive integer.`
-`next 99 a/Call d/2026-10-20` when fewer than 99 people are displayed | `The person index provided is invalid.`
-`next 1 a/ d/2026-10-20` or an action over 200 characters | `Next action must contain 1 to 200 characters.`
-`next 1 a/Call d/2026-02-30` | `Due date must be a valid date in yyyy-MM-dd format.`
-`next 1 a/Call d/2026-10-25` when today is `2026-10-26` | `Follow-up date cannot be before today.`
-
-Repeated `a/` or `d/` prefixes produce the standard duplicate-prefix error. Space-prefixed `a/` and `d/`
-are reserved delimiters and cannot appear literally within the description. URLs such as `https://example.com`
-and other text are accepted.
 
 `NextCommand` resolves the visible person against its index in the complete list, rejects invalid indices,
 and checks the requested date against `LocalDate.now(clock)` before any mutation. Both new and
@@ -505,7 +513,7 @@ The diagram shows the successful path, assuming the example date is today or lat
 Parser failures, invalid displayed indices and past replacement dates stop before mutation;
 save failures follow the existing `LogicManager` error handling.
 
-#### Completing an action
+#### Completing an action (US20)
 
 `ClientBookParser` routes `done INDEX` to `DoneCommandParser`. Empty arguments report
 `Person index is required.`; otherwise `ParserUtil#parseIndex` validates the entire argument string,
@@ -514,20 +522,6 @@ rejecting zero, negative, non-integer and multiple indices.
 `DoneCommand` first resolves the visible person against its index in the complete list, then checks that the selected
 person has a next action. These checks occur before any model mutation and report, respectively,
 `Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX` and `NAME has no next action to complete.`.
-
-##### Validation errors
-
-The command checks these conditions in the order shown; a rejected command leaves all data and the current filter
-unchanged:
-
-Condition | Error message
-----------|--------------
-The index is outside the currently displayed list | `The person index provided is invalid.`
-The person has no next action | `NAME has no next action to complete.`
-
-`done` without an index reports `Person index is required.`. Zero, negative numbers, non-integers, and extra
-arguments such as `done 1 2` report `Index must be a positive integer.`.
-
 If the action is already completed, the command returns a normal `CommandResult` with
 `Next action for NAME is already completed.` without calling `Model#setPerson` or changing the filter.
 
@@ -541,7 +535,7 @@ Tests cover the immutable completed copy, preserved description/date and person 
 indices, out-of-range indices, absent actions, repeated completion, unchanged data on errors, command equality,
 string representation, parser validation and routing through `ClientBookParser`.
 
-#### Rescheduling existing follow-ups
+#### Rescheduling existing follow-ups (US21)
 
 `ClientBookParser` routes `reschedule INDEX d/yyyy-MM-dd [a/ACTION]` to
 `RescheduleCommandParser`. It reuses the existing `a/` and `d/` prefixes, index parsing,
@@ -569,7 +563,7 @@ missing follow-ups, date-only and description changes, reopening completed actio
 past dates without mutation, local-zone date boundaries and due-filter updates. Model and JSON
 round-trip tests verify immutable rescheduling, pending status and preservation of optional fields.
 
-#### Yearly recurring reminders
+#### Yearly recurring reminders (US22)
 
 `ClientBookParser` dispatches `remind INDEX a/LABEL d/MM-dd` to `RemindCommandParser`, which reuses
 `ParserUtil.parseIndex` and the existing action/date prefixes. It rejects duplicate/missing prefixes and
@@ -611,7 +605,7 @@ captured execution date. The 30-day horizon uses `ChronoUnit.DAYS`, supports yea
 accumulated overdue annual occurrence. `PersonCard` shows labels and next dates in the existing card;
 `done` still changes only `NextAction`.
 
-#### Viewing due actions
+#### Viewing due actions (US19)
 
 `ClientBookParser` routes argument-free `due` to `DueCommand`; any arguments are rejected with
 `The due command takes no arguments.`. On each execution, `DueCommand` obtains today's date using
@@ -668,99 +662,13 @@ local clock-zone boundaries, replacement reset, filtered indices, preservation o
 old JSON, historical follow-ups remaining visible in `due`, invalid stored values, completion round
 trips and card display/wrapping.
 
-### \[Proposed\] Undo/redo feature
+### Backing up and restoring records
 
-#### Proposed Implementation
+`ClientBookParser` accepts `backup` and `restore` only without arguments and creates a `BackupCommand` or `RestoreCommand` respectively. Both commands derive the backup path from the main data-file path, placing `clientbook-backup.json` beside `clientbook.json` in the `data` folder.
 
-The proposed undo/redo mechanism is facilitated by `VersionedClientBook`. It extends `ClientBook` with an undo/redo history, stored internally as an `clientBookStateList` and `currentStatePointer`. Additionally, it implements the following operations:
+`BackupCommand` does not change the in-memory client book. It serializes the current records through `Storage#saveClientBook(ReadOnlyClientBook, Path)` to a temporary file in the backup folder, then replaces the backup file with an atomic move when supported. It falls back to a normal replacement move on file systems that do not support atomic moves. This prevents a failed write from replacing an existing backup with a partial file.
 
-* `VersionedClientBook#commit()` -- Saves the current client book state in its history.
-* `VersionedClientBook#undo()` -- Restores the previous client book state from its history.
-* `VersionedClientBook#redo()` -- Restores a previously undone client book state from its history.
-
-These operations are exposed in the `Model` interface as `Model#commitClientBook()`, `Model#undoClientBook()` and `Model#redoClientBook()` respectively.
-
-Given below is an example usage scenario and how the undo/redo mechanism behaves at each step.
-
-Step 1. The user launches the application for the first time. The `VersionedClientBook` will be initialized with the initial client book state, and the `currentStatePointer` pointing to that single client book state.
-
-<puml src="diagrams/UndoRedoState0.puml" alt="UndoRedoState0" />
-
-Step 2. The user executes `delete 5` command to delete the 5th person in the client book. The `delete` command calls `Model#commitClientBook()`, causing the modified state of the client book after the `delete 5` command executes to be saved in the `clientBookStateList`, and the `currentStatePointer` is shifted to the newly inserted client book state.
-
-<puml src="diagrams/UndoRedoState1.puml" alt="UndoRedoState1" />
-
-Step 3. The user executes `add n/David …​` to add a new person. The `add` command also calls `Model#commitClientBook()`, causing another modified client book state to be saved into the `clientBookStateList`.
-
-<puml src="diagrams/UndoRedoState2.puml" alt="UndoRedoState2" />
-
-<box type="info" seamless>
-
-**Note:** If a command fails its execution, it will not call `Model#commitClientBook()`, so the client book state will not be saved into the `clientBookStateList`.
-</box>
-
-Step 4. The user now decides that adding the person was a mistake, and decides to undo that action by executing the `undo` command. The `undo` command will call `Model#undoClientBook()`, which will shift the `currentStatePointer` once to the left, pointing it to the previous client book state, and restores the client book to that state.
-
-<puml src="diagrams/UndoRedoState3.puml" alt="UndoRedoState3" />
-
-
-<box type="info" seamless>
-
-**Note:** If the `currentStatePointer` is at index 0, pointing to the initial ClientBook state, then there are no previous ClientBook states to restore. The `undo` command uses `Model#canUndoClientBook()` to check if this is the case. If so, it will return an error to the user rather
-than attempting to perform the undo.
-</box>
-
-The following sequence diagram shows how an undo operation goes through the `Logic` component:
-
-<puml src="diagrams/UndoSequenceDiagram-Logic.puml" alt="UndoSequenceDiagram-Logic" />
-
-<box type="info" seamless>
-
-**Note:** The lifeline for `UndoCommand` should end at the destroy marker (X), but due to a limitation of PlantUML, it continues to the end of the diagram.
-</box>
-
-Similarly, how an undo operation goes through the `Model` component is shown below:
-
-<puml src="diagrams/UndoSequenceDiagram-Model.puml" alt="UndoSequenceDiagram-Model" />
-
-The `redo` command does the opposite — it calls `Model#redoClientBook()`, which shifts the `currentStatePointer` once to the right, pointing to the previously undone state, and restores the client book to that state.
-
-<box type="info" seamless>
-
-**Note:** If the `currentStatePointer` is at index `clientBookStateList.size() - 1`, pointing to the latest client book state, then there are no undone ClientBook states to restore. The `redo` command uses `Model#canRedoClientBook()` to check if this is the case. If so, it will return an error to the user rather than attempting to perform the redo.
-</box>
-
-Step 5. The user then decides to execute the command `list`. Commands that do not modify the client book, such as `list`, will usually not call `Model#commitClientBook()`, `Model#undoClientBook()` or `Model#redoClientBook()`. Thus, the `clientBookStateList` remains unchanged.
-
-<puml src="diagrams/UndoRedoState4.puml" alt="UndoRedoState4" />
-
-Step 6. The user executes `clear`, which calls `Model#commitClientBook()`. Since the `currentStatePointer` is not pointing at the end of the `clientBookStateList`, all client book states after the `currentStatePointer` will be purged. Reason: It no longer makes sense to redo the `add n/David …` command. This is the behavior that most modern desktop applications follow.
-
-<puml src="diagrams/UndoRedoState5.puml" alt="UndoRedoState5" />
-
-The following activity diagram summarizes what happens when a user executes a new command:
-
-<puml src="diagrams/CommitActivityDiagram.puml" width="250" />
-
-#### Design considerations:
-
-**Aspect: How undo & redo execute:**
-
-* **Alternative 1 (current choice):** Saves the entire client book.
-  * Pros: Easy to implement.
-  * Cons: May have performance issues in terms of memory usage.
-
-* **Alternative 2:** Individual command knows how to undo/redo by
-  itself.
-  * Pros: Will use less memory (e.g. for `delete`, just save the person being deleted).
-  * Cons: We must ensure that the implementation of each individual command is correct.
-
-_{more aspects and alternatives to be added}_
-
-### \[Proposed\] Data archiving
-
-_{Explain here how the data archiving feature will be implemented}_
-
+`RestoreCommand` first reads and validates the backup through `Storage#readClientBook(Path)`. Only after a valid `ReadOnlyClientBook` is available does it save those records to the main data file, replace the temporary model's client book, and reset the active filter to show all persons. It marks the result as already saved so `LogicManager` does not write the restored records again. A missing, invalid, or unreadable backup leaves the in-memory records unchanged.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -800,7 +708,6 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | --- | --- | --- | --- |
 | * * * | As a financial consultant | add a client or prospect with their basic contact details | keep a record of every professional relationship I manage. |
 | * * * | As a financial consultant | view all active clients and prospects | see the relationships currently under my care. |
-| * * | As a financial consultant preparing to contact someone | view one person's complete profile | recall the relevant relationship context before the conversation. |
 | * * | As a financial consultant | update a person's contact details | keep the record accurate when their information changes. |
 | * * * | As a financial consultant | delete a record that I created by mistake | prevent incorrect entries from cluttering my records. |
 
@@ -809,9 +716,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | Priority | As a … | I want to … | So that I can … |
 | --- | --- | --- | --- |
 | * * | As a financial consultant handling different kinds of relationships | assign one or more meaningful tags to a person | organise contacts according to how I work. |
-| * * * | As a financial consultant managing a relationship pipeline | record whether a person is a prospect, active client, or inactive client | tell what kind of attention each relationship needs. |
-| * * | As a financial consultant who relies on personal rapport | record a person's preferences and interests | make future conversations more relevant and personal. |
-| * * | As a financial consultant | record important dates shared by a client | remember occasions that matter to the relationship. |
+| * * * | As a financial consultant managing a relationship pipeline | record whether a person is a prospect or an active client | tell what kind of attention each relationship needs. |
 | * * | As a financial consultant | record a person's preferred contact channel and timing | approach them in a way that is convenient for them. |
 | * * * | As a financial consultant | record a client's high-level financial needs, priorities, and areas of interest | continue the business discussion from the correct context. |
 
@@ -843,17 +748,23 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | * * | As a financial consultant focusing on a segment of contacts | filter people by client or prospect relationship status | work with only the relevant group. |
 | * * | As a financial consultant planning the order of work | sort contacts by next follow-up or last interaction date | prioritise relationships using timely information. |
 | * | As a financial consultant maintaining long-term relationships | identify people I have not contacted recently | notice relationships that may otherwise be neglected. |
-| * * | As a busy financial consultant about to meet or call someone | view a concise summary of their preferences, recent interactions, and next action | refresh my memory without reading the entire record. |
 
 #### Long Term Use and Data Continuity
 
 | Priority | As a … | I want to … | So that I can … |
 | --- | --- | --- | --- |
-| * | As a long-time user | move inactive records out of my active view and restore them later | reduce clutter without permanently losing relationship history. |
 | * * | As a financial consultant moving or safeguarding my local data | create a backup copy of my records | protect the relationship information I have accumulated. |
 | * * | As a financial consultant recovering from data loss or changing computers | restore my records from a backup | resume work without rebuilding my relationship history. |
 | * * * | As a long-term user | have my data saved between sessions | continue managing my information without having to re-enter it each time. |
 
+### User Stories to be implemented in the future
+
+| Priority | As a … | I want to … | So that I can … |
+| --- | --- | --- | --- |
+| * * | As a financial consultant preparing to contact someone | view one person's complete profile | recall the relevant relationship context before the conversation. |
+| * * | As a financial consultant who relies on personal rapport | record a person's preferences and interests | make future conversations more relevant and personal. |
+| * * | As a financial consultant | record important dates shared by a client | remember occasions that matter to the relationship. |
+| * * | As a busy financial consultant about to meet or call someone | view a concise summary of their preferences, recent interactions, and next action | refresh my memory without reading the entire record. |
 
 ### Use cases
 
@@ -1099,17 +1010,126 @@ testers are expected to do more *exploratory* testing.
 
    1. Download the JAR file and copy it into an empty folder.
 
-   2. Double-click the JAR file.<br>
-      Expected: The GUI opens with a set of sample contacts. The window size may not be optimal.
+   2. Run the following command:
+
+      ```sh
+      java -jar clientbook.jar
+      ```
+
+      Expected: The GUI opens without any contacts. The window size may not be optimal.
 
 2. Saving window preferences
 
    1. Resize the window to an optimal size. Move the window to a different location. Close the window.
 
-   2. Relaunch the app by double-clicking the JAR file.<br>
-       Expected: The most recent window size and location are retained.
+   2. Run the following command:
 
-3. _{ more test cases … }_
+      ```sh
+      java -jar clientbook.jar
+      ```
+
+      Expected: The most recent window size and location are retained.
+
+### Adding a client/prospect
+
+Use a separate test folder with fictional records.
+
+1. Adding valid records
+
+    1. Prerequisites: Start with an empty client book, or run `clear`.
+
+    2. Test case: `add r/Client n/John Doe e/john@example.com p/91234567 t/referral`<br>
+       Expected: A confirmation beginning with `New person added:` appears. A Client record for John Doe is shown
+       with the supplied email, phone number, and `referral` tag.
+
+    3. Test case: `add r/Prospect n/Jane Tan e/jane@example.com p/98765432`<br>
+       Expected: A confirmation beginning with `New person added:` appears. A Prospect record for Jane Tan is
+       added at index 2.
+
+2. Rejecting duplicate records
+
+    1. Prerequisites: John Doe has been added as above.
+
+    2. Test case: `add r/Client n/John Doe e/john@example.com p/91234567`<br>
+       Expected: `This contact already exists.` is shown and no additional record is created.
+
+3. Rejecting invalid input
+
+    1. Test case: `add r/Client n/John Doe e/john@example.com p/123`<br>
+       Expected: An error message is shown for the invalid phone number and no record is created.
+
+### Editing a client/prospect
+
+Use a separate test folder with fictional records. Add John Doe and Jane Tan as described in the preceding section.
+
+1. Editing a displayed record
+
+    1. Prerequisites: Run `list` so that John Doe is at index 1 and Jane Tan is at index 2.
+
+    2. Test case: `edit 1 r/Prospect e/john.new@example.com p/91234568`<br>
+       Expected: A confirmation beginning with `Edited person:` appears. John Doe is now a Prospect with the new
+       email address and phone number; the existing `referral` tag remains.
+
+2. Editing one field
+
+    1. Test case: `edit 2 r/Client`<br>
+       Expected: A confirmation beginning with `Edited person:` appears. Jane Tan is now a Client and her other
+       details are unchanged.
+
+3. Rejecting invalid edits
+
+    1. Test case: `edit 3 n/Alex Tan`<br>
+       Expected: `The person index provided is invalid.` is shown and neither record changes.
+
+    2. Test case: `edit 1`<br>
+       Expected: `At least one field to edit must be provided.` is shown and John Doe's record does not change.
+
+### Financial information and contact preferences
+
+Use a separate test folder with fictional records. Repeat this setup before testing **each** feature below;
+`clear` removes all records in that test copy. Enter each line as a separate command.
+
+```text
+clear
+add r/Client n/Alex Teo e/alex@example.com p/91234567
+add r/Prospect n/Jamie Lim e/jamie@example.com p/98765432
+info 1 fn/Education pr/Low ai/Savings
+contact 1 ch/Email tm/Weekends
+info 2 fn/Retirement pr/Medium ai/Insurance
+contact 2 ch/Email tm/Weekends
+```
+
+#### Financial information: `info`
+
+1. Set values with financial notation and reversed field order:
+   `info 2 ai/Planning Life/Health insurance pr/High fn/Save $3000/month + CPF/SRS`.<br>
+   Expected: Jamie's three financial fields match the supplied text. Contact preferences remain Email and Weekends;
+   Alex and all unrelated details are unchanged. Also try accented text such as `info 2 fn/épargne CPF/SRS`.
+2. Run `info 2 fn/- ai/-`.<br>
+   Expected: Financial need and area of interest disappear; priority remains High. Repeat the command: it remains safe.
+3. Try `info 2 pr/- fn/`, `info 2 pr/Low pr/High`, `info 2 /pr Low`, and `info 0 pr/Low` separately.<br>
+   Expected: Each reports an error. Priority stays High and the cleared fields stay absent; no partial update occurs.
+4. Run `find Jamie`, then `info 2 pr/Protect family income`.<br>
+   Expected: Jamie remains the sole result at index 2 and their priority changes. `info 1 pr/High` and `info 3 pr/High`
+   both fail. Run `list`: Alex still has Education, Low, Savings and their original contact preferences.
+   Run `exit`, reopen the same test copy and check Jamie: the new priority and cleared fields are retained.
+
+#### Contact preferences: `contact`
+
+1. Run `contact 2 tm/Weekdays AM/PM ch/Phone/WhatsApp`.<br>
+   Expected: Jamie's timing and channel match the supplied text. Financial information remains Retirement, Medium,
+   Insurance; Alex and all unrelated details are unchanged.
+2. Run `contact 2 ch/Phone tm/-`.<br>
+   Expected: Channel changes to Phone and timing disappears. Then run `contact 2 tm/-`: Phone remains unchanged.
+3. Try `contact 2 ch/- tm/`, `contact 2 ch/Email ch/Phone`, and `contact 0 ch/Email` separately.<br>
+   Expected: Each reports an error; channel stays Phone and timing stays absent.
+   Also try `contact 2 /ch Email` and `contact 2 ch/WhatsApp tmm/Evenings` separately.<br>
+   Expected: Both report `Invalid contact parameter. Use ch/CHANNEL or tm/TIMING; use - to clear a preference.`
+   Displayed and saved preferences remain Phone with no timing; neither rejected command changes them.
+4. Run `find Jamie`, then `contact 2 tm/Lunch break`.<br>
+   Expected: Jamie stays visible at index 2 with Phone and Lunch break. `contact 1 ch/WhatsApp` and
+   `contact 3 ch/WhatsApp` both fail. Run `list`: Alex's details remain unchanged.
+   Run `exit`, reopen the same test copy and confirm Jamie's Phone and Lunch break preferences remain.
 
 ### Deleting a client/prospect
 
@@ -1119,7 +1139,7 @@ Use a separate test folder with fictional records. Run these commands to prepare
 clear
 add r/Client n/John Doe e/john@example.com p/91234567
 add r/Prospect n/Jane Tan e/jane@example.com p/98765432
-info 2 /fn Retirement planning /pr High /ai Life insurance
+info 2 fn/Retirement planning pr/High ai/Life insurance
 note 2 d/2026-10-06 n/Discussed next steps.
 ```
 
