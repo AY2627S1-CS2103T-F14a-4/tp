@@ -133,6 +133,16 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     private void handlePersonListNavigation(KeyEvent event) {
+        if (event.isShiftDown()) {
+            if (event.getCode() == KeyCode.DOWN) {
+                personListPanel.scrollDown();
+                event.consume();
+            } else if (event.getCode() == KeyCode.UP) {
+                personListPanel.scrollUp();
+                event.consume();
+            }
+            return;
+        }
         if (!findResultNavigationActive || !personListPanel.hasSelectedPerson()) {
             return;
         }
