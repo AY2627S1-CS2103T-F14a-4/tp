@@ -13,13 +13,16 @@
 
 ## **Acknowledgements**
 
-* _{List the sources of reused or adapted ideas, code, documentation, and third-party libraries here, with links to the originals.}_
-
 * Junhan Liu (`ZachL1113`) used OpenAI ChatGPT/Codex to draft the v1.3 delete integration tests, additional parser
   boundary tests, and the accompanying delete documentation. This assistance covers `DeleteIntegrationTest`,
   the new cases in `DeleteCommandParserTest`, the UG delete section additions, and the DG deletion test instructions.
   Codex also helped correct the UG product/download references and synchronise UG/DG find instructions with the
   combined name-and-relationship search already merged in PR #67.
+
+* Koey Xian Han (`KoeyXianHan123`) used OpenAI ChatGPT and Codex to assist with implementation reviews, debugging,
+  test generation, and documentation improvements for the `info` and `contact` features. This included assistance
+  with parser validation, regression tests, User Guide and Developer Guide revisions, and the corresponding sequence
+  diagrams. The resulting changes were reviewed and validated before submission.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -261,7 +264,7 @@ The following sequence shows the confirmation gate before selected tags are dele
 
 <puml src="diagrams/TagDeleteSequenceDiagram.puml" alt="Deleting tags with confirmation sequence" />
 
-### Contact preferences
+### Contact preferences (`contact`)
 
 `ContactCommandParser` accepts `contact INDEX [ch/CHANNEL|-] [tm/TIMING|-]`. It requires a positive index
 and at least one preference, and rejects duplicate prefixes. Prefixes are case-sensitive and begin after an
@@ -271,6 +274,8 @@ a stored `-` after trimming. `PreferredContactChannel` and `PreferredContactTimi
 values with a 1–200 UTF-16-code-unit limit after surrounding whitespace is removed; internal text is preserved.
 Unpaired UTF-16 surrogates are rejected to prevent replacement characters when saving UTF-8 JSON.
 The top-level parser preserves raw `contact` arguments, including Unicode line separators, for preference validation.
+Invalid values report `Preferred contact channel must contain 1 to 200 characters of valid Unicode text.` or
+`Preferred contact timing must contain 1 to 200 characters of valid Unicode text.`, depending on the invalid field.
 
 The parser also performs targeted, case-sensitive malformed-prefix detection after ordinary spaces:
 `/ch` and `/tm` followed by whitespace, `/`, or the end of input, and the exact prefixes `cch/`, `chh/`,
@@ -303,8 +308,10 @@ Missing or null properties load as absent, preserving compatibility with older f
 are rejected. Clearing reuses this absence representation. The card hides absent preferences and wraps recorded
 values. Parser, command and storage tests cover set/omit/clear combinations, filtered indices, preservation of
 unrelated fields and save/reload compatibility.
+`InfoContactReleaseAuditTest` also checks Unicode line separators through `LogicManager.execute`, rejection of
+unpaired surrogates without changing the model or saved JSON, and Unicode preference round trips.
 
-### Financial information
+### Financial information (`info`)
 
 `InfoCommandParser` accepts `info INDEX [fn/VALUE|-] [pr/VALUE|-] [ai/VALUE|-]`, requiring a positive index
 and at least one field. Prefixes may appear in any order at whitespace boundaries; duplicates, slash-first
@@ -1153,7 +1160,7 @@ info 2 fn/Retirement pr/Medium ai/Insurance
 contact 2 ch/Email tm/Weekends
 ```
 
-#### Financial information: `info`
+#### Testing financial information: `info`
 
 1. Set values with financial notation and reversed field order:
    `info 2 ai/Planning Life/Health insurance pr/High fn/Save $3000/month + CPF/SRS`.<br>
@@ -1168,7 +1175,7 @@ contact 2 ch/Email tm/Weekends
    both fail. Run `list`: Alex still has Education, Low, Savings and their original contact preferences.
    Run `exit`, reopen the same test copy and check Jamie: the new priority and cleared fields are retained.
 
-#### Contact preferences: `contact`
+#### Testing contact preferences: `contact`
 
 1. Run `contact 2 tm/Weekdays AM/PM ch/Phone/WhatsApp`.<br>
    Expected: Jamie's timing and channel match the supplied text. Financial information remains Retirement, Medium,
@@ -1184,6 +1191,9 @@ contact 2 ch/Email tm/Weekends
    Expected: Jamie stays visible at index 2 with Phone and Lunch break. `contact 1 ch/WhatsApp` and
    `contact 3 ch/WhatsApp` both fail. Run `list`: Alex's details remain unchanged.
    Run `exit`, reopen the same test copy and confirm Jamie's Phone and Lunch break preferences remain.
+5. Run `contact 2 ch/电话/WhatsApp 📞 tm/-`, then `exit` and reopen the same test copy.<br>
+   Expected: Jamie's channel remains exactly `电话/WhatsApp 📞` and timing stays absent. Financial information
+   remains Retirement, Medium, Insurance; Alex's details are unchanged.
 
 ### Deleting a client/prospect
 

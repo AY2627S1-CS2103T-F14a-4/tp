@@ -184,7 +184,7 @@ Examples:
 *  `edit 1 r/Client` Changes the 1st person's relationship to `Client`.
 *  `edit 2 n/Betsy Crower` Edits the name of the 2nd person to be `Betsy Crower`.
 
-### Updating client financial information: `info`
+### Updating financial information: `info`
 
 Record a client's or prospect's financial need (`fn/`), priority (`pr/`), and area of interest (`ai/`).
 These details appear on their card; cleared fields are hidden.
@@ -212,12 +212,10 @@ Examples:
 **Prefix restrictions:** A space-separated `fn/`, `pr/`, or `ai/` always starts a field, even inside text.
 For example, `fn/Review pr/High options` stores financial need `Review` and priority `High options`.
 There is no quoting or escaping; rephrase literal prefix-like text as `fn/Review priority High options`.
-The old `/fn VALUE`, `/pr VALUE`, `/ai VALUE` syntax and tokens starting with `/` are rejected.
-Common mistakes `fnn/`, `prr/`, `aii/` and case variants such as `FN/` are also rejected at token boundaries.
-Other misspellings inside a value, such as `xyz/Value`, may be saved as text, so check the displayed result.
-Unknown slash-style parameters before the first field are rejected.
+Malformed forms such as `/fn VALUE`, `FN/` and `fnn/` are rejected. Other slash-containing text inside a value,
+including some misspellings such as `xyz/Value`, may be saved as text, so check the displayed result.
 
-### Recording preferred contact channel and timing: `contact`
+### Updating contact preferences: `contact`
 
 Record how and when a client or prospect prefers to be contacted. Recorded preferences appear on their card;
 cleared preferences are hidden.
@@ -226,8 +224,8 @@ Format: `contact INDEX [ch/CHANNEL|-] [tm/TIMING|-]`
 
 * Use the positive index shown on the person's card. Search results keep their original full-list indices:
   if Bob is labelled `2` after `find Bob`, use `contact 2`. The person must be visible in the current results.
-* Supply at least one preference, each at most once, in either order. Use lowercase `ch/` and `tm/`,
-  separated from preceding text by ordinary spaces.
+* Supply at least one preference, each at most once, in either order. Separate prefixes from preceding text
+  with ordinary spaces.
 * A supplied value replaces that preference; omitted preferences and other person details stay unchanged.
   An exact `-`, optionally surrounded by ordinary spaces, clears a preference. Clearing an absent preference is safe.
   Type `-` directly to clear; a larger value such as `Phone-call` remains text.
@@ -237,6 +235,11 @@ Format: `contact INDEX [ch/CHANNEL|-] [tm/TIMING|-]`
   Empty or whitespace-only values are invalid.
 * Preferences are saved automatically. If either supplied preference is invalid, neither changes.
   Cleared preferences remain absent after restarting the application.
+
+**Prefix restrictions:** Use lowercase `ch/` and `tm/`. A space-separated `ch/` or `tm/` starts another
+preference even inside a value; there is no quoting or escaping. Malformed forms such as `/ch`, `/tm`,
+`cch/` and `tmm/` are rejected after an ordinary space, while some other slash-containing text may be
+treated as part of a preference value. Check the displayed preferences after updating them.
 
 Examples:
 
