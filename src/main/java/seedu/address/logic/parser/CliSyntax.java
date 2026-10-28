@@ -10,9 +10,9 @@ public class CliSyntax {
     public static final Prefix PREFIX_CONTACT_TIMING = new Prefix("tm/");
     public static final Prefix PREFIX_ACTION = new Prefix("a/");
     public static final Prefix PREFIX_DUE_DATE = new Prefix("d/");
-    public static final Prefix PREFIX_FINANCIAL_NEED = new Prefix("/fn");
-    public static final Prefix PREFIX_PRIORITY = new Prefix("/pr");
-    public static final Prefix PREFIX_AREA_OF_INTEREST = new Prefix("/ai");
+    public static final Prefix PREFIX_FINANCIAL_NEED = new Prefix("fn/");
+    public static final Prefix PREFIX_PRIORITY = new Prefix("pr/");
+    public static final Prefix PREFIX_AREA_OF_INTEREST = new Prefix("ai/");
     public static final Prefix PREFIX_NAME = new Prefix("n/");
     public static final Prefix PREFIX_PHONE = new Prefix("p/");
     public static final Prefix PREFIX_EMAIL = new Prefix("e/");

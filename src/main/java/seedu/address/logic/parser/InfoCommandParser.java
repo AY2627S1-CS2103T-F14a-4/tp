@@ -21,21 +21,22 @@ import seedu.address.logic.parser.exceptions.ParseException;
 public class InfoCommandParser implements Parser<InfoCommand> {
     public static final String MESSAGE_INDEX_REQUIRED = "Client index is required";
     public static final String MESSAGE_INVALID_INDEX = "Client index must be a positive integer.";
-    public static final String MESSAGE_NO_PARAMETERS = "At least one of /fn, /pr or /ai is required.";
+    public static final String MESSAGE_NO_PARAMETERS = "At least one of fn/, pr/ or ai/ is required.";
     public static final String MESSAGE_DUPLICATE_PARAMETER = "%s can only be specified once.";
     public static final String MESSAGE_INVALID_PARAMETER =
-            "Invalid parameter. Valid parameters are /fn, /pr and /ai.";
-    public static final String MESSAGE_REVERSED_PARAMETER =
-            "Invalid info parameter. Use /fn VALUE, /pr VALUE or /ai VALUE.";
+            "Invalid parameter. Use fn/VALUE, pr/VALUE or ai/VALUE (or - to clear).";
 
-    private static final Pattern PARAMETER = Pattern.compile("(?<!\\S)/\\S*");
-    private static final Pattern REVERSED_PARAMETER = Pattern.compile("(?<!\\S)(?:fn|pr|ai)/");
+    // Reserve only known prefixes, their case variants, and these explicit near misses in values.
+    // Other slash-containing words (CPF/SRS, $3000/month) must remain ordinary financial text.
+    private static final Pattern PARAMETER = Pattern.compile("(?<!\\S)(?:(?i:fn|pr|ai|fnn|prr|aii)/|/\\S*)");
+    // Before the first field there can be no value text, so any NAME/ token is a malformed parameter.
+    private static final Pattern PREAMBLE_PARAMETER = Pattern.compile("(?<!\\S)[^\\s/]+/");
 
     @Override
     public InfoCommand parse(String args) throws ParseException {
         requireNonNull(args);
-        // Scan every slash-prefixed token, including unknown parameters and a bare slash.
-        // Embedded slashes remain value text. Keep raw values so control
+        // Scan recognised prefixes, reserved near misses, and legacy slash-first parameters.
+        // Ordinary slash-containing words remain text. Keep raw values so control
         // characters are validated rather than silently removed by ArgumentTokenizer's trim().
         Matcher matcher = PARAMETER.matcher(args);
         Map<String, String> values = new HashMap<>();
@@ -67,18 +68,18 @@ public class InfoCommandParser implements Parser<InfoCommand> {
         if (indexText.isEmpty()) {
             throw new ParseException(MESSAGE_INDEX_REQUIRED);
         }
-        // Diagnose reversed prefixes only in the preamble, never inside recognized field values.
-        Matcher reversedParameter = REVERSED_PARAMETER.matcher(indexText);
-        boolean hasReversedParameter = reversedParameter.find();
+        Matcher preambleParameter = PREAMBLE_PARAMETER.matcher(indexText);
+        boolean hasUnexpectedParameter = preambleParameter.find();
+        String indexCandidate = hasUnexpectedParameter
+                ? indexText.substring(0, preambleParameter.start()).trim() : indexText;
         Index index;
         try {
-            index = ParserUtil.parseIndex(hasReversedParameter
-                    ? indexText.substring(0, reversedParameter.start()) : indexText);
+            index = ParserUtil.parseIndex(indexCandidate);
         } catch (ParseException e) {
             throw new ParseException(MESSAGE_INVALID_INDEX, e);
         }
-        if (hasReversedParameter) {
-            throw new ParseException(MESSAGE_REVERSED_PARAMETER);
+        if (hasUnexpectedParameter) {
+            throw new ParseException(MESSAGE_INVALID_PARAMETER);
         }
         if (values.isEmpty()) {
             throw new ParseException(MESSAGE_NO_PARAMETERS);

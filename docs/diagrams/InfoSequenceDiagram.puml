@@ -21,7 +21,7 @@ box Storage STORAGE_COLOR_T1
 participant ":Storage" as Storage STORAGE_COLOR
 end box
 
-User -> Logic : execute("info 1 /pr High /ai -")
+User -> Logic : execute("info 1 pr/High ai/-")
 activate Logic
 Logic -> Parser : parseCommand(commandText)
 activate Parser

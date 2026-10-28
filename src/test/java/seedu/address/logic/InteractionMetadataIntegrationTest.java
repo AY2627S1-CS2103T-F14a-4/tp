@@ -85,7 +85,7 @@ public class InteractionMetadataIntegrationTest {
     public void execute_contactMutationsAndBackupRestore_preserveMetadata() throws Exception {
         logic.execute("note 1 d/2000-01-01 t/OTHER o/PENDING n/Follow up later");
         List<InteractionNote> expected = List.copyOf(notes());
-        for (String command : List.of("edit 1 p/81234567", "info 1 /fn Retirement", "info 1 /fn -",
+        for (String command : List.of("edit 1 p/81234567", "info 1 fn/Retirement", "info 1 fn/-",
                 "contact 1 ch/Email tm/Morning", "contact 1 ch/- tm/-", "tag 1 priority",
                 "next 1 a/Call d/9999-12-31", "done 1", "reschedule 1 d/9999-12-31")) {
             logic.execute(command);

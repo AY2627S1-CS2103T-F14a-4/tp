@@ -301,12 +301,32 @@ stored text and equality retain the supplied representation after ordinary-space
 200-character limit uses `String.length()` (UTF-16 code units), including combining marks.
 `Priority` stores validated text rather than a fixed enumeration.
 
-`ClientBookParser` routes `info INDEX [/fn VALUE|-] [/pr VALUE|-] [/ai VALUE|-]` to `InfoCommandParser`.
+`ClientBookParser` routes `info INDEX [fn/VALUE|-] [pr/VALUE|-] [ai/VALUE|-]` to `InfoCommandParser`.
 The parser requires a positive index and at least one financial prefix, accepts any prefix order, and rejects
-duplicate or unknown parameters. Slashes embedded in a value token (for example, `Life/Health` or `CPF/SRS`)
-are value text. Every slash at the start of a whitespace-delimited token is scanned as a parameter, including
-a bare `/`, so malformed parameters cannot silently become values. `Life / Health` and `Life /Health`
-remain invalid; use `Life/Health`. The parser recognizes an exact `-` surrounded only by ordinary spaces before calling
+duplicates. A prefix starts only at the beginning of the arguments or after whitespace.
+The local scanner reserves only `fn/`, `pr/`, `ai/`, their case variants, and the explicit near misses
+`fnn/`, `prr/`, `aii/` (also case-insensitive). Only the three exact lowercase prefixes are valid;
+the other reserved forms report an invalid parameter. This deliberately small reservation avoids a broad
+edit-distance or generic `NAME/` heuristic that would reject ordinary financial text. For example,
+`fn/Planning CPF/SRS`, `fn/Save $3000/month`, `ai/Planning Life/Health insurance`, and
+`fn/ CPF/SRS` preserve their complete values. Slash-first tokens (including legacy `/fn`, `/pr`, `/ai`
+and a bare `/`) still produce the invalid-parameter diagnostic. No shared tokenizer changes are needed.
+
+A separate scan of the preamble rejects any unknown `NAME/` token before the first field: value text cannot
+occur there. The preceding index is validated first, preserving invalid-index diagnostics. Inside a field,
+unknown forms such as `xyz/Value`, `fna/Value`, or `fnValue/Value` are ordinary value text, subject to the
+usual character and length validation. They cannot reliably be distinguished from `CPF/SRS` or `$3000/month`.
+The explicit near-miss reservations above also cannot be used literally at token boundaries within values;
+users must rephrase them. Recognised prefixes and slash-first tokens retain their existing scan precedence
+over index validation. Parser, command atomicity, and save/reload regression tests cover these rules.
+
+There is an unavoidable ambiguity between a new parameter and literal prefix-like text within free text:
+`fn/Review pr/High options` sets financial need to `Review` and priority to `High options`.
+Every whitespace-delimited known prefix starts a field; duplicate prefixes fail. Quoting and escaping are
+not supported, so users must rephrase literal prefix-like text. This restriction is also in the User Guide
+and covered by parser regression tests. Attached `fn/pr/High` stores literal `pr/High` as financial need.
+
+The parser recognizes an exact `-` surrounded only by ordinary spaces before calling
 `ParserUtil` to validate normal values. Bare prefixes remain invalid. `InfoDescriptor` stores a specified flag
 and nullable value per field: omitted means unchanged, specified non-null means replace, and specified null
 means explicitly clear. `InfoCommand` defensively copies this descriptor, including its flags.
@@ -323,7 +343,7 @@ with `Financial need:`, `Priority:` and `Area of interest:`; absent labels are i
 Automated tests cover parser validation and boundaries, set/clear combinations, descriptor copying, filtered indices,
 unrelated-field preservation, JSON compatibility, save/reload after clearing, and UI hiding/wrapping.
 
-The following sequence shows `info 1 /pr High /ai -`; validation and index resolution precede model mutation.
+The following sequence shows `info 1 pr/High ai/-`; validation and index resolution precede model mutation.
 
 <puml src="diagrams/InfoSequenceDiagram.puml" alt="Financial information update sequence" />
 
@@ -1080,7 +1100,7 @@ Use a separate test folder with fictional records. Run these commands to prepare
 clear
 add r/Client n/John Doe e/john@example.com p/91234567
 add r/Prospect n/Jane Tan e/jane@example.com p/98765432
-info 2 /fn Retirement planning /pr High /ai Life insurance
+info 2 fn/Retirement planning pr/High ai/Life insurance
 note 2 d/2026-10-06 n/Discussed next steps.
 ```
 

@@ -192,16 +192,17 @@ Examples:
 Adds, updates, or clears a person's financial need, priority, and area of interest. Present fields appear on the person's card as
 `Financial need: VALUE`, `Priority: VALUE`, and `Area of interest: VALUE`. Absent fields are hidden.
 
-Format: `info INDEX [/fn VALUE|-] [/pr VALUE|-] [/ai VALUE|-]`
+Format: `info INDEX [fn/VALUE|-] [pr/VALUE|-] [ai/VALUE|-]`
 
-* `INDEX` refers to the index in the currently displayed list, including filtered search results. It must be a positive
-  integer (1, 2, 3, ...) corresponding to an existing person in that list.
-* At least one of `/fn`, `/pr`, or `/ai` is required. Each parameter may be supplied at most once, in any order.
+* `INDEX` is the original index shown on the person's card, including after filtering. It must be a positive
+  integer referring to a currently visible person. Filtering retains original indices; a sole result labelled `2`
+  requires `info 2`, not `info 1`.
+* At least one of `fn/`, `pr/`, or `ai/` is required. Each parameter may be supplied at most once, in any order.
 * Normal supplied values replace existing values. Omitted fields remain unchanged.
-* An exact `-` value clears only that field. Surrounding ordinary spaces are ignored, so `/pr   -   ` also clears
+* An exact `-` value clears only that field. Surrounding ordinary spaces are ignored, so `pr/   -   ` also clears
   priority. Clearing an already absent field is safe. A hyphen in a larger value, such as `Long-term`, remains text.
 * Each value must contain 1-200 characters after leading and trailing ordinary spaces are ignored. Internal spaces are
-  preserved. Empty values and bare prefixes (for example, `info 1 /pr`) remain invalid; clearing requires explicit `-`.
+  preserved. Empty values and bare prefixes (for example, `info 1 pr/`) remain invalid; clearing requires explicit `-`.
 * Allowed characters are Unicode letters and combining marks, digits, spaces, periods (`.`), commas (`,`),
   apostrophes (`'`), hyphens (`-`),
   parentheses (`(` and `)`), ampersands (`&`), dollar signs (`$`), percent signs (`%`), plus signs (`+`),
@@ -209,20 +210,34 @@ Format: `info INDEX [/fn VALUE|-] [/pr VALUE|-] [/ai VALUE|-]`
   Both precomposed and decomposed accents, and scripts such as Tamil, are accepted. Text is saved as entered
   after trimming ordinary spaces; it is not Unicode-normalized. The 200-character limit counts UTF-16 code units,
   so combining marks count separately from their base letters.
-* Slashes within a word, such as `Life/Health` or `CPF/SRS`, are accepted. A slash at the start of a
-  whitespace-separated token is reserved for parameters: only `/fn`, `/pr`, and `/ai` are recognized.
-  Unknown parameters such as `/fnn` and `/xyz`, and a bare slash, are rejected. Use `Life/Health`,
-  rather than `Life / Health` or `Life /Health`.
+* Prefixes are case-sensitive and must begin a whitespace-separated token (or the command arguments).
+  Ordinary slash-containing text is accepted anywhere in a value: `fn/Planning CPF/SRS`,
+  `fn/Save $3000/month`, and `ai/Planning Life/Health insurance` work, as do `fn/CPF/SRS`
+  and `fn/ CPF/SRS`.
+  Tokens beginning with `/`, including the old syntax and a bare slash, are rejected.
+* The specific near misses `fnn/`, `prr/`, and `aii/`, and case variants of these or the three valid prefixes
+  (such as `FN/`), are reserved and rejected with an invalid-parameter error at token boundaries.
+  Unknown slash-style parameters before the first field are also rejected. Inside values, arbitrary forms
+  such as `xyz/Value` or `fna/Value` are preserved as text because they cannot reliably be distinguished
+  from financial notation. Check spelling carefully: not every mistyped prefix can be detected.
+* **Free-text restriction:** `fn/Review pr/High options` sets financial need to `Review` and priority to
+  `High options`. There is no quoting or escape syntax: a whitespace-separated `fn/`, `pr/`, or `ai/`
+  always starts a parameter, even inside a value. Rephrase literal prefix-like text, for example
+  `fn/Review priority High options`, to avoid updating another field. Repeating a prefix is an error.
+* The former `/fn VALUE`, `/pr VALUE`, and `/ai VALUE` syntax is no longer accepted. For example,
+  `info 2 /pr High` reports an invalid parameter; use `info 2 pr/High`.
 
 Examples:
 
-* `info 1 /fn retirement planning`
-* `info 1 /fn Retire on $3000 monthly /pr Target 6% return /ai CPF/SRS + insurance`
-* `info 2 /pr protect family income /ai life insurance`
-* `info 1 /ai investment products /fn wealth accumulation /pr preserve capital`
-* `info 1 /pr -` clears only priority.
-* `info 1 /fn - /ai -` clears financial need and area of interest, leaving priority unchanged.
-* `info 1 /pr High /ai -` sets priority to `High` and clears area of interest, leaving financial need unchanged.
+* `info 1 fn/retirement planning`
+* `info 1 fn/Retire on $3000 monthly pr/Target 6% return ai/CPF/SRS + insurance`
+* `info 2 fn/Planning CPF/SRS pr/High`
+* `info 2 fn/Save $3000/month ai/Planning Life/Health insurance`
+* `info 2 pr/protect family income ai/life insurance`
+* `info 1 ai/investment products fn/wealth accumulation pr/preserve capital`
+* `info 1 pr/-` clears only priority.
+* `info 1 fn/- ai/-` clears financial need and area of interest, leaving priority unchanged.
+* `info 1 pr/High ai/-` sets priority to `High` and clears area of interest, leaving financial need unchanged.
 
 ### Recording preferred contact channel and timing: `contact`
 
@@ -767,7 +782,7 @@ Action     | Format, Examples
 **Edit**   | `edit INDEX [r/RELATIONSHIP] [n/NAME] [p/PHONE_NUMBER] [e/EMAIL]`<br> e.g.,`edit 2 r/Client n/James Lee e/jameslee@example.com`
 **Find**   | `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...]] [k/DETAIL_KEYWORD [MORE_KEYWORDS...]]`<br> e.g., `find James r/client t/priority referral k/retirement`
 **Contact** | `contact INDEX [ch/CHANNEL\|-] [tm/TIMING\|-]`<br> e.g., `contact 1 ch/WhatsApp tm/-`
-**Info**   | `info INDEX [/fn VALUE\|-] [/pr VALUE\|-] [/ai VALUE\|-]`<br> e.g., `info 1 /fn retirement planning`
+**Info**   | `info INDEX [fn/VALUE\|-] [pr/VALUE\|-] [ai/VALUE\|-]`<br> e.g., `info 1 fn/retirement planning`
 **Note**   | `note INDEX d/DATE [t/TYPE] [o/OUTCOME] n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
 **Note edit** | `noteedit CONTACT_INDEX NOTE_INDEX [d/DATE] [n/NEW_NOTE_CONTENT]`<br> e.g., `noteedit 1 2 d/2026-10-19 n/Discussed insurance renewal`
 **Note delete** | `notedelete CONTACT_INDEX NOTE_INDEX`<br> e.g., `notedelete 1 2`
