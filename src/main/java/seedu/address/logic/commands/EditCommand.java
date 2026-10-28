@@ -86,7 +86,8 @@ public class EditCommand extends Command {
 
     private static boolean hasMatchingName(Model model, Person personToEdit, Person editedPerson) {
         return model.getClientBook().getPersonList().stream()
-                .anyMatch(person -> !person.equals(personToEdit) && person.getName().equals(editedPerson.getName()));
+                .anyMatch(person -> !person.equals(personToEdit)
+                        && person.getName().hasSameName(editedPerson.getName()));
     }
 
     /**

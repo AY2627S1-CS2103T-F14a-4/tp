@@ -55,7 +55,7 @@ public class AddCommand extends Command {
                 .anyMatch(person -> person.getEmail().equals(toAdd.getEmail())
                         && person.getPhone().hasSamePhoneNumber(toAdd.getPhone()));
         boolean hasMatchingName = model.getClientBook().getPersonList().stream()
-                .anyMatch(person -> person.getName().equals(toAdd.getName()));
+                .anyMatch(person -> person.getName().hasSameName(toAdd.getName()));
 
         if (hasMatchingEmailAndPhone) {
             throw new CommandException(MESSAGE_DUPLICATE_PERSON);

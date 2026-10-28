@@ -57,6 +57,21 @@ public class AddCommandTest {
     }
 
     @Test
+    public void execute_duplicateNameDifferingOnlyInCaseOrSpacing_throwsCommandException() {
+        Person existingPerson = new PersonBuilder().withName("John Doe").build();
+        Person personWithDifferentCase = new PersonBuilder(existingPerson).withName("JOHN DOE")
+                .withEmail("case@example.com").withPhone("91234567").build();
+        Person personWithExtraSpacing = new PersonBuilder(existingPerson).withName("John  Doe")
+                .withEmail("spacing@example.com").withPhone("92345678").build();
+        ModelStub modelStub = new ModelStubWithPerson(existingPerson);
+
+        assertThrows(CommandException.class, AddCommand.MESSAGE_DUPLICATE_NAME, () ->
+                new AddCommand(personWithDifferentCase).execute(modelStub, null));
+        assertThrows(CommandException.class, AddCommand.MESSAGE_DUPLICATE_NAME, () ->
+                new AddCommand(personWithExtraSpacing).execute(modelStub, null));
+    }
+
+    @Test
     public void execute_duplicateEmail_throwsCommandException() {
         Person validPerson = new PersonBuilder().build();
         Person personWithSameEmail = new PersonBuilder(validPerson).withName("Different Name")

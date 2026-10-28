@@ -3,6 +3,7 @@ package seedu.address.model.person;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.AppUtil.checkArgument;
 
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 /**
@@ -64,6 +65,17 @@ public class Name {
         return null;
     }
 
+    /**
+     * Returns whether this name and {@code otherName} are equal after ignoring letter case and redundant spaces.
+     */
+    public boolean hasSameName(Name otherName) {
+        requireNonNull(otherName);
+        return getNormalizedName().equals(otherName.getNormalizedName());
+    }
+
+    private String getNormalizedName() {
+        return fullName.trim().replaceAll(" +", " ").toLowerCase(Locale.ROOT);
+    }
 
     @Override
     public String toString() {
