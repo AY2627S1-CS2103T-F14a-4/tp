@@ -17,10 +17,7 @@ import seedu.address.storage.Storage;
 /** Adds one or more tags to a person in the currently displayed list. */
 public class TagCommand extends Command {
     public static final String COMMAND_WORD = "tag";
-    public static final String MESSAGE_USAGE = COMMAND_WORD
-            + ": Adds tags to the person identified by the index in the displayed list.\n"
-            + "Parameters: INDEX TAG [MORE_TAGS...]\n"
-            + "Example: " + COMMAND_WORD + " 1 priority referral";
+    public static final String MESSAGE_USAGE = "Parameters: INDEX TAG [MORE_TAGS...]";
     public static final String MESSAGE_SUCCESS = "Added tags to %s: %s";
     public static final String MESSAGE_DUPLICATE_TAGS = "This contact already has the following tag(s): %s";
 

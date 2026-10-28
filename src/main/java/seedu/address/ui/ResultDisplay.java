@@ -2,6 +2,7 @@ package seedu.address.ui;
 
 import static java.util.Objects.requireNonNull;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.VPos;
 import javafx.scene.control.ScrollPane;
@@ -30,6 +31,8 @@ public class ResultDisplay extends UiPart<Region> {
         super(FXML);
         getRoot().setVisible(false);
         getRoot().setManaged(false);
+        resultDisplay.widthProperty().addListener((observable, oldWidth, newWidth) ->
+                Platform.runLater(this::resizeToWrappedText));
     }
 
     /**
@@ -42,6 +45,7 @@ public class ResultDisplay extends UiPart<Region> {
         getRoot().setManaged(true);
         getRoot().setVisible(true);
         setDisplayedRows(commandFeedback, calculateDisplayedRowCount(commandFeedback));
+        Platform.runLater(this::resizeToWrappedText);
     }
 
     static int calculateDisplayedRowCount(String commandFeedback) {
@@ -51,8 +55,7 @@ public class ResultDisplay extends UiPart<Region> {
     }
 
     private void setDisplayedRows(String commandFeedback, int rowCount) {
-        String[] rows = commandFeedback.split("\\R", -1);
-        String displayedRows = String.join("\n", java.util.Arrays.copyOf(rows, rowCount));
+        String displayedRows = "X\n".repeat(rowCount - 1) + "X";
         resultDisplay.setText(displayedRows);
         resultDisplay.setMinHeight(Region.USE_COMPUTED_SIZE);
         resultDisplay.setPrefHeight(Region.USE_COMPUTED_SIZE);
@@ -81,6 +84,36 @@ public class ResultDisplay extends UiPart<Region> {
         resultDisplay.setPrefHeight(preferredHeight);
         resultDisplay.setMaxHeight(preferredHeight);
         resultDisplay.setText(commandFeedback);
+    }
+
+    private void resizeToWrappedText() {
+        if (resultDisplay.getText().isEmpty() || resultDisplay.getWidth() <= 0) {
+            return;
+        }
+        resultDisplay.applyCss();
+        Region content = (Region) resultDisplay.lookup(".content");
+        double wrappingWidth = content.getWidth() - content.getInsets().getLeft() - content.getInsets().getRight();
+        if (wrappingWidth <= 0) {
+            return;
+        }
+
+        int logicalRowCount = resultDisplay.getText().split("\\R", -1).length;
+        Text unwrappedText = createText(resultDisplay.getText());
+        Text wrappedText = createText(resultDisplay.getText());
+        wrappedText.setWrappingWidth(wrappingWidth);
+        double averageRowHeight = unwrappedText.getLayoutBounds().getHeight() / logicalRowCount;
+        double wrappedRowsHeight = wrappedText.getLayoutBounds().getHeight()
+                - unwrappedText.getLayoutBounds().getHeight();
+        int additionalRowCount = (int) Math.ceil(wrappedRowsHeight / averageRowHeight - 0.01);
+        int wrappedRowCount = logicalRowCount + additionalRowCount;
+        setDisplayedRows(resultDisplay.getText(), Math.clamp(wrappedRowCount, MINIMUM_ROW_COUNT, MAXIMUM_ROW_COUNT));
+    }
+
+    private Text createText(String text) {
+        Text renderedText = new Text(text);
+        renderedText.setFont(resultDisplay.getFont());
+        renderedText.setTextOrigin(VPos.TOP);
+        return renderedText;
     }
 
     static String formatCommandFeedback(String commandText, String feedbackToUser) {

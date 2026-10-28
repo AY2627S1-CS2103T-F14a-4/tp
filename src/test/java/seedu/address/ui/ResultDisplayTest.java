@@ -22,6 +22,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
+import javafx.stage.Stage;
 import seedu.address.MainApp;
 
 public class ResultDisplayTest {
@@ -117,15 +118,87 @@ public class ResultDisplayTest {
         checked.get(10, TimeUnit.SECONDS);
     }
 
+    @Test
+    public void wrappedFeedback_windowResized_adjustsBetweenThreeAndFourRows() throws Exception {
+        CompletableFuture<Void> checked = new CompletableFuture<>();
+        Platform.runLater(() -> {
+            Stage stage = new Stage();
+            try {
+                ResultDisplay display = new ResultDisplay();
+                TextArea textArea = (TextArea) display.getRoot().lookup("#resultDisplay");
+                VBox layout = new VBox(display.getRoot());
+                Scene scene = new Scene(layout, 1400, 300);
+                scene.getStylesheets().add(Objects.requireNonNull(
+                        MainApp.class.getResource("/view/DarkTheme.css")).toExternalForm());
+                stage.setScene(scene);
+                stage.show();
+
+                String findFeedback = "Invalid command format!\n"
+                        + "Parameters: [KEYWORD [MORE_KEYWORDS]...] [r/RELATIONSHIP] "
+                        + "[t/TAG [MORE_TAGS...]] [k/DETAIL_KEYWORD [MORE_KEYWORDS...]]";
+                display.setFeedbackToUser("find", findFeedback);
+                layout.applyCss();
+                layout.layout();
+                runAfterLayoutUpdates(() -> {
+                    try {
+                        layout.layout();
+                        assertEquals(3, textArea.getPrefRowCount());
+                        stage.setWidth(600);
+                        layout.resize(600, 300);
+                        layout.layout();
+                        runAfterLayoutUpdates(() -> {
+                            try {
+                                layout.layout();
+                                assertEquals(4, textArea.getPrefRowCount());
+                                assertTrue(textArea.isWrapText());
+                                assertFalse(getScrollBar(textArea, Orientation.HORIZONTAL).isVisible());
+                                assertFalse(getVerticalScrollBar(textArea).isVisible());
+
+                                stage.setWidth(1400);
+                                layout.resize(1400, 300);
+                                layout.layout();
+                                runAfterLayoutUpdates(() -> {
+                                    try {
+                                        layout.layout();
+                                        assertEquals(3, textArea.getPrefRowCount());
+                                        checked.complete(null);
+                                    } catch (Throwable error) {
+                                        checked.completeExceptionally(error);
+                                    } finally {
+                                        stage.close();
+                                    }
+                                });
+                            } catch (Throwable error) {
+                                checked.completeExceptionally(error);
+                                stage.close();
+                            }
+                        });
+                    } catch (Throwable error) {
+                        checked.completeExceptionally(error);
+                        stage.close();
+                    }
+                });
+            } catch (Throwable error) {
+                checked.completeExceptionally(error);
+                stage.close();
+            }
+        });
+        checked.get(10, TimeUnit.SECONDS);
+    }
+
     private void runAfterLayoutUpdates(Runnable task) {
         Platform.runLater(() -> Platform.runLater(task));
     }
 
     private ScrollBar getVerticalScrollBar(TextArea textArea) {
+        return getScrollBar(textArea, Orientation.VERTICAL);
+    }
+
+    private ScrollBar getScrollBar(TextArea textArea, Orientation orientation) {
         return textArea.lookupAll(".scroll-bar").stream()
                 .filter(ScrollBar.class::isInstance)
                 .map(ScrollBar.class::cast)
-                .filter(scrollBar -> scrollBar.getOrientation() == Orientation.VERTICAL)
+                .filter(scrollBar -> scrollBar.getOrientation() == orientation)
                 .findFirst()
                 .orElseThrow();
     }

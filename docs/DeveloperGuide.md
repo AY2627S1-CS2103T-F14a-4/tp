@@ -89,7 +89,7 @@ The `UI` component,
 * executes user commands using the `Logic` component.
 * displays the exact command submitted by the user above its success or error feedback in the `ResultDisplay`. The
   result box is hidden before any feedback is available, fits between two and four text rows according to the output,
-  and remains scrollable when the output exceeds four rows.
+  wraps text to the available width, and remains vertically scrollable when the output exceeds its visible area.
 * listens for changes to `Model` data so that the UI can be updated with the modified data.
 * keeps a reference to the `Logic` component, because the `UI` relies on the `Logic` to execute commands.
 * depends on some classes in the `Model` component because it displays `Person` objects from the model.

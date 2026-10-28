@@ -30,8 +30,8 @@ and stores records locally.
 
 5. Type a command in the command box and press Enter to execute it. The result box below the command box shows
    the command you entered followed by its result. The box appears when a result is available, expands from two to
-   four lines as needed, and can be scrolled when the result is longer. For example, type **`help`** and press Enter
-   to open the help window.<br>
+   four lines as needed, wraps long text to fit the available width, and can be scrolled vertically when the result
+   is longer. For example, type **`help`** and press Enter to open the help window.<br>
    Hold <kbd>Shift</kbd> and press <kbd>Down</kbd> or <kbd>Up</kbd> to scroll the current contact list a small amount,
    similar to using the mouse wheel. This does not change the selected contact.<br>
    Some example commands you can try:
