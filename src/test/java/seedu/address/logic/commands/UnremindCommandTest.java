@@ -70,13 +70,37 @@ public class UnremindCommandTest {
         Person second = model.getFilteredPersonList().get(1);
         model.setPerson(second, second.withRecurringReminder(BIRTHDAY));
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
-        assertCommandFailure(new UnremindCommand(INDEX_SECOND_PERSON, "Birthday"), model,
+        assertCommandFailure(new UnremindCommand(INDEX_FIRST_PERSON, "Birthday"), model,
                 Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
-        new UnremindCommand(INDEX_FIRST_PERSON, "birthday").execute(model, null);
+        new UnremindCommand(INDEX_SECOND_PERSON, "birthday").execute(model, null);
         assertEquals(first, model.getClientBook().getPersonList().getFirst());
         assertEquals(second, model.getFilteredPersonList().getFirst());
         assertCommandFailure(new UnremindCommand(Index.fromOneBased(1), "Birthday"), new ModelManager(),
                 Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+    }
+
+    @Test
+    public void execute_findWithNonconsecutiveIndices_targetsOriginalIndexAndRejectsHiddenClient() throws Exception {
+        for (int i = 0; i < 3; i++) {
+            Person original = model.getClientBook().getPersonList().get(i);
+            model.setPerson(original, original.withRecurringReminder(BIRTHDAY).withRecurringReminder(RENEWAL));
+        }
+        Person first = model.getClientBook().getPersonList().getFirst();
+        Person hidden = model.getClientBook().getPersonList().get(1);
+        Person third = model.getClientBook().getPersonList().get(2);
+        new ClientBookParser().parseCommand("find Alice Carl").execute(model, null);
+        assertEquals(List.of(first, third), model.getFilteredPersonList());
+
+        new UnremindCommand(Index.fromOneBased(3), "birthday").execute(model, null);
+
+        Person updatedThird = third.withoutRecurringReminder("Birthday");
+        assertEquals(List.of(first, updatedThird), model.getFilteredPersonList());
+        assertEquals(first, model.getClientBook().getPersonList().getFirst());
+        assertEquals(hidden, model.getClientBook().getPersonList().get(1));
+        assertEquals(updatedThird, model.getClientBook().getPersonList().get(2));
+        assertCommandFailure(new UnremindCommand(INDEX_SECOND_PERSON, "Birthday"), model,
+                Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+        assertEquals(List.of(first, updatedThird), model.getFilteredPersonList());
     }
 
     @Test

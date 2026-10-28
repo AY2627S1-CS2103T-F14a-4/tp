@@ -54,13 +54,33 @@ public class RemindCommandTest {
         Person first = model.getFilteredPersonList().getFirst();
         Person second = model.getFilteredPersonList().get(1);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
-        new RemindCommand(INDEX_FIRST_PERSON, REMINDER).execute(model, null);
+        new RemindCommand(INDEX_SECOND_PERSON, REMINDER).execute(model, null);
         assertEquals(first, model.getClientBook().getPersonList().getFirst());
         assertEquals(second.withRecurringReminder(REMINDER), model.getFilteredPersonList().getFirst());
-        assertCommandFailure(new RemindCommand(INDEX_SECOND_PERSON, REMINDER), model,
+        assertCommandFailure(new RemindCommand(INDEX_FIRST_PERSON, REMINDER), model,
                 Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
         assertCommandFailure(new RemindCommand(Index.fromOneBased(1), REMINDER), new ModelManager(),
                 Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+    }
+
+    @Test
+    public void execute_findWithNonconsecutiveIndices_targetsOriginalIndexAndRejectsHiddenClient() throws Exception {
+        Person first = model.getClientBook().getPersonList().getFirst();
+        Person hidden = model.getClientBook().getPersonList().get(1);
+        Person third = model.getClientBook().getPersonList().get(2);
+        new ClientBookParser().parseCommand("find Alice Carl").execute(model, null);
+        assertEquals(List.of(first, third), model.getFilteredPersonList());
+
+        new RemindCommand(Index.fromOneBased(3), REMINDER).execute(model, null);
+
+        Person updatedThird = third.withRecurringReminder(REMINDER);
+        assertEquals(List.of(first, updatedThird), model.getFilteredPersonList());
+        assertEquals(first, model.getClientBook().getPersonList().getFirst());
+        assertEquals(hidden, model.getClientBook().getPersonList().get(1));
+        assertEquals(updatedThird, model.getClientBook().getPersonList().get(2));
+        assertCommandFailure(new RemindCommand(INDEX_SECOND_PERSON, REMINDER), model,
+                Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+        assertEquals(List.of(first, updatedThird), model.getFilteredPersonList());
     }
 
     @Test

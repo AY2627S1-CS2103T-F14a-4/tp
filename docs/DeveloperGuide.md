@@ -499,7 +499,8 @@ constructs an immutable `RecurringReminder`. Labels are stripped, limited to 50 
 control characters and slashes. The date is a strictly formatted `MonthDay`; no year or general recurrence
 rule is stored.
 
-`RemindCommand` resolves the displayed index and uses `Person.withRecurringReminder` through
+`RemindCommand` resolves the client through `Command.getVisiblePersonAtIndex`, retaining the original
+full-list index after filtering and rejecting hidden clients. It uses `Person.withRecurringReminder` through
 `Model.setPerson`. Case-insensitive label matching updates a reminder in place and retains the existing
 label's display spelling; otherwise it appends with the supplied spelling. `equalsIgnoreCase` performs
 lookup for upserts and deletion, and `TreeSet(String.CASE_INSENSITIVE_ORDER)` enforces the same equivalence
@@ -517,8 +518,8 @@ as an empty list, preserving compatibility with old JSON.
 Persistence uses the existing `LogicManager`/storage path, including backup and restore.
 
 `ClientBookParser` separately dispatches `unremind INDEX a/LABEL` to `UnremindCommandParser`, which reuses
-`RecurringReminder.parseLabel` for the same label validation as creation. `UnremindCommand` validates the
-displayed index and finds the label ignoring case before any mutation. A missing match (including an empty
+`RecurringReminder.parseLabel` for the same label validation as creation. `UnremindCommand` uses the
+same `getVisiblePersonAtIndex` helper, then finds the label ignoring case before any mutation. A missing match (including an empty
 reminder list) reports a `CommandException`. `Person.withoutRecurringReminder` creates an immutable copy
 without that label and preserves every other field. `Model.setPerson` re-evaluates the active due filter;
 removing the last qualifying yearly reminder hides the person unless a due action still qualifies.

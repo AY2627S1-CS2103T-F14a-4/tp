@@ -538,7 +538,9 @@ Examples:
 * `remind 1 a/Policy renewal d/12-01`
 * `remind 1 a/birthday d/11-11` updates the existing `Birthday` reminder to November 11, keeping its display spelling.
 
-The index refers to the currently displayed list. The label must contain 1–50 characters after trimming
+Use the client index shown beside the person. After `find`, indices keep their positions in the full
+client list: if results show 1 and 3, use 3 for the second result; hidden index 2 is rejected.
+The label must contain 1–50 characters after trimming
 surrounding whitespace; control characters and `/` are not accepted. Label matching ignores case:
 `Birthday`, `birthday` and `BIRTHDAY` refer to the same reminder. A matching label updates the date and
 keeps the existing display spelling; another label adds a reminder with the supplied spelling. The `a/`
@@ -559,7 +561,7 @@ Removes one yearly reminder from a client or prospect in the currently displayed
 
 Format: `unremind INDEX a/LABEL`
 
-For example, `unremind 1 a/birthday` removes the first displayed person's `Birthday` reminder, ignoring
+For example, `unremind 1 a/birthday` removes the visible client at index 1's `Birthday` reminder, ignoring
 label case. Multi-word labels work too: `unremind 1 a/Policy renewal`. The label follows the same
 1–50-character validation and surrounding-whitespace trimming as `remind`. The `a/` field is required
 and cannot be repeated; no date is accepted.
@@ -571,7 +573,8 @@ and remains deleted after restarting ClientBook.
 
 While `due` is active, removing the last qualifying reminder makes the person disappear unless they
 still have an incomplete due/overdue next action. Other qualifying reminders keep the person visible.
-Use the updated displayed indices for your next command, or use `list` to view everyone.
+Remaining client indices do not change when a reminder removes someone from the due view.
+Use the client index shown beside the person, or use `list` to view everyone.
 
 ### Viewing due follow-ups and upcoming reminders: `due`
 
