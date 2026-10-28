@@ -29,7 +29,9 @@ and stores records locally.
    ![Ui](images/Ui.png)
 
 5. Type a command in the command box and press Enter to execute it. The result box below the command box shows
-   the command you entered followed by its result. For example, type **`help`** and press Enter to open the help window.<br>
+   the command you entered followed by its result. The box appears when a result is available, expands from two to
+   four lines as needed, and can be scrolled when the result is longer. For example, type **`help`** and press Enter
+   to open the help window.<br>
    Some example commands you can try:
 
    * `list` : Lists all contacts.
