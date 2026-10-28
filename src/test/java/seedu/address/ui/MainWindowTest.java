@@ -73,7 +73,7 @@ public class MainWindowTest {
     }
 
     @Test
-    public void executeFind_selectsFirstResultAndArrowKeysNavigate() throws Exception {
+    public void executeFind_selectsFirstResultAndScopesArrowKeyNavigation() throws Exception {
         CompletableFuture<Void> checked = new CompletableFuture<>();
         Platform.runLater(() -> {
             Stage stage = new Stage();
@@ -91,6 +91,11 @@ public class MainWindowTest {
                 ListView<?> personListView = (ListView<?>) scene.lookup("#personListView");
                 assertEquals(-1, personListView.getSelectionModel().getSelectedIndex());
 
+                personListView.getSelectionModel().select(0);
+                commandTextField.fireEvent(keyPressed(KeyCode.DOWN));
+                assertEquals(0, personListView.getSelectionModel().getSelectedIndex());
+                personListView.getSelectionModel().clearSelection();
+
                 commandTextField.setText("find e");
                 commandTextField.fireEvent(new ActionEvent());
 
@@ -99,6 +104,19 @@ public class MainWindowTest {
                 commandTextField.fireEvent(keyPressed(KeyCode.DOWN));
                 assertEquals(1, personListView.getSelectionModel().getSelectedIndex());
                 commandTextField.fireEvent(keyPressed(KeyCode.UP));
+                assertEquals(0, personListView.getSelectionModel().getSelectedIndex());
+
+                commandTextField.setText("foo");
+                commandTextField.fireEvent(new ActionEvent());
+                commandTextField.fireEvent(keyPressed(KeyCode.DOWN));
+                assertEquals(0, personListView.getSelectionModel().getSelectedIndex());
+
+                commandTextField.setText("find e");
+                commandTextField.fireEvent(new ActionEvent());
+                commandTextField.setText("list");
+                commandTextField.fireEvent(new ActionEvent());
+                personListView.getSelectionModel().select(0);
+                commandTextField.fireEvent(keyPressed(KeyCode.DOWN));
                 assertEquals(0, personListView.getSelectionModel().getSelectedIndex());
 
                 commandTextField.setText("find Nobody");

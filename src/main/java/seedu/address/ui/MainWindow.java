@@ -37,6 +37,7 @@ public class MainWindow extends UiPart<Stage> {
     private PersonListPanel personListPanel;
     private ResultDisplay resultDisplay;
     private HelpWindow helpWindow;
+    private boolean findResultNavigationActive;
 
     @FXML
     private StackPane commandBoxPlaceholder;
@@ -130,7 +131,7 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     private void handlePersonListNavigation(KeyEvent event) {
-        if (!personListPanel.hasSelectedPerson()) {
+        if (!findResultNavigationActive || !personListPanel.hasSelectedPerson()) {
             return;
         }
         if (event.getCode() == KeyCode.DOWN) {
@@ -192,6 +193,7 @@ public class MainWindow extends UiPart<Stage> {
      * @see seedu.address.logic.Logic#execute(String)
      */
     private CommandResult executeCommand(String commandText) throws CommandException, ParseException {
+        findResultNavigationActive = false;
         try {
             CommandResult commandResult = logic.execute(commandText);
             logger.info("Result: " + commandResult.getFeedbackToUser());
@@ -199,6 +201,7 @@ public class MainWindow extends UiPart<Stage> {
 
             if (commandResult.shouldSelectFirstResult()) {
                 personListPanel.selectFirstPerson();
+                findResultNavigationActive = personListPanel.hasSelectedPerson();
             }
 
             if (commandResult.isShowHelp()) {
