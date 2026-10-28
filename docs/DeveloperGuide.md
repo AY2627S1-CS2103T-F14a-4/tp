@@ -264,7 +264,7 @@ The following sequence shows the confirmation gate before selected tags are dele
 
 <puml src="diagrams/TagDeleteSequenceDiagram.puml" alt="Deleting tags with confirmation sequence" />
 
-### Contact preferences (US12)
+### Contact preferences
 
 `ContactCommandParser` accepts `contact INDEX [ch/CHANNEL|-] [tm/TIMING|-]` in either prefix order. It reuses
 duplicate-prefix checks and `ParserUtil.parseIndex`, but retains raw preference values using the same ordinary-space
@@ -293,7 +293,7 @@ The following sequence shows a successful update; parser validation and index ch
 
 <puml src="diagrams/ContactSequenceDiagram.puml" alt="Contact preference update sequence" />
 
-### Financial information (US13)
+### Financial information
 
 `FinancialNeed`, `Priority` and `AreaOfInterest` are immutable value objects, independently optional on `Person`.
 Normal values contain 1-200 characters after trimming ordinary spaces; internal spaces are preserved. Validation
@@ -330,7 +330,7 @@ The following sequence shows `info 1 /pr High /ai -`; validation and index resol
 
 <puml src="diagrams/InfoSequenceDiagram.puml" alt="Financial information update sequence" />
 
-### Dated interaction notes (US14)
+### Dated interaction notes
 
 `note INDEX d/yyyy-MM-dd n/NOTE` appends an interaction note to the person at the index in the currently displayed
 list. It works for clients and prospects, preserves the current filter, and does not replace earlier entries.
@@ -424,7 +424,7 @@ including an empty history.
 
 Automated and manual regression checks are described in the [Testing guide](Testing.md#us14-interaction-note-regression-checks).
 
-### Follow-ups (US18, US19 and US20)
+### Follow-ups
 
 Each `Person` has zero or one immutable `NextAction`: an action description, a `LocalDate` due date,
 and a boolean completion status. Absence is exposed through `Person#getNextAction()` as an empty `Optional`.
@@ -432,7 +432,7 @@ The value participates in full person equality and hashing, but does not affect 
 `Person#withNextAction` creates a replacement person while preserving all unrelated information.
 `EditCommand`, `InfoCommand` and `NoteCommand` must carry this field into their replacement persons.
 
-#### Recording or replacing an action (US18)
+#### Recording or replacing an action
 
 `ClientBookParser` routes `next` to `NextCommandParser`, which uses `ArgumentTokenizer` for `a/` and `d/`.
 The parser validates the index through `ParserUtil#parseIndex`, rejects duplicate prefixes, and distinguishes
@@ -461,7 +461,7 @@ The diagram shows the successful path, assuming the example date is today or lat
 Parser failures, invalid displayed indices and past replacement dates stop before mutation;
 save failures follow the existing `LogicManager` error handling.
 
-#### Completing an action (US20)
+#### Completing an action
 
 `ClientBookParser` routes `done INDEX` to `DoneCommandParser`. Empty arguments report
 `Person index is required.`; otherwise `ParserUtil#parseIndex` validates the entire argument string,
@@ -483,7 +483,7 @@ Tests cover the immutable completed copy, preserved description/date and person 
 indices, out-of-range indices, absent actions, repeated completion, unchanged data on errors, command equality,
 string representation, parser validation and routing through `ClientBookParser`.
 
-#### Rescheduling existing follow-ups (US21)
+#### Rescheduling existing follow-ups
 
 `ClientBookParser` routes `reschedule INDEX d/yyyy-MM-dd [a/ACTION]` to
 `RescheduleCommandParser`. It reuses the existing `a/` and `d/` prefixes, index parsing,
@@ -511,7 +511,7 @@ missing follow-ups, date-only and description changes, reopening completed actio
 past dates without mutation, local-zone date boundaries and due-filter updates. Model and JSON
 round-trip tests verify immutable rescheduling, pending status and preservation of optional fields.
 
-#### Yearly recurring reminders (US22)
+#### Yearly recurring reminders
 
 `ClientBookParser` dispatches `remind INDEX a/LABEL d/MM-dd` to `RemindCommandParser`, which reuses
 `ParserUtil.parseIndex` and the existing action/date prefixes. It rejects duplicate/missing prefixes and
@@ -553,7 +553,7 @@ captured execution date. The 30-day horizon uses `ChronoUnit.DAYS`, supports yea
 accumulated overdue annual occurrence. `PersonCard` shows labels and next dates in the existing card;
 `done` still changes only `NextAction`.
 
-#### Viewing due actions (US19)
+#### Viewing due actions
 
 `ClientBookParser` routes argument-free `due` to `DueCommand`; any arguments are rejected with
 `The due command takes no arguments.`. On each execution, `DueCommand` obtains today's date using
