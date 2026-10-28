@@ -35,12 +35,38 @@ import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.InteractionNote;
+import seedu.address.model.person.InteractionOutcome;
+import seedu.address.model.person.InteractionType;
 import seedu.address.model.person.NextAction;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.RecurringReminder;
 import seedu.address.testutil.PersonBuilder;
 
 public class PersonCardTest {
+    @Test
+    public void interactionMetadata_displaysCanonicalAndUnspecifiedValues() throws Exception {
+        CompletableFuture<Void> checked = new CompletableFuture<>();
+        Platform.runLater(() -> {
+            try {
+                InteractionNote typed = new InteractionNote(LocalDate.of(2000, 1, 1), "No answer",
+                        InteractionType.CALL, InteractionOutcome.UNSUCCESSFUL);
+                InteractionNote legacy = new InteractionNote(LocalDate.of(2000, 1, 2), "Old note");
+                VBox notes = (VBox) new PersonCard(new PersonBuilder(ALICE).withInteractionNotes(typed, legacy).build(),
+                        1).getRoot().lookup("#interactionNotes");
+                Label typedLabel = (Label) notes.getChildren().get(1);
+                Label legacyLabel = (Label) notes.getChildren().get(2);
+                assertEquals("1. 2000-01-01 [Type: CALL; Outcome: UNSUCCESSFUL]: No answer", typedLabel.getText());
+                assertEquals("2. 2000-01-02 [Type: UNSPECIFIED; Outcome: UNSPECIFIED]: Old note",
+                        legacyLabel.getText());
+                assertTrue(typedLabel.isWrapText());
+                checked.complete(null);
+            } catch (Throwable error) {
+                checked.completeExceptionally(error);
+            }
+        });
+        checked.get(10, TimeUnit.SECONDS);
+    }
+
     @Test
     public void filteredList_displaysOriginalIndexUntilPersonDeleted() throws Exception {
         CompletableFuture<Void> checked = new CompletableFuture<>();

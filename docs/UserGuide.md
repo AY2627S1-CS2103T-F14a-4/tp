@@ -279,26 +279,46 @@ free text, so check the saved preference when unsure.
 
 Adds a dated note to a client or prospect. Notes appear on the person's card in ascending date order (oldest first).
 
-Format: `note INDEX d/DATE n/NOTE`
+Format: `note INDEX d/DATE [t/TYPE] [o/OUTCOME] n/NOTE`
 
 * `INDEX` refers to the currently displayed list, including search results.
 * `DATE` must be a real calendar date in `yyyy-MM-dd` format, with a year from `0001` to `9999`.
   Year `0000` is rejected with `Interaction date must be a valid date in yyyy-MM-dd format.`
   Today's date and past dates are accepted.
   Future dates are rejected with `Interaction date cannot be in the future.` using the computer's local date.
-* Put the date before `n/`. Everything after `n/` is note text, including URLs, punctuation and prefix-like text.
+* Put `d/DATE` first, then any optional `t/` and `o/` fields in either order, before `n/`.
+  Everything after `n/` is note text, including URLs, punctuation and prefix-like text.
+* `TYPE` describes the interaction: `MEETING`, `CALL`, `MESSAGE`, or `OTHER`.
+  `OUTCOME` records its result: `SUCCESSFUL`, `UNSUCCESSFUL`, or `PENDING`.
+  Values ignore case and are saved and displayed in uppercase. For example, `t/call` means `CALL`.
+* Both fields are optional and independent. An omitted field is `UNSPECIFIED`, meaning no detail was recorded;
+  this does not imply `OTHER`, a successful interaction, or a pending result. You may also supply `UNSPECIFIED`
+  explicitly. Existing commands without either field still work, and older saved notes load with these defaults.
+* Each header prefix (`d/`, `t/`, `o/`) may appear only once. Blank or unsupported metadata values are rejected.
 * Note text cannot be blank. Surrounding whitespace is removed; case and internal text are preserved.
 * Adding a note keeps all previous notes. An exact duplicate (same date and text) for the same contact is rejected
   with `This interaction note already exists for this contact.` Existing records remain unchanged.
+* Changing type or outcome does not bypass the same-date-and-text duplicate check.
 * Notes with the same date but different text, or the same text but different dates, are allowed.
   Text comparison is case-sensitive and preserves internal spaces; surrounding whitespace is removed as usual.
   Identical notes for different contacts are allowed.
 * Notes are saved automatically and preserved when using `edit` or `info`.
-* Each entry shows its date and text under **Interaction notes:** on the person's card. Long text wraps, and the
+* Each entry shows its date, type, outcome and text under **Interaction notes:** on the person's card. Long text wraps, and the
   card grows to fit its contents immediately. Scroll the client list to read longer histories.
 * There is no maximum note length imposed by this command. Enter a note on one command line.
 
 Example: `note 1 d/2026-10-06 n/Discussed retirement planning and agreed to follow up next month.`
+
+Example with interaction details:
+
+`note 1 d/2026-10-28 t/CALL o/UNSUCCESSFUL n/Client did not answer`
+
+The card displays `1. 2026-10-28 [Type: CALL; Outcome: UNSUCCESSFUL]: Client did not answer`
+if this is the first note. Use today's date or a past date when trying the example.
+
+Partial metadata is supported: `note 1 d/2026-10-28 t/MESSAGE n/Sent policy details` displays
+`[Type: MESSAGE; Outcome: UNSPECIFIED]`. With neither field, the display shows
+`[Type: UNSPECIFIED; Outcome: UNSPECIFIED]`.
 
 Success message: `Added interaction note for PERSON_NAME.`
 
@@ -311,6 +331,12 @@ Missing indices, dates or note prefixes produce an error. Dates such as `2026-02
 `Interaction date must be a valid date in yyyy-MM-dd format.` Blank note text produces
 `Interaction note cannot be empty.` An index outside the displayed list produces
 `The person index provided is invalid.` These input errors leave the stored records unchanged.
+
+Unsupported or empty `t/` values report
+`Interaction type must be MEETING, CALL, MESSAGE, OTHER, or UNSPECIFIED.` Unsupported or empty `o/` values report
+`Interaction outcome must be SUCCESSFUL, UNSUCCESSFUL, PENDING, or UNSPECIFIED.` Repeated header prefixes
+produce the standard duplicate-prefix error. Use lowercase prefixes with a slash (`t/CALL`, not `t=CALL`).
+Metadata written after `n/` remains literal note text and does not set type or outcome.
 
 Backdated notes are placed in chronological order. Notes with the same date retain their existing order;
 new notes with that date appear after them. Displayed note numbers update to match this order.
@@ -336,6 +362,8 @@ Format: `noteedit CONTACT_INDEX NOTE_INDEX [d/DATE] [n/NEW_NOTE_CONTENT]`
   Notes with identical dates retain their relative order. Other notes and all other contact information are preserved.
 * New text cannot be blank. Surrounding whitespace is removed; case and internal text are preserved.
   Everything after `n/` is note text, including URLs and prefix-like strings. Enter it on one command line.
+* Type and outcome are preserved when changing either date or text. `noteedit` does not change these fields;
+  `t/` and `o/` after `n/` are literal note text.
 * Changes are saved automatically.
 
 Example: `noteedit 1 2 n/Discussed insurance renewal`
@@ -740,7 +768,7 @@ Action     | Format, Examples
 **Find**   | `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...]] [k/DETAIL_KEYWORD [MORE_KEYWORDS...]]`<br> e.g., `find James r/client t/priority referral k/retirement`
 **Contact** | `contact INDEX [ch/CHANNEL\|-] [tm/TIMING\|-]`<br> e.g., `contact 1 ch/WhatsApp tm/-`
 **Info**   | `info INDEX [/fn VALUE\|-] [/pr VALUE\|-] [/ai VALUE\|-]`<br> e.g., `info 1 /fn retirement planning`
-**Note**   | `note INDEX d/DATE n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
+**Note**   | `note INDEX d/DATE [t/TYPE] [o/OUTCOME] n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
 **Note edit** | `noteedit CONTACT_INDEX NOTE_INDEX [d/DATE] [n/NEW_NOTE_CONTENT]`<br> e.g., `noteedit 1 2 d/2026-10-19 n/Discussed insurance renewal`
 **Note delete** | `notedelete CONTACT_INDEX NOTE_INDEX`<br> e.g., `notedelete 1 2`
 **Restore** | `restore`<br> e.g., `restore`

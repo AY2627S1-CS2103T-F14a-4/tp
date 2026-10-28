@@ -61,7 +61,7 @@ public class NoteEditCommand extends Command {
         }
         InteractionNote originalNote = notes.get(noteIndex.getZeroBased());
         notes.set(noteIndex.getZeroBased(), new InteractionNote(date == null ? originalNote.getDate() : date,
-                text == null ? originalNote.getText() : text));
+                text == null ? originalNote.getText() : text, originalNote.getType(), originalNote.getOutcome()));
         Person updated = new Person(original.getName(), original.getPhone(), original.getEmail(), original.getTags(),
                 original.getRelationship(), original.getFinancialNeed().orElse(null),
                 original.getPriority().orElse(null), original.getAreaOfInterest().orElse(null), notes,
