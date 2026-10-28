@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 /** Shared validation and ordinary-space trimming for financial information value objects. */
 final class FinancialInformationValidator {
     private static final int MAX_LENGTH = 200;
-    private static final Pattern VALID_PATTERN = Pattern.compile("[\\p{L}\\p{Nd} .,'()&-]+");
+    private static final Pattern VALID_PATTERN = Pattern.compile("[\\p{L}\\p{M}\\p{Nd} .,'()&$%+/-]+");
 
     private FinancialInformationValidator() {}
 

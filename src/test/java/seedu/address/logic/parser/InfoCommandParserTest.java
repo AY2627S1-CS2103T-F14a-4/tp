@@ -16,6 +16,136 @@ public class InfoCommandParserTest {
     private final InfoCommandParser parser = new InfoCommandParser();
 
     @Test
+    public void parse_reversedPrefixesAfterValidIndex_helpfulParameterError() {
+        for (String fields : new String[] {"fn/Retirement", "pr/High", "ai/Insurance",
+            "fn/", "pr/ -", "ai/Insurance pr/High"}) {
+            for (String index : new String[] {"1", "2", "2147483647"}) {
+                assertParseFailure(parser, index + " " + fields, InfoCommandParser.MESSAGE_REVERSED_PARAMETER);
+                assertParseFailure(parser, index + " " + fields + " /fn Retirement",
+                        InfoCommandParser.MESSAGE_REVERSED_PARAMETER);
+            }
+        }
+    }
+
+    @Test
+    public void parse_reversedPrefixesWithInvalidIndex_preservesIndexError() {
+        for (String index : new String[] {"", "0", "-1", "abc", "1.5", "2147483648", "1 2", "2 extra"}) {
+            for (String fields : new String[] {"fn/Retirement", "pr/High", "ai/Insurance"}) {
+                assertParseFailure(parser, index + " " + fields, InfoCommandParser.MESSAGE_INVALID_INDEX);
+                assertParseFailure(parser, index + " " + fields + " /pr -",
+                        InfoCommandParser.MESSAGE_INVALID_INDEX);
+            }
+        }
+        for (String fields : new String[] {"fnn/Retirement", "xpr/High", "AI/Insurance"}) {
+            assertParseFailure(parser, "2 " + fields, InfoCommandParser.MESSAGE_INVALID_INDEX);
+        }
+    }
+
+    @Test
+    public void parse_reversedPrefixesWithOtherErrors_preservesPrefixErrorPrecedence() {
+        for (String index : new String[] {"2", "0", "abc"}) {
+            assertParseFailure(parser, index + " pr/High /fnn Retirement",
+                    InfoCommandParser.MESSAGE_INVALID_PARAMETER);
+            assertParseFailure(parser, index + " pr/High /pr - /pr High",
+                    String.format(InfoCommandParser.MESSAGE_DUPLICATE_PARAMETER, "/pr"));
+        }
+        assertParseFailure(parser, "2 pr/High /fn /ai Bad!", InfoCommandParser.MESSAGE_REVERSED_PARAMETER);
+    }
+
+    @Test
+    public void parse_reversedPrefixTextInsideRecognizedValues_preservesText() {
+        for (String value : new String[] {"pr/High", "fn/Retirement", "ai/Insurance",
+            "Review pr/High options", "e\u0301pargne $3000 + CPF/SRS 4%"}) {
+            InfoDescriptor descriptor = new InfoDescriptor();
+            descriptor.setFinancialNeed(new FinancialNeed(value));
+            descriptor.setPriority(new Priority(value));
+            descriptor.setAreaOfInterest(new AreaOfInterest(value));
+            assertParseSuccess(parser, "1 /fn " + value + " /pr " + value + " /ai " + value,
+                    new InfoCommand(INDEX_FIRST_PERSON, descriptor));
+            descriptor.setPriority(null);
+            assertParseSuccess(parser, "1 /ai " + value + " /pr - /fn " + value,
+                    new InfoCommand(INDEX_FIRST_PERSON, descriptor));
+        }
+    }
+
+    @Test
+    public void parse_financialNotationInEachField_success() {
+        for (String value : new String[] {"Retire on $3000 monthly", "Target 4% return", "CPF + SRS",
+            "Life/Health insurance", "Target 6% return", "CPF/SRS planning", "\u00e9pargne", "e\u0301pargne",
+            "\u0b93\u0baf\u0bcd\u0bb5\u0bc2\u0ba4\u0bbf\u0baf\u0bae\u0bcd"}) {
+            InfoDescriptor need = new InfoDescriptor();
+            need.setFinancialNeed(new FinancialNeed(value));
+            assertParseSuccess(parser, "1 /fn   " + value + "  ", new InfoCommand(INDEX_FIRST_PERSON, need));
+            InfoDescriptor priority = new InfoDescriptor();
+            priority.setPriority(new Priority(value));
+            assertParseSuccess(parser, "1 /pr   " + value + "  ", new InfoCommand(INDEX_FIRST_PERSON, priority));
+            InfoDescriptor interest = new InfoDescriptor();
+            interest.setAreaOfInterest(new AreaOfInterest(value));
+            assertParseSuccess(parser, "1 /ai   " + value + "  ", new InfoCommand(INDEX_FIRST_PERSON, interest));
+        }
+    }
+
+    @Test
+    public void parse_financialNotationAnyFieldOrderAndClearing_success() {
+        InfoDescriptor descriptor = new InfoDescriptor();
+        descriptor.setFinancialNeed(new FinancialNeed("Retire on $3000 monthly"));
+        descriptor.setPriority(new Priority("Target 6% return"));
+        descriptor.setAreaOfInterest(new AreaOfInterest("CPF/SRS + insurance"));
+        String need = "/fn Retire on $3000 monthly";
+        String priority = "/pr Target 6% return";
+        String interest = "/ai CPF/SRS + insurance";
+        for (String fields : new String[] {need + " " + priority + " " + interest,
+            need + " " + interest + " " + priority, priority + " " + need + " " + interest,
+            priority + " " + interest + " " + need, interest + " " + need + " " + priority,
+            interest + " " + priority + " " + need}) {
+            assertParseSuccess(parser, "1 " + fields, new InfoCommand(INDEX_FIRST_PERSON, descriptor));
+        }
+        descriptor.setPriority(null);
+        assertParseSuccess(parser, "1 " + interest + " /pr   -   " + need,
+                new InfoCommand(INDEX_FIRST_PERSON, descriptor));
+    }
+
+    @Test
+    public void parse_financialSymbolBoundariesAndMixedInvalidFields_preservesValidation() {
+        for (String symbol : new String[] {"$", "%", "+", "/"}) {
+            String value = "A" + symbol.repeat(199);
+            InfoDescriptor descriptor = new InfoDescriptor();
+            descriptor.setFinancialNeed(new FinancialNeed(value));
+            descriptor.setPriority(new Priority(value));
+            descriptor.setAreaOfInterest(new AreaOfInterest(value));
+            assertParseSuccess(parser, "1 /fn " + value + " /pr " + value + " /ai " + value,
+                    new InfoCommand(INDEX_FIRST_PERSON, descriptor));
+            assertParseFailure(parser, "1 /ai " + value + symbol + " /pr " + value + symbol
+                    + " /fn " + value + symbol, FinancialNeed.MESSAGE_LENGTH + "\n"
+                            + Priority.MESSAGE_LENGTH + "\n" + AreaOfInterest.MESSAGE_LENGTH);
+        }
+        assertParseFailure(parser, "1 /ai Bad! /pr /fn Retire on $3000 monthly",
+                Priority.MESSAGE_BLANK + "\n" + AreaOfInterest.MESSAGE_INVALID_CHARACTERS);
+        assertParseFailure(parser, "1 /ai CPF/SRS /pr Bad! /fn -", Priority.MESSAGE_INVALID_CHARACTERS);
+        assertParseFailure(parser, "1 /fn CPF + SRS /ai Plan\t", AreaOfInterest.MESSAGE_INVALID_CHARACTERS);
+        assertParseFailure(parser, "1 /pr Target 6% return /fn Bad!", FinancialNeed.MESSAGE_INVALID_CHARACTERS);
+    }
+
+    @Test
+    public void parse_financialNotationWithMalformedOrDuplicateParameters_failure() {
+        for (String prefix : new String[] {"/fnn", "/xyz", "/fna", "/fnValue", "/prValue", "/aiValue"}) {
+            assertParseFailure(parser, "1 " + prefix + " value", InfoCommandParser.MESSAGE_INVALID_PARAMETER);
+            assertParseFailure(parser, "1 /fn CPF/SRS " + prefix + " value",
+                    InfoCommandParser.MESSAGE_INVALID_PARAMETER);
+        }
+        for (String value : new String[] {"Life /Health", "Life / Health", "Life /", "/", "/ Health"}) {
+            for (String prefix : new String[] {"/fn", "/pr", "/ai"}) {
+                assertParseFailure(parser, "1 " + prefix + " " + value,
+                        InfoCommandParser.MESSAGE_INVALID_PARAMETER);
+            }
+        }
+        for (String prefix : new String[] {"/fn", "/pr", "/ai"}) {
+            assertParseFailure(parser, "1 " + prefix + " CPF/SRS " + prefix + " $3000 + 4%",
+                    String.format(InfoCommandParser.MESSAGE_DUPLICATE_PARAMETER, prefix));
+        }
+    }
+
+    @Test
     public void parse_clearIndividualFieldsWithSpaces_success() {
         InfoDescriptor need = new InfoDescriptor();
         need.setFinancialNeed(null);
@@ -170,7 +300,7 @@ public class InfoCommandParserTest {
         String longValue = "A".repeat(201);
         assertParseFailure(parser, "1 /ai " + longValue + " /pr " + longValue + " /fn " + longValue,
                 FinancialNeed.MESSAGE_LENGTH + "\n" + Priority.MESSAGE_LENGTH + "\n" + AreaOfInterest.MESSAGE_LENGTH);
-        for (String value : new String[] {"Bad!", "Needs/Wants", "\tValue", "Value\n", "Value\r"}) {
+        for (String value : new String[] {"Bad!", "Needs:Wants", "\tValue", "Value\n", "Value\r"}) {
             assertParseFailure(parser, "1 /ai " + value + " /pr " + value + " /fn " + value,
                     FinancialNeed.MESSAGE_INVALID_CHARACTERS + "\n" + Priority.MESSAGE_INVALID_CHARACTERS
                             + "\n" + AreaOfInterest.MESSAGE_INVALID_CHARACTERS);
@@ -207,7 +337,7 @@ public class InfoCommandParserTest {
     public void parse_invalidFinancialNeed_exactMessages() {
         assertParseFailure(parser, "1 /fn ", FinancialNeed.MESSAGE_BLANK);
         assertParseFailure(parser, "1 /fn " + "A".repeat(201), FinancialNeed.MESSAGE_LENGTH);
-        for (String value : new String[] {"Bad!", "Needs/Wants", "\tRetirement", "Retirement\n", "Retirement\r"}) {
+        for (String value : new String[] {"Bad!", "Needs:Wants", "\tRetirement", "Retirement\n", "Retirement\r"}) {
             assertParseFailure(parser, "1 /fn " + value, FinancialNeed.MESSAGE_INVALID_CHARACTERS);
         }
     }
@@ -216,7 +346,7 @@ public class InfoCommandParserTest {
     public void parse_invalidPriority_exactMessages() {
         assertParseFailure(parser, "1 /pr ", Priority.MESSAGE_BLANK);
         assertParseFailure(parser, "1 /pr " + "A".repeat(201), Priority.MESSAGE_LENGTH);
-        for (String value : new String[] {"Bad!", "Needs/Wants", "\tRetirement", "Retirement\n", "Retirement\r"}) {
+        for (String value : new String[] {"Bad!", "Needs:Wants", "\tRetirement", "Retirement\n", "Retirement\r"}) {
             assertParseFailure(parser, "1 /pr " + value, Priority.MESSAGE_INVALID_CHARACTERS);
         }
     }
@@ -225,7 +355,7 @@ public class InfoCommandParserTest {
     public void parse_invalidAreaOfInterest_exactMessages() {
         assertParseFailure(parser, "1 /ai ", AreaOfInterest.MESSAGE_BLANK);
         assertParseFailure(parser, "1 /ai " + "A".repeat(201), AreaOfInterest.MESSAGE_LENGTH);
-        for (String value : new String[] {"Bad!", "Needs/Wants", "\tRetirement", "Retirement\n", "Retirement\r"}) {
+        for (String value : new String[] {"Bad!", "Needs:Wants", "\tRetirement", "Retirement\n", "Retirement\r"}) {
             assertParseFailure(parser, "1 /ai " + value, AreaOfInterest.MESSAGE_INVALID_CHARACTERS);
         }
     }

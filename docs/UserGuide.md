@@ -197,13 +197,22 @@ Format: `info INDEX [/fn VALUE|-] [/pr VALUE|-] [/ai VALUE|-]`
   priority. Clearing an already absent field is safe. A hyphen in a larger value, such as `Long-term`, remains text.
 * Each value must contain 1-200 characters after leading and trailing ordinary spaces are ignored. Internal spaces are
   preserved. Empty values and bare prefixes (for example, `info 1 /pr`) remain invalid; clearing requires explicit `-`.
-* Allowed characters are letters, digits, spaces, periods (`.`), commas (`,`), apostrophes (`'`), hyphens (`-`),
-  parentheses (`(` and `)`), and ampersands (`&`). Tabs and line breaks are not allowed.
-* Forward slash (`/`) is not allowed in a value because it is reserved for parameter prefixes.
+* Allowed characters are Unicode letters and combining marks, digits, spaces, periods (`.`), commas (`,`),
+  apostrophes (`'`), hyphens (`-`),
+  parentheses (`(` and `)`), ampersands (`&`), dollar signs (`$`), percent signs (`%`), plus signs (`+`),
+  and forward slashes (`/`). Tabs and line breaks are not allowed.
+  Both precomposed and decomposed accents, and scripts such as Tamil, are accepted. Text is saved as entered
+  after trimming ordinary spaces; it is not Unicode-normalized. The 200-character limit counts UTF-16 code units,
+  so combining marks count separately from their base letters.
+* Slashes within a word, such as `Life/Health` or `CPF/SRS`, are accepted. A slash at the start of a
+  whitespace-separated token is reserved for parameters: only `/fn`, `/pr`, and `/ai` are recognized.
+  Unknown parameters such as `/fnn` and `/xyz`, and a bare slash, are rejected. Use `Life/Health`,
+  rather than `Life / Health` or `Life /Health`.
 
 Examples:
 
 * `info 1 /fn retirement planning`
+* `info 1 /fn Retire on $3000 monthly /pr Target 6% return /ai CPF/SRS + insurance`
 * `info 2 /pr protect family income /ai life insurance`
 * `info 1 /ai investment products /fn wealth accumulation /pr preserve capital`
 * `info 1 /pr -` clears only priority.

@@ -29,6 +29,56 @@ public class FinancialNeedTest {
     }
 
     @Test
+    public void financialNotation_preservesValuesAndBoundaries() {
+        for (String input : new String[] {"Retire on $3000 monthly", "Target 4% return", "CPF + SRS",
+            "Life/Health insurance", "Target 6% return", "CPF/SRS planning", "Needs/Wants", "r/note"}) {
+            FinancialNeed value = new FinancialNeed("  " + input + "  ");
+            assertTrue(FinancialNeed.isValidFinancialNeed(input));
+            assertNull(FinancialNeed.getValidationError(input));
+            assertEquals(input, value.value);
+            assertEquals(new FinancialNeed(input), value);
+            assertEquals(new FinancialNeed(input).hashCode(), value.hashCode());
+        }
+        for (String symbol : new String[] {"$", "%", "+", "/"}) {
+            assertEquals(symbol, new FinancialNeed(symbol).value);
+            String boundary = symbol.repeat(200);
+            assertEquals(boundary, new FinancialNeed("  " + boundary + "  ").value);
+            assertInvalid(boundary + symbol, FinancialNeed.MESSAGE_LENGTH);
+            assertInvalid(symbol + "\t", FinancialNeed.MESSAGE_INVALID_CHARACTERS);
+        }
+    }
+
+    @Test
+    public void unicodeCombiningMarks_preservesTextWithoutNormalization() {
+        for (String input : new String[] {"\u00e9pargne", "e\u0301pargne",
+            "\u0b93\u0baf\u0bcd\u0bb5\u0bc2\u0ba4\u0bbf\u0baf\u0bae\u0bcd",
+            "\u0915\u093e", "\u05e9\u05b8\u05c1", "1\u20dd", "e\u0301",
+            "e\u0301pargne $3000 + CPF/SRS 4%"}) {
+            FinancialNeed value = new FinancialNeed("  " + input + "  ");
+            assertTrue(FinancialNeed.isValidFinancialNeed(input));
+            assertNull(FinancialNeed.getValidationError(input));
+            assertEquals(input, value.value);
+            assertEquals(input, value.toString());
+            assertEquals(new FinancialNeed(input), value);
+            assertEquals(new FinancialNeed(input).hashCode(), value.hashCode());
+        }
+        assertFalse(new FinancialNeed("\u00e9pargne").equals(new FinancialNeed("e\u0301pargne")));
+    }
+
+    @Test
+    public void unicodeCombiningMarks_preservesLengthAndControlRestrictions() {
+        String boundary = "e\u0301".repeat(100);
+        assertEquals(boundary, new FinancialNeed("  " + boundary + "  ").value);
+        assertInvalid(boundary + "\u0301", FinancialNeed.MESSAGE_LENGTH);
+        assertInvalid(boundary + "\t", FinancialNeed.MESSAGE_LENGTH);
+        for (String control : new String[] {"\t", "\n", "\r", "\f", "\u0000", "\u007f"}) {
+            assertInvalid(control + "e\u0301pargne", FinancialNeed.MESSAGE_INVALID_CHARACTERS);
+            assertInvalid("e\u0301pargne" + control, FinancialNeed.MESSAGE_INVALID_CHARACTERS);
+            assertInvalid("e\u0301" + control + "pargne", FinancialNeed.MESSAGE_INVALID_CHARACTERS);
+        }
+    }
+
+    @Test
     public void constructor_trimsEdgesAndPreservesInternalSpaces() {
         FinancialNeed result = new FinancialNeed("  Long  term   plans  ");
         assertEquals("Long  term   plans", result.value);
@@ -51,9 +101,9 @@ public class FinancialNeedTest {
 
     @Test
     public void invalidCharacters_rejectedWithExactMessage() {
-        for (String input : new String[] {"/", "Needs/Wants", "r/note", "Plan!", "Plan?", "A_B", "A:B", "A;B",
-            "A@B", "A#B", "A$B", "A%B", "A+B", "[A]", "{A}", "A\\B", "A\"B", "A\tB", "A\nB",
-            "A\rB", "A\u00a0B", "A\uD83D\uDE00B", "e\u0301", "A\u2013B"}) {
+        for (String input : new String[] {"Plan!", "Plan?", "A_B", "A:B", "A;B",
+            "A@B", "A#B", "[A]", "{A}", "A\\B", "A\"B", "A\tB", "A\nB",
+            "A\rB", "A\u00a0B", "A\uD83D\uDE00B", "A\u2013B"}) {
             assertInvalid(input, "Financial need contains invalid characters");
         }
     }

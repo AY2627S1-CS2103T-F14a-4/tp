@@ -218,11 +218,14 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void financialInformation_jsonRoundTrip_preservesValues() throws Exception {
-        Person original = new PersonBuilder(BENSON).withFinancialNeed("Retirement").withPriority("High")
-                .withAreaOfInterest("Insurance").build();
-        String json = JsonUtil.toJsonString(new JsonAdaptedPerson(original));
-        Person restored = JsonUtil.fromJsonString(json, JsonAdaptedPerson.class).toModelType();
-        assertEquals(original, restored);
+        for (String value : List.of("Retire on $3000 monthly", "\u00e9pargne", "e\u0301pargne",
+                "\u0b93\u0baf\u0bcd\u0bb5\u0bc2\u0ba4\u0bbf\u0baf\u0bae\u0bcd")) {
+            Person original = new PersonBuilder(BENSON).withFinancialNeed(value)
+                    .withPriority(value + " 6%").withAreaOfInterest(value + " CPF/SRS + insurance").build();
+            String json = JsonUtil.toJsonString(new JsonAdaptedPerson(original));
+            Person restored = JsonUtil.fromJsonString(json, JsonAdaptedPerson.class).toModelType();
+            assertEquals(original, restored);
+        }
     }
 
     @Test
@@ -259,7 +262,7 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_invalidFinancialNeed_throwsExactValidationMessage() {
-        String[] invalidValues = {"", "   ", "A".repeat(201), "Needs/Wants", "\tRetirement", "Retirement\n",
+        String[] invalidValues = {"", "   ", "A".repeat(201), "Needs:Wants", "\tRetirement", "Retirement\n",
             "Retirement\r"};
         String[] expectedMessages = {FinancialNeed.MESSAGE_BLANK, FinancialNeed.MESSAGE_BLANK,
             FinancialNeed.MESSAGE_LENGTH,
@@ -275,7 +278,7 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_invalidPriority_throwsExactValidationMessage() {
-        String[] invalidValues = {"", "   ", "A".repeat(201), "Needs/Wants", "\tRetirement", "Retirement\n",
+        String[] invalidValues = {"", "   ", "A".repeat(201), "Needs:Wants", "\tRetirement", "Retirement\n",
             "Retirement\r"};
         String[] expectedMessages = {Priority.MESSAGE_BLANK, Priority.MESSAGE_BLANK, Priority.MESSAGE_LENGTH,
             Priority.MESSAGE_INVALID_CHARACTERS, Priority.MESSAGE_INVALID_CHARACTERS,
@@ -290,7 +293,7 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_invalidAreaOfInterest_throwsExactValidationMessage() {
-        String[] invalidValues = {"", "   ", "A".repeat(201), "Needs/Wants", "\tRetirement", "Retirement\n",
+        String[] invalidValues = {"", "   ", "A".repeat(201), "Needs:Wants", "\tRetirement", "Retirement\n",
             "Retirement\r"};
         String[] expectedMessages = {AreaOfInterest.MESSAGE_BLANK, AreaOfInterest.MESSAGE_BLANK,
             AreaOfInterest.MESSAGE_LENGTH,
