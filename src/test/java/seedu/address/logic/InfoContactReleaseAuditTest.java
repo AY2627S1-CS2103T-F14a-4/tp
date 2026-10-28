@@ -47,7 +47,7 @@ public class InfoContactReleaseAuditTest {
     private static final String[] NEW = {"New need", "New priority", "New interest", "New channel", "New timing"};
 
     @TempDir
-    public Path temporaryFolder;
+    Path temporaryFolder;
 
     @Test
     public void execute_contactMalformedUtf16_rejectsWithoutChangingModelOrJson() throws Exception {
