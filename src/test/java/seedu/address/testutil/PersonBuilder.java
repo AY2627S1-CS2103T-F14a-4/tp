@@ -15,6 +15,7 @@ import seedu.address.model.person.Phone;
 import seedu.address.model.person.PreferredContactChannel;
 import seedu.address.model.person.PreferredContactTiming;
 import seedu.address.model.person.Priority;
+import seedu.address.model.person.RecurringReminder;
 import seedu.address.model.person.Relationship;
 import seedu.address.model.tag.Tag;
 import seedu.address.model.util.SampleDataUtil;
@@ -29,6 +30,7 @@ public class PersonBuilder {
     public static final String DEFAULT_EMAIL = "amy@gmail.com";
 
     private NextAction nextAction;
+    private List<RecurringReminder> recurringReminders = List.of();
     private PreferredContactChannel preferredContactChannel;
     private PreferredContactTiming preferredContactTiming;
     private Name name;
@@ -55,6 +57,7 @@ public class PersonBuilder {
      * Initializes the PersonBuilder with the data of {@code personToCopy}.
      */
     public PersonBuilder(Person personToCopy) {
+        recurringReminders = personToCopy.getRecurringReminders();
         nextAction = personToCopy.getNextAction().orElse(null);
         preferredContactChannel = personToCopy.getPreferredContactChannel().orElse(null);
         preferredContactTiming = personToCopy.getPreferredContactTiming().orElse(null);
@@ -148,7 +151,13 @@ public class PersonBuilder {
     /** Builds the person with all supplied information. */
     public Person build() {
         return new Person(name, phone, email, tags, relationship, financialNeed, priority, areaOfInterest,
-                interactionNotes, nextAction, preferredContactChannel, preferredContactTiming);
+                interactionNotes, nextAction, preferredContactChannel, preferredContactTiming, recurringReminders);
+    }
+
+    /** Sets yearly reminders with a defensive copy. */
+    public PersonBuilder withRecurringReminders(RecurringReminder... reminders) {
+        recurringReminders = List.of(reminders);
+        return this;
     }
 
     /** Sets the optional follow-up. */

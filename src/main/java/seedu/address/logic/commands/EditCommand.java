@@ -107,7 +107,7 @@ public class EditCommand extends Command {
                 personToEdit.getAreaOfInterest().orElse(null), personToEdit.getInteractionNotes(),
                 personToEdit.getNextAction().orElse(null),
                 personToEdit.getPreferredContactChannel().orElse(null),
-                personToEdit.getPreferredContactTiming().orElse(null));
+                personToEdit.getPreferredContactTiming().orElse(null), personToEdit.getRecurringReminders());
     }
 
     @Override

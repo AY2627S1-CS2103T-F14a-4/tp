@@ -526,27 +526,86 @@ The person has no next action | `NAME has no next action to complete.`
 `done` without an index reports `Person index is required.`. Zero, negative numbers, non-integers,
 and extra arguments such as `done 1 2` report `Index must be a positive integer.`.
 
-### Viewing due follow-ups: `due`
+### Setting a yearly reminder: `remind`
 
-Shows every client or prospect whose incomplete next action is due today or earlier.
+Sets a birthday, policy renewal or other yearly relationship date for a client or prospect.
+
+Format: `remind INDEX a/LABEL d/MM-dd`
+
+Examples:
+
+* `remind 1 a/Birthday d/11-10`
+* `remind 1 a/Policy renewal d/12-01`
+* `remind 1 a/birthday d/11-11` updates the existing `Birthday` reminder to November 11, keeping its display spelling.
+
+Use the client index shown beside the person. After `find`, indices keep their positions in the full
+client list: if results show 1 and 3, use 3 for the second result; hidden index 2 is rejected.
+The label must contain 1–50 characters after trimming
+surrounding whitespace; control characters and `/` are not accepted. Label matching ignores case:
+`Birthday`, `birthday` and `BIRTHDAY` refer to the same reminder. A matching label updates the date and
+keeps the existing display spelling; another label adds a reminder with the supplied spelling. The `a/`
+and `d/` fields are both required and cannot be repeated. An empty `d/` is invalid; use `unremind` to delete.
+
+Use exactly two month and day digits, with a real calendar date: `02-29` is accepted, while `2-29`,
+`02-30` and `2026-11-10` are rejected. Dates repeat every year. February 29 is observed on February 28
+in non-leap years. If this year's occurrence has passed, the next occurrence is next year.
+
+The contact card shows each label and its next occurrence as `Yearly | YYYY-MM-DD: LABEL`.
+Reminders survive restarting ClientBook and do not replace the person's one-off next action or other
+optional information. `done` completes only that one-off next action; yearly reminders continue annually.
+Only yearly dates are supported; reminders have no completion history.
+
+### Removing a yearly reminder: `unremind`
+
+Removes one yearly reminder from a client or prospect in the currently displayed list.
+
+Format: `unremind INDEX a/LABEL`
+
+For example, `unremind 1 a/birthday` removes the visible client at index 1's `Birthday` reminder, ignoring
+label case. Multi-word labels work too: `unremind 1 a/Policy renewal`. The label follows the same
+1–50-character validation and surrounding-whitespace trimming as `remind`. The `a/` field is required
+and cannot be repeated; no date is accepted.
+
+An invalid displayed index reports the usual invalid-index error. An unmatched label or a person without
+reminders reports `NAME has no yearly reminder matching label "LABEL".` and changes nothing. Successful
+deletion preserves all other reminders, the next action, notes, preferences and other contact information,
+and remains deleted after restarting ClientBook.
+
+While `due` is active, removing the last qualifying reminder makes the person disappear unless they
+still have an incomplete due/overdue next action. Other qualifying reminders keep the person visible.
+Remaining client indices do not change when a reminder removes someone from the due view.
+Use the client index shown beside the person, or use `list` to view everyone.
+
+### Viewing due follow-ups and upcoming reminders: `due`
+
+Shows every client or prospect with an incomplete next action due today or earlier, or a yearly reminder
+whose next occurrence is within 30 days, including today and the date exactly 30 days from today.
 
 Format: `due`
 
-* Includes actions due today and overdue actions, using your computer's local date. Previously
+* Includes incomplete actions due today and overdue actions, using your computer's local date. Previously
   saved follow-ups are retained as they become overdue; the new-date restriction in `next` does
   not prevent loading them or showing them here.
-* Excludes completed actions, future actions and people without a next action.
-* Replaces any previous `find` filter. Results are sorted by due date ascending (most overdue first).
-  Equal dates are ordered alphabetically by name, ignoring case; exact spelling breaks case-only ties.
+* Past yearly occurrences roll forward to next year and do not accumulate overdue reminders.
+* Completed and future one-off actions do not qualify by themselves. A person without a next action
+  still appears when a yearly reminder qualifies.
+* A person appears once even if several actions or reminders qualify; cards show all their yearly dates.
+* Replaces any previous `find` filter. Results are sorted by the earliest qualifying action or reminder date,
+  with overdue actions first. Equal dates are ordered alphabetically by name, ignoring case;
+  exact spelling breaks case-only ties.
 * Use the displayed client index for subsequent commands. Sorting does not change those indices.
-  After `done INDEX`, the completed person disappears from the due list; remaining indices stay the same.
+  After `done INDEX`, the person disappears only if they have no upcoming yearly reminders.
+  Remaining client indices do not change.
 * Sorting changes only the displayed view, not saved contact order. `list` and `find` return to the
-  original contact order. Run `due` again to refresh the date after midnight.
+  original contact order. Run `due` again to refresh the date after midnight; refreshing the displayed
+  cards also updates their computed next occurrence.
 
-For example, if today is `2026-10-20`, `due` includes incomplete actions dated `2026-10-19`
-and `2026-10-20`, but excludes an action dated `2026-10-21`.
-The result message is `2 follow-up(s) due today or earlier.` when two people match,
-or `No follow-ups are due.` when nobody matches.
+For example, if today is `2026-10-26`, an incomplete action dated `2026-10-25` qualifies, while a future
+one-off action dated `2026-10-27` does not. `remind 1 a/Birthday d/11-10` qualifies in `due` because
+November 10 is 15 days away. A reminder dated `11-26` falls outside the 30-day window.
+
+The result message is `2 person(s) with due follow-ups or yearly reminders in the next 30 days.` when two
+people match, or `No follow-ups are due and no yearly reminders are upcoming.` when nobody matches.
 
 Arguments are not accepted: `due 1` reports `The due command takes no arguments.`.
 
@@ -647,6 +706,8 @@ Action     | Format, Examples
 **Next**   | `next INDEX a/ACTION d/yyyy-MM-dd`<br> e.g., `next 1 a/Call d/2026-11-02` (use today or later)
 **Reschedule** | `reschedule INDEX d/yyyy-MM-dd [a/ACTION]`<br> e.g., `reschedule 1 d/2026-11-02`
 **Done**   | `done INDEX`<br> e.g., `done 1`
+**Yearly reminder** | `remind INDEX a/LABEL d/MM-dd`<br>e.g. `remind 1 a/Birthday d/11-10`
+**Remove yearly reminder** | `unremind INDEX a/LABEL`<br>e.g. `unremind 1 a/birthday`
 **Due**    | `due`
 **List**   | `list`
 **Help**   | `help`

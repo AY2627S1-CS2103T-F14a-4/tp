@@ -26,10 +26,12 @@ import seedu.address.logic.commands.NextCommand;
 import seedu.address.logic.commands.NoteCommand;
 import seedu.address.logic.commands.NoteDeleteCommand;
 import seedu.address.logic.commands.NoteEditCommand;
+import seedu.address.logic.commands.RemindCommand;
 import seedu.address.logic.commands.RescheduleCommand;
 import seedu.address.logic.commands.RestoreCommand;
 import seedu.address.logic.commands.TagCommand;
 import seedu.address.logic.commands.TagDeleteCommand;
+import seedu.address.logic.commands.UnremindCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 
 /**
@@ -94,6 +96,8 @@ public class ClientBookParser {
             case ClearCommand.COMMAND_WORD -> new ClearCommand();
             case FindCommand.COMMAND_WORD -> new FindCommandParser().parse(arguments);
             case ListCommand.COMMAND_WORD -> new ListCommand();
+            case UnremindCommand.COMMAND_WORD -> new UnremindCommandParser().parse(arguments);
+            case RemindCommand.COMMAND_WORD -> new RemindCommandParser().parse(arguments);
             case NextCommand.COMMAND_WORD -> new NextCommandParser().parse(arguments);
             case NoteCommand.COMMAND_WORD -> new NoteCommandParser().parse(arguments);
             case NoteDeleteCommand.COMMAND_WORD -> new NoteDeleteCommandParser().parse(arguments);
