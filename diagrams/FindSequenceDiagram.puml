@@ -2,6 +2,11 @@
 !include style.puml
 skinparam ArrowFontStyle plain
 
+box UI UI_COLOR_T1
+participant ":MainWindow" as MainWindow UI_COLOR
+participant ":PersonListPanel" as PersonListPanel UI_COLOR
+end box
+
 box Logic LOGIC_COLOR_T1
 participant ":LogicManager" as Logic LOGIC_COLOR
 participant ":ClientBookParser" as Parser LOGIC_COLOR
@@ -15,19 +20,21 @@ participant "model:Model" as Model MODEL_COLOR
 participant "filteredPersons:FilteredList<Person>" as FilteredList MODEL_COLOR
 end box
 
-[-> Logic : execute("find Alex David r/client t/priority referral")
+[-> MainWindow : executeCommand("find Alex r/client t/priority k/retirement")
+activate MainWindow
+MainWindow -> Logic : execute(commandText)
 activate Logic
 Logic -> Parser : parseCommand(commandText)
 activate Parser
 Parser -> FindParser : parse(arguments)
 activate FindParser
 note right of FindParser
-Tokenize the optional r/ and t/ filters.
+Tokenize the optional r/, t/ and k/ filters.
 Reject duplicate prefixes and validate supplied values.
-Require at least one name, relationship or tag filter.
+Require at least one name, relationship, tag or detail filter.
 end note
 create Predicate
-FindParser -> Predicate : new PersonMatchesFiltersPredicate(\nnameKeywords, relationship, tagKeywords)
+FindParser -> Predicate : new PersonMatchesFiltersPredicate(\nnameKeywords, relationship, tagKeywords, detailKeywords)
 create Command
 FindParser -> Command : new FindCommand(predicate)
 FindParser --> Parser : command
@@ -45,6 +52,8 @@ loop for each source person
     Names: any keyword (OR)
     Relationship: exact match
     Tags: any keyword (OR)
+    Details: any keyword across preferences, financial
+    information, notes, and follow-up text/date (OR)
     Supplied filter types: all must match (AND)
     end note
     Predicate --> FilteredList : matches
@@ -53,8 +62,16 @@ FilteredList --> Model
 deactivate Model
 Command -> Model : getFilteredPersonList()
 Model --> Command : matchingPersons
-Command --> Logic : CommandResult(matchCount)
+Command --> Logic : CommandResult(matchCount, selectFirstResult=true)
 deactivate Command
-[<-- Logic : CommandResult
+Logic --> MainWindow : commandResult
 deactivate Logic
+MainWindow -> PersonListPanel : selectFirstPerson()
+activate PersonListPanel
+PersonListPanel -> PersonListPanel : select(0)
+PersonListPanel -> PersonListPanel : scrollTo(0)
+PersonListPanel --> MainWindow
+deactivate PersonListPanel
+[<-- MainWindow : commandResult
+deactivate MainWindow
 @enduml
