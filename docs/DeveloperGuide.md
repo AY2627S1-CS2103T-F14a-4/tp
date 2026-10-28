@@ -269,6 +269,8 @@ ordinary space. Other slash-containing text remains part of a value. The parser 
 only an exact `-`, padded with ordinary spaces, means clear. A tab-padded hyphen is normal text and can become
 a stored `-` after trimming. `PreferredContactChannel` and `PreferredContactTiming` are immutable free-text
 values with a 1–200 UTF-16-code-unit limit after surrounding whitespace is removed; internal text is preserved.
+Unpaired UTF-16 surrogates are rejected to prevent replacement characters when saving UTF-8 JSON.
+The top-level parser preserves raw `contact` arguments, including Unicode line separators, for preference validation.
 
 The parser also performs targeted, case-sensitive malformed-prefix detection after ordinary spaces:
 `/ch` and `/tm` followed by whitespace, `/`, or the end of input, and the exact prefixes `cch/`, `chh/`,
