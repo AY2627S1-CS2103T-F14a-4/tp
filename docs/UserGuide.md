@@ -85,12 +85,10 @@ Adds a person to the client book.
 
 Format: `add r/RELATIONSHIP n/NAME e/EMAIL p/PHONE_NUMBER [t/TAG]...`
 
-<box type="tip" seamless>
-
 * `RELATIONSHIP` must be either `Client` or `Prospect`.
 * `NAME` must contain 1–100 characters after leading and trailing whitespace is removed. It may include letters,
   spaces, hyphens (`-`), apostrophes (`'`), and the relationship markers `s/o`, `d/o`, or `w/o`.
-* A name must not duplicate another contact's name.
+* A name must not duplicate another contact's name. Name comparison ignores letter case and repeated spaces.
 * `EMAIL` must contain 5–254 characters, one `@`, no whitespace, text in both the local and domain parts, and at
   least one dot in the domain. Its local part may use common characters such as `.`, `_`, `+`, and `-`; each domain
   label may use letters, digits, and hyphens, and cannot exceed 63 characters.
@@ -104,7 +102,6 @@ Format: `add r/RELATIONSHIP n/NAME e/EMAIL p/PHONE_NUMBER [t/TAG]...`
   multiple numbers are entered.
 * Parameters may be entered in any order.
 * Each optional `TAG` must contain only letters and numbers, with no spaces. Use `t/` before every tag.
-</box>
 
 Examples:
 * `add r/Client n/John Doe e/john.doe@example.com p/91234567`
@@ -173,7 +170,7 @@ Format: `edit INDEX [r/RELATIONSHIP] [n/NAME] [p/PHONE] [e/EMAIL]`
 * At least one of the optional fields must be provided.
 * Existing values will be updated to the input values.
 * `RELATIONSHIP` must be either `Client` or `Prospect`.
-* The edited name must not duplicate another contact's name.
+* The edited name must not duplicate another contact's name. Name comparison ignores letter case and repeated spaces.
 * `EMAIL` must meet the same format requirements as `add`, including a total length of 5–254 characters and a
   maximum of 63 characters for each domain label.
 * The edited email address and phone number must not duplicate those of another contact. Phone numbers use the same
@@ -247,16 +244,6 @@ Examples:
 * `contact 2 ch/Email tm/-` changes the channel and clears the timing.
 * `contact 2 ch/-` clears only the channel, keeping any recorded timing.
 
-**Prefix restrictions:** A `ch/` or `tm/` preceded by a space always starts a preference, even inside text;
-there is no quoting or escaping. Other slash-containing text, such as `Weekdays AM/PM`, is preserved.
-Malformed parameters `/ch` and `/tm` (including `/ch/VALUE` and `/tm/VALUE`) and the exact typos
-`cch/`, `chh/`, `ttm/`, and `tmm/` are rejected after an ordinary space, even inside a preference.
-For example, `contact 2 /ch Email` and `contact 2 ch/WhatsApp tmm/Evenings` report:
-`Invalid contact parameter. Use ch/CHANNEL or tm/TIMING; use - to clear a preference.`
-Neither command changes the stored preferences. Detection is limited to these patterns; other misspellings
-may be saved as text. For example, `ch/Email xx/After 6 pm` records the entire text as the channel,
-without setting a timing.
-
 ### Adding a dated interaction note: `note`
 
 Adds a dated note to a client or prospect. Notes appear on the person's card in ascending date order (oldest first).
@@ -309,16 +296,7 @@ Examples of other accepted notes:
 * `note 1 d/2020-02-29 n/Reviewed the client's long-term goals.` (Backdated entry.)
 * `note 1 d/2026-10-06 n/Shared https://example.com/plans/retirement; discussed option A/B.`
 
-Missing indices, dates or note prefixes produce an error. Dates such as `2026-02-30` are rejected with
-`Interaction date must be a valid date in yyyy-MM-dd format.` Blank note text produces
-`Interaction note cannot be empty.` An index outside the displayed list produces
-`The person index provided is invalid.` These input errors leave the stored records unchanged.
-
-Unsupported or empty `t/` values report
-`Interaction type must be MEETING, CALL, MESSAGE, OTHER, or UNSPECIFIED.` Unsupported or empty `o/` values report
-`Interaction outcome must be SUCCESSFUL, UNSUCCESSFUL, PENDING, or UNSPECIFIED.` Repeated header prefixes
-produce the standard duplicate-prefix error. Use lowercase prefixes with a slash (`t/CALL`, not `t=CALL`).
-Metadata written after `n/` remains literal note text and does not set type or outcome.
+Invalid input leaves existing notes unchanged.
 
 Backdated notes are placed in chronological order. Notes with the same date retain their existing order;
 new notes with that date appear after them. Displayed note numbers update to match this order.
@@ -357,11 +335,7 @@ Other examples:
 This updates the second note of the first displayed contact. Success message:
 `Updated interaction note 2 for PERSON_NAME.`
 
-Missing arguments, missing both editable fields, invalid indices, invalid dates, and blank supplied text produce an error
-without changing records. Invalid dates produce `Interaction date must be a valid date in yyyy-MM-dd format.`
-An out-of-range contact index produces `The person index provided is invalid.` An out-of-range note index,
-including when the contact has no notes, produces `The interaction note index provided is invalid.`
-Blank text produces `Interaction note cannot be empty.`
+Invalid input does not change existing records.
 
 ### Deleting a dated interaction note: `notedelete`
 
@@ -384,13 +358,7 @@ Example: `notedelete 1 2`
 This deletes the second note of the first displayed contact. Success message:
 `Deleted interaction note 2 for PERSON_NAME (2026-10-18): Client interested in investment`
 
-The message includes the deleted note's original date and an excerpt of its content. Whitespace in the excerpt
-is collapsed to single spaces. At most 80 Unicode code points of content are shown, followed by `…` if truncated.
-This formatting does not change stored note content. Deletion cannot be undone.
-
-Missing or extra arguments and invalid indices produce an error without changing records.
-An out-of-range contact index produces `The person index provided is invalid.` An out-of-range note index,
-including when the contact has no notes, produces `The interaction note index provided is invalid.`
+Deletion cannot be undone. Invalid input does not change existing records.
 
 ### Locating persons by name, relationship, tags or remembered details: `find`
 
@@ -509,22 +477,9 @@ The success message is `Next action for NAME has been updated successfully.`
 The card shows the description, due date and a text status: `Pending`, `Overdue`, or `Completed`.
 An incomplete action becomes overdue when its date is earlier than the computer's current local date.
 An action due today is pending. Cards without a next action do not show this area.
-Status is calculated when a card is rendered. If the app stays open overnight, restart it to refresh all card labels.
+If the app stays open overnight, restart it to refresh all card labels.
 
-Input | Error message
-------|--------------
-`next` | `Person index is required.`
-`next 1 d/2026-10-20` | `Next action is required: use a/ACTION.`
-`next 1 a/Call` or `next 1 a/Call d/` | `Due date is required: use d/yyyy-MM-dd.`
-`next 0 a/Call d/2026-10-20` or a negative/non-integer index | `Index must be a positive integer.`
-`next 99 a/Call d/2026-10-20` when fewer than 99 people are displayed | `The person index provided is invalid.`
-`next 1 a/ d/2026-10-20` or an action over 200 characters | `Next action must contain 1 to 200 characters.`
-`next 1 a/Call d/2026-02-30` | `Due date must be a valid date in yyyy-MM-dd format.`
-`next 1 a/Call d/2026-10-25` when today is `2026-10-26` | `Follow-up date cannot be before today.`
-
-Repeated `a/` or `d/` prefixes produce the standard duplicate-prefix error. Space-prefixed `a/` and `d/`
-are reserved delimiters and cannot appear literally within the description. URLs such as `https://example.com`
-and other text are accepted. Rejected commands leave the person's data unchanged.
+Rejected commands leave the person's data unchanged.
 
 ### Rescheduling a follow-up: `reschedule`
 
@@ -557,7 +512,7 @@ Examples:
 
 The success message is `Follow-up for NAME has been rescheduled successfully.`.
 Invalid indices, date formats and descriptions report the same validation messages as `next`.
-Changes are saved automatically using the existing follow-up storage format.
+Changes are saved automatically.
 
 ### Completing a follow-up: `done`
 
@@ -575,15 +530,7 @@ If the action is already completed, repeating `done` returns the normal message
 `Next action for NAME is already completed.` without changing the record or current filter.
 Running `next` for that person later replaces the action and resets its status to pending.
 
-The command checks these conditions in the order shown; a rejected command leaves all data unchanged:
-
-Condition | Error message
-----------|--------------
-The index is outside the currently displayed list | `The person index provided is invalid.`
-The person has no next action | `NAME has no next action to complete.`
-
-`done` without an index reports `Person index is required.`. Zero, negative numbers, non-integers,
-and extra arguments such as `done 1 2` report `Index must be a positive integer.`.
+If a `done` command is rejected, the record and current filter remain unchanged.
 
 ### Setting a yearly reminder: `remind`
 
