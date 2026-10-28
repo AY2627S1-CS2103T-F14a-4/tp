@@ -4,15 +4,23 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.commons.util.JsonUtil;
+import seedu.address.logic.commands.DueCommand;
+import seedu.address.model.Model;
+import seedu.address.model.ModelManager;
+import seedu.address.model.UserPrefs;
 import seedu.address.model.person.NextAction;
 import seedu.address.model.person.Person;
+import seedu.address.testutil.ClientBookBuilder;
 import seedu.address.testutil.PersonBuilder;
 
 public class JsonAdaptedNextActionTest {
@@ -27,6 +35,35 @@ public class JsonAdaptedNextActionTest {
                 assertEquals(source, JsonUtil.fromJsonString(json, JsonAdaptedPerson.class).toModelType());
             }
         }
+    }
+
+    @Test
+    public void toModelType_rescheduledAction_preservesOtherFieldsAndPendingStatus() throws Exception {
+        for (boolean completed : new boolean[] {false, true}) {
+            Person original = new PersonBuilder().withFinancialNeed("Retirement").withPriority("High")
+                    .withAreaOfInterest("Insurance").withPreferredContactChannel("WhatsApp")
+                    .withPreferredContactTiming("Evening").withTags("friend")
+                    .withNextAction(new NextAction("Call", LocalDate.of(2026, 10, 20), completed)).build();
+            Person updated = original.withNextAction(original.getNextAction().orElseThrow()
+                    .reschedule(LocalDate.of(2026, 10, 30), "Email"));
+            String json = JsonUtil.toJsonString(new JsonAdaptedPerson(updated));
+            Person loaded = JsonUtil.fromJsonString(json, JsonAdaptedPerson.class).toModelType();
+            assertEquals(updated, loaded);
+            assertEquals(new NextAction("Email", LocalDate.of(2026, 10, 30), false),
+                    loaded.getNextAction().orElseThrow());
+        }
+    }
+
+    @Test
+    public void toModelType_historicalFollowup_remainsAvailableToDueView() throws Exception {
+        Person source = new PersonBuilder()
+                .withNextAction(new NextAction("Call", LocalDate.of(2000, 1, 1), false)).build();
+        String json = JsonUtil.toJsonString(new JsonAdaptedPerson(source));
+        Person restored = JsonUtil.fromJsonString(json, JsonAdaptedPerson.class).toModelType();
+        Model model = new ModelManager(new ClientBookBuilder().withPerson(restored).build(), new UserPrefs());
+        Clock clock = Clock.fixed(Instant.parse("2026-10-26T04:00:00Z"), ZoneOffset.UTC);
+        new DueCommand(clock).execute(model, null);
+        assertEquals(List.of(source), model.getFilteredPersonList());
     }
 
     @Test

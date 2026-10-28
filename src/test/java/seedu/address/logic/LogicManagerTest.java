@@ -27,6 +27,7 @@ import seedu.address.logic.commands.BackupCommand;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.NextCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.Model;
@@ -69,7 +70,7 @@ public class LogicManagerTest {
         logic.execute("edit 1 p/81234567");
         logic.execute("info 1 pr/Protection");
         logic.execute("note 1 d/2000-01-01 n/Discussed plans");
-        logic.execute("next 1 a/Call d/2000-01-02");
+        logic.execute("next 1 a/Call d/" + LocalDate.now().plusDays(2));
         logic.execute("done 1");
         Person beforeInvalidInput = model.getFilteredPersonList().getFirst();
         assertThrows(ParseException.class, () -> logic.execute("contact 1 ch/Phone tm/"));
@@ -79,6 +80,13 @@ public class LogicManagerTest {
         Person restored = reopened.readClientBook().orElseThrow().getPersonList().getFirst();
         assertEquals("WhatsApp", restored.getPreferredContactChannel().orElseThrow().value);
         assertEquals("Weekdays after 6 pm", restored.getPreferredContactTiming().orElseThrow().value);
+    }
+
+    @Test
+    public void execute_nextWithPastDate_rejectsWithoutReplacingExistingFollowup() {
+        NextAction original = new NextAction("Call", LocalDate.of(2000, 1, 1), true);
+        model.addPerson(new PersonBuilder(AMY).withNextAction(original).build());
+        assertCommandException("next 1 a/Email d/" + LocalDate.now().minusDays(1), NextCommand.MESSAGE_PAST_DATE);
     }
 
     @Test
@@ -163,7 +171,7 @@ public class LogicManagerTest {
     public void execute_notesThenUpdates_savedHistorySurvivesReopening() throws Exception {
         model.addPerson(new Person(AMY.getName(), AMY.getPhone(), AMY.getEmail(), Relationship.CLIENT));
         logic.execute("note 1 d/2000-02-29 n/Discussed retirement; https://example.com/a/b n/text d/text");
-        logic.execute("note 1 d/2000-02-29 n/Discussed retirement; https://example.com/a/b n/text d/text");
+        logic.execute("note 1 d/2000-03-01 n/Discussed retirement; https://example.com/a/b n/text d/text");
         assertEquals(2, model.getFilteredPersonList().get(0).getInteractionNotes().size());
         logic.execute("edit 1 p/81234567");
         logic.execute("info 1 fn/Retirement");
@@ -174,7 +182,11 @@ public class LogicManagerTest {
         assertEquals(model.getClientBook(), reopened.getClientBook());
         Person restored = reopened.getFilteredPersonList().get(0);
         assertEquals(2, restored.getInteractionNotes().size());
-        assertEquals(restored.getInteractionNotes().get(0), restored.getInteractionNotes().get(1));
+        assertEquals(List.of(new InteractionNote(LocalDate.of(2000, 2, 29),
+                "Discussed retirement; https://example.com/a/b n/text d/text"),
+                new InteractionNote(LocalDate.of(2000, 3, 1),
+                        "Discussed retirement; https://example.com/a/b n/text d/text")),
+                restored.getInteractionNotes());
         assertEquals("81234567", restored.getPhone().value);
         assertEquals("Retirement", restored.getFinancialNeed().orElseThrow().value);
         assertEquals(Relationship.CLIENT, restored.getRelationship());

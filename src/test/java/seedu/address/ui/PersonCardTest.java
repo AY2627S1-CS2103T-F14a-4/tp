@@ -9,6 +9,7 @@ import static seedu.address.testutil.TypicalPersons.BENSON;
 import static seedu.address.testutil.TypicalPersons.getTypicalClientBook;
 
 import java.time.LocalDate;
+import java.time.MonthDay;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -34,11 +35,38 @@ import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.InteractionNote;
+import seedu.address.model.person.InteractionOutcome;
+import seedu.address.model.person.InteractionType;
 import seedu.address.model.person.NextAction;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.RecurringReminder;
 import seedu.address.testutil.PersonBuilder;
 
 public class PersonCardTest {
+    @Test
+    public void interactionMetadata_displaysCanonicalAndUnspecifiedValues() throws Exception {
+        CompletableFuture<Void> checked = new CompletableFuture<>();
+        Platform.runLater(() -> {
+            try {
+                InteractionNote typed = new InteractionNote(LocalDate.of(2000, 1, 1), "No answer",
+                        InteractionType.CALL, InteractionOutcome.UNSUCCESSFUL);
+                InteractionNote legacy = new InteractionNote(LocalDate.of(2000, 1, 2), "Old note");
+                VBox notes = (VBox) new PersonCard(new PersonBuilder(ALICE).withInteractionNotes(typed, legacy).build(),
+                        1).getRoot().lookup("#interactionNotes");
+                Label typedLabel = (Label) notes.getChildren().get(1);
+                Label legacyLabel = (Label) notes.getChildren().get(2);
+                assertEquals("1. 2000-01-01 [Type: CALL; Outcome: UNSUCCESSFUL]: No answer", typedLabel.getText());
+                assertEquals("2. 2000-01-02 [Type: UNSPECIFIED; Outcome: UNSPECIFIED]: Old note",
+                        legacyLabel.getText());
+                assertTrue(typedLabel.isWrapText());
+                checked.complete(null);
+            } catch (Throwable error) {
+                checked.completeExceptionally(error);
+            }
+        });
+        checked.get(10, TimeUnit.SECONDS);
+    }
+
     @Test
     public void filteredList_displaysOriginalIndexUntilPersonDeleted() throws Exception {
         CompletableFuture<Void> checked = new CompletableFuture<>();
@@ -209,6 +237,31 @@ public class PersonCardTest {
         checked.get(10, TimeUnit.SECONDS);
     }
 
+    @Test
+    public void recurringReminders_hiddenWhenAbsent_showsUpcomingDateAndWrappedLabel() throws Exception {
+        CompletableFuture<Void> checked = new CompletableFuture<>();
+        Platform.runLater(() -> {
+            try {
+                VBox absent = (VBox) new PersonCard(ALICE, 1).getRoot().lookup("#recurringReminders");
+                assertFalse(absent.isVisible());
+                assertFalse(absent.isManaged());
+                RecurringReminder reminder = new RecurringReminder("A".repeat(50), MonthDay.of(2, 29));
+                Region card = new PersonCard(ALICE.withRecurringReminder(reminder), 1).getRoot();
+                VBox reminders = (VBox) card.lookup("#recurringReminders");
+                assertTrue(reminders.isVisible());
+                assertTrue(reminders.isManaged());
+                Label label = (Label) reminders.getChildren().getFirst();
+                assertEquals("Yearly | " + reminder.nextOccurrence(LocalDate.now()) + ": " + reminder.getLabel(),
+                        label.getText());
+                assertTrue(label.isWrapText());
+                checked.complete(null);
+            } catch (Throwable error) {
+                checked.completeExceptionally(error);
+            }
+        });
+        checked.get(10, TimeUnit.SECONDS);
+    }
+
     /** Starts the real toolkit; headless Linux runs need a virtual display such as Xvfb. */
     @BeforeAll
     public static void startToolkit() throws Exception {
@@ -296,15 +349,15 @@ public class PersonCardTest {
                 root.layout();
                 ListView<?> list = (ListView<?>) root.lookup("#personListView");
                 VBox notes = (VBox) displayedCell(list, 0).getGraphic().lookup("#interactionNotes");
-                assertEquals("1. " + duplicate, ((Label) notes.getChildren().get(1)).getText());
-                assertEquals("2. " + backdated, ((Label) notes.getChildren().get(2)).getText());
+                assertEquals("1. " + backdated, ((Label) notes.getChildren().get(1)).getText());
+                assertEquals("2. " + duplicate, ((Label) notes.getChildren().get(2)).getText());
                 assertEquals("3. " + duplicate, ((Label) notes.getChildren().get(3)).getText());
 
                 new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON).execute(model, null);
                 root.layout();
                 notes = (VBox) displayedCell(list, 0).getGraphic().lookup("#interactionNotes");
                 assertEquals(3, notes.getChildren().size());
-                assertEquals("1. " + backdated, ((Label) notes.getChildren().get(1)).getText());
+                assertEquals("1. " + duplicate, ((Label) notes.getChildren().get(1)).getText());
                 assertEquals("2. " + duplicate, ((Label) notes.getChildren().get(2)).getText());
 
                 new NoteDeleteCommand(INDEX_FIRST_PERSON, INDEX_FIRST_PERSON).execute(model, null);

@@ -13,7 +13,10 @@ import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BOB;
 import static seedu.address.testutil.TypicalPersons.getTypicalClientBook;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -22,6 +25,7 @@ import seedu.address.commons.core.index.Index;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.ContactCommand.ContactDescriptor;
 import seedu.address.logic.parser.ClientBookParser;
+import seedu.address.logic.parser.ContactCommandParser;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.ClientBook;
 import seedu.address.model.Model;
@@ -138,6 +142,22 @@ public class ContactCommandTest {
     }
 
     @Test
+    public void parse_mistypedParameters_noMutation() {
+        Person original = new PersonBuilder(model.getFilteredPersonList().get(1))
+                .withPreferredContactChannel("Email").withPreferredContactTiming("Weekends")
+                .withFinancialNeed("Retirement").withPriority("High").withAreaOfInterest("Insurance").build();
+        model.setPerson(model.getFilteredPersonList().get(1), original);
+        List<Person> expectedPersons = List.copyOf(model.getClientBook().getPersonList());
+        for (String fields : List.of("/ch sms", "/tm Evenings", "ch/WhatsApp tmm/Evenings",
+                "tm/Evenings chh/Phone", "ch/- tmm/Evenings", "tm/- cch/Phone",
+                "ch/Phone tm/Evenings ttm/Weekends")) {
+            assertThrows(ParseException.class, ContactCommandParser.MESSAGE_INVALID_PARAMETER, () ->
+                    parser.parseCommand("contact 2 " + fields).execute(model, null));
+            assertEquals(expectedPersons, model.getClientBook().getPersonList());
+        }
+    }
+
+    @Test
     public void parse_invalidInputWithClear_noMutation() {
         Person original = populatedPerson();
         model.setPerson(model.getFilteredPersonList().getFirst(), original);
@@ -229,7 +249,8 @@ public class ContactCommandTest {
         assertEquals(expected, model.getFilteredPersonList().getFirst());
         NextAction action = new NextAction("Email", LocalDate.of(2000, 1, 3), false);
         expected = new PersonBuilder(expected).withNextAction(action).build();
-        parser.parseCommand("next 1 a/Email d/2000-01-03").execute(model, null);
+        new NextCommand(INDEX_FIRST_PERSON, action,
+                Clock.fixed(Instant.parse("2000-01-03T04:00:00Z"), ZoneOffset.UTC)).execute(model, null);
         assertEquals(expected, model.getFilteredPersonList().getFirst());
         parser.parseCommand("done 1").execute(model, null);
         assertEquals(new PersonBuilder(expected).withNextAction(action.markCompleted()).build(),

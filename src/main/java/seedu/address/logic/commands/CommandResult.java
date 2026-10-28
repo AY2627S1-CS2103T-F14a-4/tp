@@ -22,21 +22,33 @@ public class CommandResult {
     /** The command has already persisted the model. */
     private final boolean modelSaved;
 
+    /** The first displayed person should be selected. */
+    private final boolean selectFirstResult;
+
     /**
      * Constructs a {@code CommandResult} with the specified fields.
      */
     public CommandResult(String feedbackToUser, boolean showHelp, boolean exit) {
-        this(feedbackToUser, showHelp, exit, false);
+        this(feedbackToUser, showHelp, exit, false, false);
     }
 
     /**
      * Constructs a {@code CommandResult} with the specified display and persistence state.
      */
     public CommandResult(String feedbackToUser, boolean showHelp, boolean exit, boolean modelSaved) {
+        this(feedbackToUser, showHelp, exit, modelSaved, false);
+    }
+
+    /**
+     * Constructs a {@code CommandResult} with the specified display, persistence, and selection state.
+     */
+    public CommandResult(String feedbackToUser, boolean showHelp, boolean exit, boolean modelSaved,
+            boolean selectFirstResult) {
         this.feedbackToUser = requireNonNull(feedbackToUser);
         this.showHelp = showHelp;
         this.exit = exit;
         this.modelSaved = modelSaved;
+        this.selectFirstResult = selectFirstResult;
     }
 
     /**
@@ -66,6 +78,11 @@ public class CommandResult {
         return modelSaved;
     }
 
+    /** Returns whether the first displayed person should be selected. */
+    public boolean shouldSelectFirstResult() {
+        return selectFirstResult;
+    }
+
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -80,12 +97,13 @@ public class CommandResult {
         return feedbackToUser.equals(otherCommandResult.feedbackToUser)
                 && showHelp == otherCommandResult.showHelp
                 && exit == otherCommandResult.exit
-                && modelSaved == otherCommandResult.modelSaved;
+                && modelSaved == otherCommandResult.modelSaved
+                && selectFirstResult == otherCommandResult.selectFirstResult;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(feedbackToUser, showHelp, exit, modelSaved);
+        return Objects.hash(feedbackToUser, showHelp, exit, modelSaved, selectFirstResult);
     }
 
     @Override
@@ -95,6 +113,7 @@ public class CommandResult {
                 .add("showHelp", showHelp)
                 .add("exit", exit)
                 .add("modelSaved", modelSaved)
+                .add("selectFirstResult", selectFirstResult)
                 .toString();
     }
 

@@ -51,6 +51,8 @@ public class PersonCard extends UiPart<Region> {
     @FXML
     private VBox interactionNotes;
     @FXML
+    private VBox recurringReminders;
+    @FXML
     private Label nextAction;
     @FXML
     private Label preferredContactChannel;
@@ -82,6 +84,18 @@ public class PersonCard extends UiPart<Region> {
             nextAction.getStyleClass().add("followup-" + status.toLowerCase(Locale.ROOT));
             return status + " | Due " + action.getDueDate() + ": " + action.getAction();
         }));
+        LocalDate today = LocalDate.now();
+        recurringReminders.setVisible(!person.getRecurringReminders().isEmpty());
+        recurringReminders.setManaged(!person.getRecurringReminders().isEmpty());
+        person.getRecurringReminders().forEach(reminder -> {
+            Label label = new Label("Yearly | " + reminder.nextOccurrence(today) + ": " + reminder.getLabel());
+            label.getStyleClass().add("cell_small_label");
+            label.setWrapText(true);
+            label.setMinWidth(0);
+            label.setPrefWidth(0);
+            label.setMaxWidth(Double.MAX_VALUE);
+            recurringReminders.getChildren().add(label);
+        });
         interactionNotes.setVisible(!person.getInteractionNotes().isEmpty());
         interactionNotes.setManaged(!person.getInteractionNotes().isEmpty());
         for (int i = 0; i < person.getInteractionNotes().size(); i++) {

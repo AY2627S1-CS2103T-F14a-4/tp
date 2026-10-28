@@ -1,6 +1,7 @@
 package seedu.address.logic.parser;
 
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_DETAIL_KEYWORD;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_RELATIONSHIP;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
 
@@ -37,15 +38,17 @@ public class FindCommandParser implements Parser<FindCommand> {
         }
 
         ArgumentMultimap argumentMultimap = ArgumentTokenizer.tokenize(" " + trimmedArgs, PREFIX_RELATIONSHIP,
-                PREFIX_TAG);
-        argumentMultimap.verifyNoDuplicatePrefixesFor(PREFIX_RELATIONSHIP, PREFIX_TAG);
+                PREFIX_TAG, PREFIX_DETAIL_KEYWORD);
+        argumentMultimap.verifyNoDuplicatePrefixesFor(PREFIX_RELATIONSHIP, PREFIX_TAG, PREFIX_DETAIL_KEYWORD);
         Optional<String> relationshipValue = argumentMultimap.getValue(PREFIX_RELATIONSHIP);
         Optional<Relationship> relationship = relationshipValue.isEmpty()
                 ? Optional.empty() : Optional.of(ParserUtil.parseRelationship(relationshipValue.get()));
         String nameKeywordsValue = argumentMultimap.getPreamble();
         List<String> nameKeywords = parseNameKeywords(nameKeywordsValue);
         List<String> tagKeywords = parseTagKeywords(argumentMultimap.getValue(PREFIX_TAG));
-        return new FindCommand(new PersonMatchesFiltersPredicate(nameKeywords, relationship, tagKeywords));
+        List<String> detailKeywords = parseDetailKeywords(argumentMultimap.getValue(PREFIX_DETAIL_KEYWORD));
+        return new FindCommand(new PersonMatchesFiltersPredicate(nameKeywords, relationship, tagKeywords,
+                detailKeywords));
     }
 
     private static List<String> parseNameKeywords(String nameKeywordsValue) throws ParseException {
@@ -68,5 +71,17 @@ public class FindCommandParser implements Parser<FindCommand> {
         }
         Set<Tag> tags = ParserUtil.parseTags(List.of(tagValue.get().split("\\s+")));
         return tags.stream().map(tag -> tag.tagName).sorted().toList();
+    }
+
+    private static List<String> parseDetailKeywords(Optional<String> detailValue) throws ParseException {
+        if (detailValue.isEmpty()) {
+            return List.of();
+        }
+        String normalizedDetailKeywords = detailValue.get().trim();
+        if (normalizedDetailKeywords.isEmpty()) {
+            throw new ParseException(
+                    String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE));
+        }
+        return List.of(normalizedDetailKeywords.split("\\s+"));
     }
 }

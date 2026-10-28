@@ -40,6 +40,45 @@ public class PersonListPanel extends UiPart<Region> {
         allPersons.addListener((ListChangeListener<Person>) change -> personListView.refresh());
     }
 
+    /** Selects and scrolls to the first displayed person, or clears selection when the list is empty. */
+    void selectFirstPerson() {
+        if (personListView.getItems().isEmpty()) {
+            personListView.getSelectionModel().clearSelection();
+            return;
+        }
+        selectAndScrollTo(0);
+    }
+
+    /** Selects and scrolls to the next displayed person, stopping at the final person. */
+    void selectNextPerson() {
+        int selectedIndex = personListView.getSelectionModel().getSelectedIndex();
+        if (selectedIndex < 0) {
+            selectFirstPerson();
+            return;
+        }
+        selectAndScrollTo(Math.min(selectedIndex + 1, personListView.getItems().size() - 1));
+    }
+
+    /** Selects and scrolls to the previous displayed person, stopping at the first person. */
+    void selectPreviousPerson() {
+        int selectedIndex = personListView.getSelectionModel().getSelectedIndex();
+        if (selectedIndex < 0) {
+            selectFirstPerson();
+            return;
+        }
+        selectAndScrollTo(Math.max(selectedIndex - 1, 0));
+    }
+
+    /** Returns whether a displayed person is currently selected. */
+    boolean hasSelectedPerson() {
+        return personListView.getSelectionModel().getSelectedIndex() >= 0;
+    }
+
+    private void selectAndScrollTo(int index) {
+        personListView.getSelectionModel().select(index);
+        personListView.scrollTo(index);
+    }
+
     /**
      * Custom {@code ListCell} that displays the graphics of a {@code Person} using a {@code PersonCard}.
      */

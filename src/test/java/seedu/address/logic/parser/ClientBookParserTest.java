@@ -7,6 +7,7 @@ import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -27,9 +28,11 @@ import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.InfoCommand;
 import seedu.address.logic.commands.ListCommand;
+import seedu.address.logic.commands.RescheduleCommand;
 import seedu.address.logic.commands.RestoreCommand;
 import seedu.address.logic.commands.TagCommand;
 import seedu.address.logic.commands.TagDeleteCommand;
+import seedu.address.logic.commands.UnremindCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.PersonMatchesFiltersPredicate;
@@ -81,6 +84,21 @@ public class ClientBookParserTest {
     }
 
     @Test
+    public void parseCommand_reschedule() throws Exception {
+        LocalDate date = LocalDate.of(2026, 11, 2);
+        assertEquals(new RescheduleCommand(INDEX_FIRST_PERSON, date, null),
+                parser.parseCommand("reschedule 1 d/2026-11-02"));
+        assertEquals(new RescheduleCommand(INDEX_FIRST_PERSON, date, "Send revised proposal"),
+                parser.parseCommand("reschedule 1 a/Send revised proposal d/2026-11-02"));
+    }
+
+    @Test
+    public void parseCommand_unremind() throws Exception {
+        assertEquals(new UnremindCommand(INDEX_FIRST_PERSON, "birthday"),
+                parser.parseCommand("unremind 1 a/birthday"));
+    }
+
+    @Test
     public void parseCommand_due() throws Exception {
         assertTrue(parser.parseCommand("due") instanceof DueCommand);
         assertTrue(parser.parseCommand("  due \t ") instanceof DueCommand);
@@ -113,7 +131,8 @@ public class ClientBookParserTest {
         List<String> keywords = List.of("foo", "bar", "baz");
         FindCommand command = (FindCommand) parser.parseCommand(
                 FindCommand.COMMAND_WORD + " " + keywords.stream().collect(Collectors.joining(" ")));
-        assertEquals(new FindCommand(new PersonMatchesFiltersPredicate(keywords, Optional.empty(), List.of())),
+        assertEquals(new FindCommand(new PersonMatchesFiltersPredicate(keywords, Optional.empty(), List.of(),
+                        List.of())),
                 command);
     }
 
@@ -122,7 +141,7 @@ public class ClientBookParserTest {
         FindCommand command = (FindCommand) parser.parseCommand(FindCommand.COMMAND_WORD + " r/client");
 
         assertEquals(new FindCommand(new PersonMatchesFiltersPredicate(List.of(), Optional.of(Relationship.CLIENT),
-                List.of())), command);
+                List.of(), List.of())), command);
     }
 
     @Test
@@ -131,7 +150,7 @@ public class ClientBookParserTest {
         FindCommand command = (FindCommand) parser.parseCommand(FindCommand.COMMAND_WORD + " foo bar r/client");
 
         assertEquals(new FindCommand(new PersonMatchesFiltersPredicate(keywords, Optional.of(Relationship.CLIENT),
-                List.of())), command);
+                List.of(), List.of())), command);
     }
 
     @Test

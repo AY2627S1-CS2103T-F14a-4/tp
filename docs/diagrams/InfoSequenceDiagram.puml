@@ -32,11 +32,11 @@ deactivate FeatureParser
 Parser --> Logic : command
 deactivate Parser
 
-Logic -> Live : getClientBook(), getUserPrefs(),\ngetFilteredPersonPredicate()
-Live --> Logic : data, preferences, predicate
+Logic -> Live : getClientBook(), getUserPrefs(),\ngetFilteredPersonPredicate(), getFilteredPersonComparator()
+Live --> Logic : data, preferences, predicate, comparator
 create Temp
 Logic -> Temp : new ModelManager(data, preferences)
-Logic -> Temp : updateFilteredPersonList(predicate)
+Logic -> Temp : updateFilteredPersonList(predicate, comparator)
 Logic -> Command : execute(temporary, storage)
 activate Command
 Command -> Temp : getClientBook().getPersonList()
@@ -58,7 +58,7 @@ opt client book changed
 end
 note over Logic, Live : Save failure returns an error without committing.\nUnchanged data skips saving.
 Logic -> Live : setClientBook(updated client book)
-Logic -> Live : updateFilteredPersonList(predicate)
+Logic -> Live : updateFilteredPersonList(predicate, comparator)
 [<-- Logic : CommandResult
 deactivate Logic
 @enduml

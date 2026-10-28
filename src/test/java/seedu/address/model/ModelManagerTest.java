@@ -2,19 +2,23 @@ package seedu.address.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BENSON;
 
+import java.util.Comparator;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.model.person.NameContainsKeywordsPredicate;
+import seedu.address.model.person.Person;
 import seedu.address.testutil.ClientBookBuilder;
+import seedu.address.testutil.PersonBuilder;
 
 public class ModelManagerTest {
 
@@ -71,6 +75,23 @@ public class ModelManagerTest {
     @Test
     public void getFilteredPersonList_modifyList_throwsUnsupportedOperationException() {
         assertThrows(UnsupportedOperationException.class, () -> modelManager.getFilteredPersonList().remove(0));
+    }
+
+    @Test
+    public void updateFilteredPersonList_sortedView_tracksReplacementsWithoutReorderingStoredPeople() {
+        modelManager = new ModelManager(new ClientBookBuilder().withPerson(BENSON).withPerson(ALICE).build(),
+                new UserPrefs());
+        Comparator<Person> names = Comparator.comparing(person -> person.getName().fullName);
+        modelManager.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS, names);
+        assertEquals(List.of(ALICE, BENSON), modelManager.getFilteredPersonList());
+        assertEquals(List.of(BENSON, ALICE), modelManager.getClientBook().getPersonList());
+        Person renamedAlice = new PersonBuilder(ALICE).withName("Zoe").build();
+        modelManager.setPerson(ALICE, renamedAlice);
+        assertEquals(List.of(BENSON, renamedAlice), modelManager.getFilteredPersonList());
+        assertEquals(names, modelManager.getFilteredPersonComparator());
+        modelManager.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
+        assertEquals(List.of(BENSON, renamedAlice), modelManager.getFilteredPersonList());
+        assertNull(modelManager.getFilteredPersonComparator());
     }
 
     @Test

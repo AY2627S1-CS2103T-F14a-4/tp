@@ -65,7 +65,7 @@ public class FindCommandTest {
         NameContainsKeywordsPredicate predicate = preparePredicate(" ");
         FindCommand command = new FindCommand(predicate);
         expectedModel.updateFilteredPersonList(predicate);
-        assertCommandSuccess(command, model, expectedMessage, expectedModel);
+        assertCommandSuccess(command, model, expectedFindResult(expectedMessage), expectedModel);
         assertEquals(List.of(), model.getFilteredPersonList());
     }
 
@@ -75,7 +75,7 @@ public class FindCommandTest {
         NameContainsKeywordsPredicate predicate = preparePredicate("Kurz Elle Kunz");
         FindCommand command = new FindCommand(predicate);
         expectedModel.updateFilteredPersonList(predicate);
-        assertCommandSuccess(command, model, expectedMessage, expectedModel);
+        assertCommandSuccess(command, model, expectedFindResult(expectedMessage), expectedModel);
         assertEquals(List.of(CARL, ELLE, FIONA), model.getFilteredPersonList());
     }
 
@@ -95,7 +95,8 @@ public class FindCommandTest {
 
         expectedRelationshipModel.updateFilteredPersonList(predicate);
 
-        assertCommandSuccess(command, relationshipModel, expectedMessage, expectedRelationshipModel);
+        assertCommandSuccess(command, relationshipModel, expectedFindResult(expectedMessage),
+                expectedRelationshipModel);
         assertEquals(List.of(clientCarl, clientFiona), relationshipModel.getFilteredPersonList());
     }
 
@@ -116,7 +117,8 @@ public class FindCommandTest {
 
         expectedCombinedFilterModel.updateFilteredPersonList(predicate);
 
-        assertCommandSuccess(command, combinedFilterModel, expectedMessage, expectedCombinedFilterModel);
+        assertCommandSuccess(command, combinedFilterModel, expectedFindResult(expectedMessage),
+                expectedCombinedFilterModel);
         assertEquals(List.of(clientCarl), combinedFilterModel.getFilteredPersonList());
     }
 
@@ -137,7 +139,8 @@ public class FindCommandTest {
 
         expectedCombinedFilterModel.updateFilteredPersonList(predicate);
 
-        assertCommandSuccess(command, combinedFilterModel, expectedMessage, expectedCombinedFilterModel);
+        assertCommandSuccess(command, combinedFilterModel, expectedFindResult(expectedMessage),
+                expectedCombinedFilterModel);
         assertEquals(List.of(clientCarl, clientFiona), combinedFilterModel.getFilteredPersonList());
     }
 
@@ -154,5 +157,9 @@ public class FindCommandTest {
      */
     private NameContainsKeywordsPredicate preparePredicate(String userInput) {
         return new NameContainsKeywordsPredicate(List.of(userInput.split("\\s+")));
+    }
+
+    private CommandResult expectedFindResult(String message) {
+        return new CommandResult(message, false, false, false, true);
     }
 }
