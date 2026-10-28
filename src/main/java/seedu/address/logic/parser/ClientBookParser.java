@@ -43,8 +43,9 @@ public class ClientBookParser {
      * Used for initial separation of command word and args.
      */
     private static final Pattern BASIC_COMMAND_FORMAT = Pattern.compile("(?<commandWord>\\S+)(?<arguments>.*)");
-    private static final Pattern INFO_COMMAND_FORMAT = Pattern.compile(
-            "\\s*" + InfoCommand.COMMAND_WORD + "(?=\\s|$)(?<arguments>.*)", Pattern.DOTALL);
+    private static final Pattern RAW_VALUE_COMMAND_FORMAT = Pattern.compile(
+            "\\s*(?<commandWord>" + InfoCommand.COMMAND_WORD + "|" + ContactCommand.COMMAND_WORD
+                    + ")(?=\\s|$)(?<arguments>.*)", Pattern.DOTALL);
     private static final Logger logger = LogsCenter.getLogger(ClientBookParser.class);
 
     /**
@@ -55,10 +56,12 @@ public class ClientBookParser {
      * @throws ParseException if the user input does not conform to the expected format
      */
     public Command parseCommand(String userInput) throws ParseException {
-        // Preserve raw info values so trailing control characters reach field validation.
-        Matcher infoMatcher = INFO_COMMAND_FORMAT.matcher(userInput);
-        if (infoMatcher.matches()) {
-            return new InfoCommandParser().parse(infoMatcher.group("arguments"));
+        // Preserve raw values, including line separators and trailing controls, for field validation.
+        Matcher rawValueMatcher = RAW_VALUE_COMMAND_FORMAT.matcher(userInput);
+        if (rawValueMatcher.matches()) {
+            String rawArguments = rawValueMatcher.group("arguments");
+            return rawValueMatcher.group("commandWord").equals(InfoCommand.COMMAND_WORD)
+                    ? new InfoCommandParser().parse(rawArguments) : new ContactCommandParser().parse(rawArguments);
         }
         final Matcher matcher = BASIC_COMMAND_FORMAT.matcher(userInput.trim());
         if (!matcher.matches()) {

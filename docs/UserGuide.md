@@ -231,8 +231,9 @@ Format: `contact INDEX [ch/CHANNEL|-] [tm/TIMING|-]`
 * A supplied value replaces that preference; omitted preferences and other person details stay unchanged.
   An exact `-`, optionally surrounded by ordinary spaces, clears a preference. Clearing an absent preference is safe.
   Type `-` directly to clear; a larger value such as `Phone-call` remains text.
-* Each value must contain 1–200 characters after surrounding whitespace is removed. Internal spaces and case
-  are kept. Free text, Unicode and punctuation are accepted, including `Phone/WhatsApp` and `Weekdays 6:30–8 pm`.
+* Each value must contain 1–200 characters of valid Unicode text after surrounding whitespace is removed.
+  Internal spaces and case are kept. Free text, Unicode and punctuation are accepted,
+  including `Phone/WhatsApp` and `Weekdays 6:30–8 pm`.
   Empty or whitespace-only values are invalid.
 * Preferences are saved automatically. If either supplied preference is invalid, neither changes.
   Cleared preferences remain absent after restarting the application.
