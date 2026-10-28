@@ -271,6 +271,21 @@ duplicate-prefix checks and `ParserUtil.parseIndex`, but retains raw preference 
 prefix boundaries as `ArgumentTokenizer`. `ClientBookParser` passes the original contact arguments so its initial
 trimming cannot change marker recognition. The shared tokenizer is unchanged.
 
+#### Parameter parsing and validation
+
+Missing or invalid indices produce `Index must be a positive integer.` An index outside the full contact list or
+belonging to a person hidden by the current filter produces `The person index provided is invalid.` Missing fields
+produce `At least one of ch/ or tm/ is required.` Duplicate `ch/` or `tm/` prefixes are rejected. These recognized
+prefixes, when preceded by a space, are delimiters and cannot be included literally in values. Other slash-containing
+text, such as `AM/PM` or `Phone/WhatsApp`, is preserved as part of the value.
+
+Reversed parameters `/ch` and `/tm` (including `/ch/VALUE` and `/tm/VALUE`) and repeated-letter prefixes `cch/`,
+`chh/`, `ttm/`, and `tmm/` are rejected when preceded by an ordinary space. The error explains: `Invalid contact
+parameter. Use ch/CHANNEL or tm/TIMING; use - to clear a preference.` These exact forms are treated as parameter
+mistakes even inside a preference. Detection is deliberately limited: other slash-containing text, including
+`Email xx/After 6 pm`, remains valid. Other misspellings may be stored as free text, so check the saved preference
+when unsure.
+
 Only an exact `-` surrounded by ordinary spaces clears a preference. Non-marker values retain the existing trimming
 and validation through immutable `PreferredContactChannel` and `PreferredContactTiming`. Thus a tab-padded hyphen is
 normal text, not a clear operation. Free text, Unicode, punctuation and the 1-200-character limit remain supported.
@@ -368,8 +383,10 @@ measurement. No fixed card height or forced list refresh is needed.
 
 #### Validation and scope
 
-The parser distinguishes missing index, date and note prefix; malformed calendar dates and blank text have specific
-errors. Execution rejects indices outside the currently displayed list before changing the model.
+Missing indices, dates or note prefixes produce an error. Dates such as `2026-02-30` are rejected with
+`Interaction date must be a valid date in yyyy-MM-dd format.` Blank note text produces
+`Interaction note cannot be empty.` An index outside the displayed list produces
+`The person index provided is invalid.` These input errors leave the stored records unchanged.
 
 This feature provides adding, displaying, editing and deleting dated notes. Chronological sorting,
 structured interaction outcomes and note search remain separate user stories.
@@ -379,6 +396,12 @@ structured interaction outcomes and note search remain separate user stories.
 `noteedit CONTACT_INDEX NOTE_INDEX n/NEW_NOTE_CONTENT` is routed to `NoteEditCommandParser`.
 The parser requires two positive indices followed by `n/` and nonblank text. As with `note`, everything after
 the prefix is treated as note content, including further prefix-like strings.
+
+Missing arguments, missing both editable fields, invalid indices, invalid dates, and blank supplied text produce an
+error without changing records. Invalid dates produce `Interaction date must be a valid date in yyyy-MM-dd format.`
+An out-of-range contact index produces `The person index provided is invalid.` An out-of-range note index, including
+when the contact has no notes, produces `The interaction note index provided is invalid.` Blank text produces
+`Interaction note cannot be empty.`
 
 `NoteEditCommand` resolves the contact against the filtered list and the note against its chronologically ordered
 history, using one-based indices. It rejects out-of-range indices (including empty histories) before mutation.
@@ -399,6 +422,10 @@ second interaction note from the first contact in the currently filtered list.
 
 `notedelete CONTACT_INDEX NOTE_INDEX` is routed to `NoteDeleteCommandParser`, which requires exactly two
 positive integer indices using `ParserUtil.parseIndex`.
+
+Missing or extra arguments and invalid indices produce an error without changing records. An out-of-range contact
+index produces `The person index provided is invalid.` An out-of-range note index, including when the contact has
+no notes, produces `The interaction note index provided is invalid.`
 
 `NoteDeleteCommand` resolves the contact against the currently filtered list and the note against that
 contact's chronologically ordered history. Both indices are one-based. Out-of-range indices, including an empty
@@ -442,6 +469,23 @@ and strict calendar validation. Both parsing and model construction restrict the
 year zero is rejected, including when loading JSON. Calendar parsing and the model continue to
 accept historical dates so existing saved follow-ups remain loadable as they become overdue.
 
+##### Validation errors
+
+Input | Error message
+------|--------------
+`next` | `Person index is required.`
+`next 1 d/2026-10-20` | `Next action is required: use a/ACTION.`
+`next 1 a/Call` or `next 1 a/Call d/` | `Due date is required: use d/yyyy-MM-dd.`
+`next 0 a/Call d/2026-10-20` or a negative/non-integer index | `Index must be a positive integer.`
+`next 99 a/Call d/2026-10-20` when fewer than 99 people are displayed | `The person index provided is invalid.`
+`next 1 a/ d/2026-10-20` or an action over 200 characters | `Next action must contain 1 to 200 characters.`
+`next 1 a/Call d/2026-02-30` | `Due date must be a valid date in yyyy-MM-dd format.`
+`next 1 a/Call d/2026-10-25` when today is `2026-10-26` | `Follow-up date cannot be before today.`
+
+Repeated `a/` or `d/` prefixes produce the standard duplicate-prefix error. Space-prefixed `a/` and `d/`
+are reserved delimiters and cannot appear literally within the description. URLs such as `https://example.com`
+and other text are accepted.
+
 `NextCommand` resolves the visible person against its index in the complete list, rejects invalid indices,
 and checks the requested date against `LocalDate.now(clock)` before any mutation. Both new and
 replacement follow-ups must be dated today or later; past dates produce
@@ -470,6 +514,20 @@ rejecting zero, negative, non-integer and multiple indices.
 `DoneCommand` first resolves the visible person against its index in the complete list, then checks that the selected
 person has a next action. These checks occur before any model mutation and report, respectively,
 `Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX` and `NAME has no next action to complete.`.
+
+##### Validation errors
+
+The command checks these conditions in the order shown; a rejected command leaves all data and the current filter
+unchanged:
+
+Condition | Error message
+----------|--------------
+The index is outside the currently displayed list | `The person index provided is invalid.`
+The person has no next action | `NAME has no next action to complete.`
+
+`done` without an index reports `Person index is required.`. Zero, negative numbers, non-integers, and extra
+arguments such as `done 1 2` report `Index must be a positive integer.`.
+
 If the action is already completed, the command returns a normal `CommandResult` with
 `Next action for NAME is already completed.` without calling `Model#setPerson` or changing the filter.
 
