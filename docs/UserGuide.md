@@ -167,6 +167,8 @@ Edits an existing person in the client book.
 
 Format: `edit INDEX [r/RELATIONSHIP] [n/NAME] [p/PHONE] [e/EMAIL]`
 
+<box type="tip" seamless>
+
 * Edits the person at the specified `INDEX`. The index refers to the index number shown in the displayed person list. The index **must be a positive integer** 1, 2, 3, ...
 * At least one of the optional fields must be provided.
 * Existing values will be updated to the input values.
@@ -176,6 +178,8 @@ Format: `edit INDEX [r/RELATIONSHIP] [n/NAME] [p/PHONE] [e/EMAIL]`
 * The edited email address and phone number must not duplicate those of another contact. Phone numbers use the same
   formatting-insensitive, multiple-number comparison as `add`; for example, `9999 9999` and `99999999` conflict.
   Email-domain casing is also ignored, so `alice@example.com` conflicts with `alice@EXAMPLE.COM`.
+
+</box>
 
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.
@@ -705,15 +709,9 @@ ClientBook data is saved automatically as a JSON file `[JAR file location]/data/
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, ClientBook starts with an empty client book at the next run. The invalid file remains on disk until you run a command (ClientBook saves after every command). Still, we recommend backing up the file before editing it.<br>
+If your changes make the data file invalid, ClientBook starts with an empty client book at the next run. The invalid file remains on disk until ClientBook next successfully saves record data, for example, after a command that changes records. Still, we recommend backing up the file before editing it.<br>
 Furthermore, certain edits can cause the ClientBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
-
-### Archiving data files `[coming in v2.0]`
-
-_Details coming soon ..._
-
---------------------------------------------------------------------------------------------------------------------
 
 ## FAQ
 
