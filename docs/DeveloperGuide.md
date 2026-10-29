@@ -13,11 +13,9 @@
 
 ## **Acknowledgements**
 
-* Junhan Liu (`ZachL1113`) used OpenAI ChatGPT/Codex to draft most of the implementation, tests and UG/DG text
-  for `next`/`due`/`done` (US18–20), `reschedule` (US21), `remind`/`unremind` (US22), and the fixes for #115
-  (`next` rejects past dates) and #138 (`due` sorts by date), plus the v1.3 delete tests and documentation.
-  AI also assisted with UG product/download references and UG/DG find instructions for PR #67.
-  Junhan directed the work, reviewed the changes and tested them before submission.
+* Liu Junhan (`ZachL1113`) used OpenAI ChatGPT/Codex to assist with implementation, testing and documentation for
+  `delete`, `next`, `due`, `done`, `reschedule`, `remind` and `unremind`, including the related bug fixes
+  and the delete confirmation. Liu Junhan directed the work, reviewed the changes and tested them before submission.
 
 * Koey Xian Han (`KoeyXianHan123`) used OpenAI ChatGPT and Codex to assist with implementation reviews, debugging,
   test generation, and documentation improvements for the `info` and `contact` features. This included assistance
