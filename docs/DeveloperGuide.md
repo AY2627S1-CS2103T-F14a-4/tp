@@ -430,7 +430,7 @@ or outcome.
 This feature provides adding, displaying, editing and deleting dated notes, with chronological sorting and
 structured type/outcome metadata. Searching interaction notes (US16) remains outside this feature.
 
-#### Interaction type and outcome (US15)
+#### Interaction type and outcome
 
 `InteractionType` contains `MEETING`, `CALL`, `MESSAGE`, `OTHER`, and `UNSPECIFIED`.
 `InteractionOutcome` contains `SUCCESSFUL`, `UNSUCCESSFUL`, `PENDING`, and `UNSPECIFIED`.
