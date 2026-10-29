@@ -20,18 +20,10 @@ public class FindCommand extends Command {
 
     public static final String COMMAND_WORD = "find";
 
-    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Finds persons matching all supplied filter types. "
-            + "Names, tags and remembered details partially match any corresponding keyword (case-insensitive).\n"
-            + "Parameters: [KEYWORD [MORE_KEYWORDS]...] [" + PREFIX_RELATIONSHIP + "RELATIONSHIP] "
+    public static final String MESSAGE_USAGE = "Parameters: [KEYWORD [MORE_KEYWORDS]...] ["
+            + PREFIX_RELATIONSHIP + "RELATIONSHIP] "
             + "[" + PREFIX_TAG + "TAG [MORE_TAGS...]] "
-            + "[" + PREFIX_DETAIL_KEYWORD + "DETAIL_KEYWORD [MORE_KEYWORDS...]]\n"
-            + "Examples:\n"
-            + COMMAND_WORD + " alice bob charlie\n"
-            + COMMAND_WORD + " " + PREFIX_RELATIONSHIP + "client\n"
-            + COMMAND_WORD + " " + PREFIX_TAG + "priority referral\n"
-            + COMMAND_WORD + " " + PREFIX_DETAIL_KEYWORD + "retirement WhatsApp\n"
-            + COMMAND_WORD + " alice " + PREFIX_RELATIONSHIP + "client " + PREFIX_TAG + "priority "
-            + PREFIX_DETAIL_KEYWORD + "retirement";
+            + "[" + PREFIX_DETAIL_KEYWORD + "DETAIL_KEYWORD [MORE_KEYWORDS...]]";
 
     private final Predicate<Person> predicate;
 

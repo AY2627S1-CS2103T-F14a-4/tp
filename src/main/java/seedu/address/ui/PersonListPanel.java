@@ -2,6 +2,7 @@ package seedu.address.ui;
 
 import java.util.logging.Logger;
 
+import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -77,6 +78,12 @@ public class PersonListPanel extends UiPart<Region> {
     private void selectAndScrollTo(int index) {
         personListView.getSelectionModel().select(index);
         personListView.scrollTo(index);
+        Platform.runLater(() -> {
+            if (personListView.getSelectionModel().getSelectedIndex() == index) {
+                personListView.layout();
+                personListView.scrollTo(index);
+            }
+        });
     }
 
     /**

@@ -74,6 +74,7 @@ else no matches
 end
 PersonListPanel --> MainWindow
 deactivate PersonListPanel
+MainWindow -> MainWindow : enable find-result navigation\nif a person is selected
 [<-- MainWindow : commandResult
 deactivate MainWindow
 @enduml
