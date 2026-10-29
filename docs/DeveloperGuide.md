@@ -71,7 +71,7 @@ The bulk of the app's work is done by the following four components:
 
 **How the architecture components interact with each other**
 
-The *Sequence Diagram* below shows how the components interact with each other for the scenario where the user issues the command `delete 1`.
+The *Sequence Diagram* below shows the deletion phase after the user enters `delete 1` and confirms with `Y`.
 
 <puml src="diagrams/ArchitectureSequenceDiagram.puml" width="574" />
 
@@ -271,6 +271,11 @@ Tag deletion uses a two-phase Logic flow. The initial `Logic#execute(String)` ca
 stores the pending `TagDeleteCommand`, and returns a `CommandResult` containing `Are you sure you want to delete
 this?`, the contact name, the exact stored tags that will be removed, and the accepted responses. `MainWindow`
 displays the result through the existing result box below the command box.
+
+`TagDeleteCommand` and `DeleteCommand` implement `ConfirmableCommand`, sharing one pending command in
+`LogicManager`. Its `handleConfirmation` method uses the same response rules and invalid-response message
+for both commands; each command supplies its validation/prompt and cancellation message. Tag deletion's
+existing prompt, success messages and `Tag deletion cancelled.` feedback are unchanged.
 
 While a deletion is pending, `LogicManager` interprets the next command-box input as a confirmation response instead
 of parsing it as a new command. `y` and `yes` execute the stored command; `n` and `no` discard it. Matching is
@@ -837,7 +842,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 1.  User requests to list persons
 2.  ClientBook shows a list of persons
 3.  User requests to delete a specific person in the list
-4.  ClientBook deletes the person
+4.  ClientBook shows the person's name and asks for confirmation
+5.  User confirms with Y or Yes
+6.  ClientBook deletes the person
 
     Use case ends.
 
@@ -852,6 +859,18 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
     * 3a1. ClientBook shows an error message.
 
       Use case resumes at step 2.
+
+* 5a. User enters N or No.
+
+    * 5a1. ClientBook cancels deletion without changing the records.
+
+      Use case ends.
+
+* 5b. User enters any other response.
+
+    * 5b1. ClientBook asks for Y/Yes or N/No and keeps the deletion pending.
+
+      Use case resumes at step 5.
 
 **Use case: Update a client relationship**
 
@@ -1207,7 +1226,7 @@ exists in the full list. The same indices apply after `find` or due-date sorting
 tags, interaction notes, next action and yearly reminders. Other records retain their details; remaining
 full-list indices shift down. The active filter and comparator are retained. `LogicManager` saves the
 temporary model before committing it to the live model, so command or save failures leave live data unchanged.
-There is no confirmation prompt or undo. Success reports `RELATIONSHIP NAME has been deleted successfully.`,
+Confirmed deletion cannot be undone. Success reports `RELATIONSHIP NAME has been deleted successfully.`,
 for example `Client John Doe has been deleted successfully.` or `Prospect Jane Tan has been deleted successfully.`.
 
 ##### Validation errors
@@ -1218,8 +1237,19 @@ Missing index | `Client index is required.`
 More than one argument | `Delete command only accepts a client index.`
 Zero, negative, non-integer or overflowing index | `Client index must be a positive integer.`
 Index is outside the full list or its person is hidden | `No client exists at index N.`
+Unrecognised response during confirmation | `Please enter Y/Yes or N/No.`
 
 Checks run in the order shown. Rejection preserves the data, filter and sorting.
+
+Before deletion, `DeleteCommand#getConfirmationMessage` validates the currently visible index without changing data or saved files. The shared `LogicManager` confirmation flow shows:
+
+```text
+Are you sure you want to delete this?
+Contact: NAME
+Enter Y/Yes to confirm or N/No to cancel.
+```
+
+`Y` or `Yes` confirms deletion. `N` or `No` cancels with `Person deletion cancelled.`. Matching ignores case and surrounding whitespace. Other responses show `Please enter Y/Yes or N/No.` and keep confirmation pending. Confirmation revalidates the index before deletion. Confirmed deletion cannot be undone.
 
 #### Manual regression checks
 
@@ -1237,15 +1267,17 @@ note 2 d/2026-10-06 n/Discussed next steps.
 
     1. Prerequisites: Prepare the records above and run `list`.
 
-    2. Test case: `delete 1`<br>
-       Expected: `Client John Doe has been deleted successfully.` John is removed. Jane moves to index 1,
+    2. Test case: `delete 1`, then `Y`<br>
+       Expected: The prompt names John Doe without deleting him. After `Y`,
+       `Client John Doe has been deleted successfully.` John is removed. Jane moves to index 1,
        with her financial information and interaction note unchanged.
 
     3. Test case: `exit`, then reopen the app from the same folder.<br>
        Expected: John remains absent. Jane and her recorded details are retained.
 
-    4. Test case: `delete 1`<br>
-       Expected: `Prospect Jane Tan has been deleted successfully.` The list becomes empty.
+    4. Test case: `delete 1`, then `Yes`<br>
+       Expected: The prompt names Jane Tan. After confirmation,
+       `Prospect Jane Tan has been deleted successfully.` The list becomes empty.
 
     5. Test case: `exit`, then reopen the app again.<br>
        Expected: The list stays empty; sample records do not replace the saved empty list.
@@ -1254,8 +1286,9 @@ note 2 d/2026-10-06 n/Discussed next steps.
 
     1. Prerequisites: Recreate the test records above, then run `find Jane`.
 
-    2. Test case: `delete 2`<br>
-       Expected: Jane is deleted using her unchanged full-list index. The search results become empty.
+    2. Test case: `delete 2`, then `yes`<br>
+       Expected: The prompt names Jane Tan. Confirmation deletes Jane using her unchanged full-list index.
+       The search results become empty.
 
     3. Test case: `list`<br>
        Expected: John is still present. Repeat this test using `find r/prospect` to check relationship-filtered deletion.
@@ -1285,7 +1318,24 @@ note 2 d/2026-10-06 n/Discussed next steps.
        Expected: `No client exists at index 1.` The empty search stays active. Use `list` and restart the app
        to confirm that both records and their details are retained.
 
-These cases are covered in `DeleteIntegrationTest`. Parser whitespace and integer boundaries are covered in
+4. Cancelling and correcting confirmation responses
+
+    1. Prerequisites: Recreate the records above and run `find Jane`.
+
+    2. Test case: `delete 2`, then `maybe`, then `list`<br>
+       Expected: The prompt names Jane. Both later inputs report `Please enter Y/Yes or N/No.`.
+       The confirmation stays pending; neither the records nor the current search changes.
+
+    3. Test case: `nO`<br>
+       Expected: `Person deletion cancelled.` Jane remains visible and all saved details are unchanged.
+
+    4. Test case: `list`, then `delete 2`, then `yEs`<br>
+       Expected: `list` works normally after cancellation. The new prompt names Jane; confirmation deletes her.
+
+These cases and unchanged-file checks are covered in `DeleteIntegrationTest`. Invalid indices must produce
+their errors immediately, with no pending prompt; a subsequent `list` must work normally.
+Existing `TagDeleteCommandTest` cases cover the unchanged tag confirmation flow.
+Parser whitespace and integer boundaries are covered in
 `DeleteCommandParserTest`.
 
 ### Interaction notes

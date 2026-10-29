@@ -401,19 +401,23 @@ Examples:
 
 ### Deleting a client/prospect: `delete`
 
-Deletes a client or prospect and all their recorded details.
+Deletes a client or prospect and all their recorded details after confirmation.
 
 Format: `delete INDEX`
 
-* Use the index shown beside the person, including in search or `due` results.
-* Delete one person at a time. The person must be visible in the current list.
-* Deletion is saved automatically and cannot be undone. Check the name and index first.
-* Other people's details stay unchanged. Their indices update after deletion; any search stays active.
+* Use the index shown beside the person in the current list, including search and `due` results.
+* Only one index is accepted. An invalid or hidden index shows an error without asking for confirmation.
+* The result box asks `Are you sure you want to delete this?` and shows the person's name. Type `Y` or `Yes`
+  to delete, or `N` or `No` to cancel. Responses ignore case and surrounding spaces.
+* Other input shows `Please enter Y/Yes or N/No.` and keeps the confirmation pending; enter a valid response
+  before using another command.
+* Confirmed deletion is saved automatically and cannot be undone. Other people's details stay unchanged,
+  remaining indices update, and any current search stays active.
 
 Examples:
 
-* `list`, then `delete 2` deletes the person shown at index 2.
-* `find Jane`, then `delete 2` deletes Jane if the index shown beside her is 2.
+* `delete 2`, then `Yes` deletes the person shown at index 2 after confirmation.
+* `find Jane`, then `delete 2`, then `No` keeps Jane if the index shown beside her is 2.
 
 ### Recording the next action: `next`
 
