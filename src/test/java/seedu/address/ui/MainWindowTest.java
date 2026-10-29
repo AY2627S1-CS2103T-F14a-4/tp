@@ -1,6 +1,7 @@
 package seedu.address.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.address.testutil.TypicalPersons.getTypicalClientBook;
@@ -15,7 +16,9 @@ import org.junit.jupiter.api.io.TempDir;
 
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
+import javafx.geometry.Bounds;
 import javafx.scene.Scene;
+import javafx.scene.control.IndexedCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
@@ -144,6 +147,65 @@ public class MainWindowTest {
             }
         });
         checked.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void executeFind_navigateToOffscreenResult_scrollsItIntoView() throws Exception {
+        CompletableFuture<Void> checked = new CompletableFuture<>();
+        Platform.runLater(() -> {
+            Stage stage = new Stage();
+            try {
+                Path clientBookPath = temporaryFolder.resolve("clientbook.json");
+                Path userPrefsPath = temporaryFolder.resolve("userprefs.json");
+                Storage storage = new StorageManager(new JsonClientBookStorage(clientBookPath),
+                        new JsonUserPrefsStorage(userPrefsPath));
+                Logic logic = new LogicManager(new ModelManager(getTypicalClientBook(), new UserPrefs()), storage);
+                MainWindow mainWindow = new MainWindow(stage, logic, clientBookPath);
+                mainWindow.fillInnerParts();
+
+                Scene scene = stage.getScene();
+                scene.getRoot().resize(600, 400);
+                scene.getRoot().applyCss();
+                scene.getRoot().layout();
+                TextField commandTextField = (TextField) scene.lookup("#commandTextField");
+                ListView<?> personListView = (ListView<?>) scene.lookup("#personListView");
+                VirtualFlow<?> virtualFlow = (VirtualFlow<?>) personListView.lookup(".virtual-flow");
+
+                commandTextField.setText("find t/friend");
+                commandTextField.fireEvent(new ActionEvent());
+                assertEquals(3, personListView.getItems().size());
+                assertEquals(0, personListView.getSelectionModel().getSelectedIndex());
+
+                commandTextField.fireEvent(keyPressed(KeyCode.DOWN));
+                commandTextField.fireEvent(keyPressed(KeyCode.DOWN));
+                assertEquals(2, personListView.getSelectionModel().getSelectedIndex());
+
+                Platform.runLater(() -> {
+                    try {
+                        scene.getRoot().layout();
+                        assertCellIsFullyVisible(virtualFlow, 2);
+                        checked.complete(null);
+                    } catch (Throwable error) {
+                        checked.completeExceptionally(error);
+                    } finally {
+                        stage.close();
+                    }
+                });
+            } catch (Throwable error) {
+                checked.completeExceptionally(error);
+                stage.close();
+            }
+        });
+        checked.get(10, TimeUnit.SECONDS);
+    }
+
+    private void assertCellIsFullyVisible(VirtualFlow<?> virtualFlow, int index) {
+        IndexedCell<?> cell = virtualFlow.getVisibleCell(index);
+        assertNotNull(cell);
+        Bounds cellBounds = cell.localToScene(cell.getBoundsInLocal());
+        Bounds viewportBounds = virtualFlow.localToScene(virtualFlow.getBoundsInLocal());
+        assertTrue(cellBounds.getMinY() >= viewportBounds.getMinY());
+        assertTrue(cellBounds.getMaxY() <= viewportBounds.getMaxY());
     }
 
     private KeyEvent keyPressed(KeyCode keyCode) {
