@@ -1,5 +1,7 @@
 package seedu.address.storage;
 
+import java.time.format.DateTimeFormatter;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -8,6 +10,8 @@ import seedu.address.model.person.RecurringReminder;
 
 /** JSON representation of a labelled yearly date. */
 class JsonAdaptedRecurringReminder {
+    private static final DateTimeFormatter MONTH_DAY_FORMATTER = DateTimeFormatter.ofPattern("MM-dd");
+
     private final String label;
     private final String date;
 
@@ -20,7 +24,7 @@ class JsonAdaptedRecurringReminder {
 
     /** Converts a model reminder into portable month/day JSON fields. */
     public JsonAdaptedRecurringReminder(RecurringReminder source) {
-        this(source.getLabel(), source.getDate().toString().substring(2));
+        this(source.getLabel(), source.getDate().format(MONTH_DAY_FORMATTER));
     }
 
     /** Validates saved labels and dates before creating the model value. */

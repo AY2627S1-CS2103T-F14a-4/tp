@@ -131,6 +131,8 @@ public class NextCommandTest {
     public void equals_comparesIndexActionAndClock() {
         NextCommand command = new NextCommand(INDEX_FIRST_PERSON, ACTION, CLOCK);
         assertEquals(command, new NextCommand(INDEX_FIRST_PERSON, ACTION, CLOCK));
+        assertEquals(command.hashCode(),
+                new NextCommand(Index.fromZeroBased(INDEX_FIRST_PERSON.getZeroBased()), ACTION, CLOCK).hashCode());
         assertNotEquals(command, new NextCommand(INDEX_SECOND_PERSON, ACTION, CLOCK));
         assertNotEquals(command, new NextCommand(INDEX_FIRST_PERSON,
                 new NextAction("Email", ACTION.getDueDate(), false), CLOCK));

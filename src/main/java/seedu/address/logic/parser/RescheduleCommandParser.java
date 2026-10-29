@@ -29,7 +29,7 @@ public class RescheduleCommandParser implements Parser<RescheduleCommand> {
         try {
             LocalDate dueDate = NextAction.parseDate(fields.getValue(PREFIX_DUE_DATE).orElseThrow());
             String action = fields.getValue(PREFIX_ACTION)
-                    .map(value -> new NextAction(value, dueDate, false).getAction()).orElse(null);
+                    .map(NextAction::parseAction).orElse(null);
             return new RescheduleCommand(index, dueDate, action);
         } catch (IllegalArgumentException e) {
             throw new ParseException(e.getMessage(), e);

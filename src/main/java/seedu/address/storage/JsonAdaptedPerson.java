@@ -235,6 +235,14 @@ class JsonAdaptedPerson {
             }
             modelNotes.add(note.toModelType());
         }
+        List<RecurringReminder> modelReminders = toModelRecurringReminders();
+        return new Person(modelName, modelPhone, modelEmail, modelTags, modelRelationship,
+                modelFinancialNeed, modelPriority, modelAreaOfInterest, modelNotes,
+                nextAction == null ? null : nextAction.toModelType(), modelChannel, modelTiming, modelReminders);
+    }
+
+    /** Converts recurring reminders while rejecting null entries and case-insensitive duplicate labels. */
+    private List<RecurringReminder> toModelRecurringReminders() throws IllegalValueException {
         List<RecurringReminder> modelReminders = new ArrayList<>();
         Set<String> reminderLabels = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         for (JsonAdaptedRecurringReminder reminder : recurringReminders) {
@@ -247,9 +255,7 @@ class JsonAdaptedPerson {
             }
             modelReminders.add(modelReminder);
         }
-        return new Person(modelName, modelPhone, modelEmail, modelTags, modelRelationship,
-                modelFinancialNeed, modelPriority, modelAreaOfInterest, modelNotes,
-                nextAction == null ? null : nextAction.toModelType(), modelChannel, modelTiming, modelReminders);
+        return modelReminders;
     }
 
     private static Relationship parseRelationship(String relationship) throws IllegalValueException {

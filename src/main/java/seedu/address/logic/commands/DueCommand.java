@@ -24,10 +24,17 @@ public class DueCommand extends Command {
 
     private final Clock clock;
 
+    /** Creates a command that determines today's date in the system default time zone at execution. */
     public DueCommand() {
         this(Clock.systemDefaultZone());
     }
 
+    /**
+     * Creates a command that captures today's date once per execution, using the clock's time zone.
+     * The filter and sort order retain that date until another command replaces them.
+     *
+     * @param clock Non-null clock used to determine the date at execution, not construction.
+     */
     public DueCommand(Clock clock) {
         this.clock = requireNonNull(clock);
     }
@@ -36,27 +43,17 @@ public class DueCommand extends Command {
     public CommandResult execute(Model model, Storage storage) {
         requireNonNull(model);
         LocalDate today = LocalDate.now(clock);
-        model.updateFilteredPersonList(new NextActionDuePredicate(today), dueOrder(today));
+        NextActionDuePredicate predicate = new NextActionDuePredicate(today);
+        model.updateFilteredPersonList(predicate, dueOrder(predicate));
         int count = model.getFilteredPersonList().size();
         return new CommandResult(count == 0 ? MESSAGE_NO_FOLLOW_UPS : String.format(MESSAGE_SUCCESS, count));
     }
 
     /** Orders each person by their earliest qualifying event, using the filter's captured date. */
-    private static Comparator<Person> dueOrder(LocalDate today) {
-        return Comparator.comparing((Person person) -> earliestDueDate(person, today))
+    private static Comparator<Person> dueOrder(NextActionDuePredicate predicate) {
+        return Comparator.comparing((Person person) -> predicate.earliestQualifyingDate(person).orElse(LocalDate.MAX))
                 .thenComparing(person -> person.getName().fullName, String.CASE_INSENSITIVE_ORDER)
                 .thenComparing(person -> person.getName().fullName);
-    }
-
-    private static LocalDate earliestDueDate(Person person, LocalDate today) {
-        LocalDate actionDate = person.getNextAction()
-                .filter(action -> !action.isCompleted() && !action.getDueDate().isAfter(today))
-                .map(action -> action.getDueDate()).orElse(LocalDate.MAX);
-        LocalDate reminderDate = person.getRecurringReminders().stream()
-                .map(reminder -> reminder.nextOccurrence(today))
-                .filter(date -> !date.isAfter(today.plusDays(NextActionDuePredicate.REMINDER_LOOKAHEAD_DAYS)))
-                .min(Comparator.naturalOrder()).orElse(LocalDate.MAX);
-        return actionDate.isBefore(reminderDate) ? actionDate : reminderDate;
     }
 
     @Override
@@ -71,6 +68,11 @@ public class DueCommand extends Command {
         }
 
         return clock.equals(otherCommand.clock);
+    }
+
+    @Override
+    public int hashCode() {
+        return clock.hashCode();
     }
 
     @Override

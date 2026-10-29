@@ -50,6 +50,11 @@ public class DoneCommand extends Command {
     }
 
     @Override
+    public int hashCode() {
+        return Integer.hashCode(index.getZeroBased());
+    }
+
+    @Override
     public String toString() {
         return new ToStringBuilder(this)
                 .add("index", index)

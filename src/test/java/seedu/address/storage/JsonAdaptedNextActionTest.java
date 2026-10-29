@@ -93,9 +93,8 @@ public class JsonAdaptedNextActionTest {
 
     @Test
     public void toModelType_invalidNestedFollowup_rejectsPerson() throws Exception {
-        String json = JsonUtil.toJsonString(new JsonAdaptedPerson(new PersonBuilder().build()));
-        String invalid = json.replace("\"nextAction\" : null",
-                "\"nextAction\" : {\"action\":\"Call\",\"dueDate\":\"2026-02-30\",\"completed\":false}");
+        String invalid = "{\"name\":\"Amy Bee\",\"phone\":\"85355255\",\"email\":\"amy@gmail.com\","
+                + "\"nextAction\":{\"action\":\"Call\",\"dueDate\":\"2026-02-30\",\"completed\":false}}";
         JsonAdaptedPerson adapted = JsonUtil.fromJsonString(invalid, JsonAdaptedPerson.class);
         assertThrows(IllegalValueException.class, adapted::toModelType);
     }
