@@ -51,7 +51,7 @@
         "storage-component": "Storage component",
         "common-classes": "Common classes",
         "implementation": "Implementation",
-        "find-by-name-relationship-tags-and-remembered-details": "Find by name, relationship, tags and remembered details",
+        "find": "Find",
         "tagging-a-person": "Tagging a person",
         "deleting-tags-from-a-person": "Deleting tags from a person",
         "contact-preferences-contact": "Contact preferences (contact)",
@@ -75,6 +75,8 @@
         "deleting-a-client-prospect": "Deleting a client/prospect",
         "interaction-notes": "Interaction notes",
         "finding-persons-by-relationship": "Finding persons by relationship",
+        "managing-tags": "Managing tags",
+        "finding-persons": "Finding persons",
         "saving-data": "Saving data"
       },
       "headingKeywords": {}
