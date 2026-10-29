@@ -374,7 +374,7 @@ validation and atomicity, descriptor states, original filtered indices, and pers
 <a id="dated-interaction-notes"></a>
 <a id="dated-interaction-notes-us14"></a>
 
-### Interaction notes (US14)
+### Interaction notes
 
 `note INDEX d/yyyy-MM-dd [t/TYPE] [o/OUTCOME] n/NOTE` appends an interaction note to the person at the displayed
 client index. It works for clients and prospects, preserves the current filter, and does not replace earlier entries.
