@@ -24,6 +24,9 @@
   with parser validation, regression tests, User Guide and Developer Guide revisions, and the corresponding sequence
   diagrams. The resulting changes were reviewed and validated before submission.
 
+* Tan Wei Jie (`JokThreee`) used OpenAI [Codex](https://openai.com/codex/) to assist with reviewing the interaction-note
+  implementation and revising its documentation, including the feature heading and manual testing instructions.
+
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Setting up, getting started**
@@ -353,7 +356,10 @@ properties load as absent, while non-null values are validated. Clearing therefo
 Present values appear on the card; absent labels are hidden. Regression tests cover financial notation and Unicode,
 validation and atomicity, descriptor states, original filtered indices, and persistence after setting or clearing.
 
-### Dated interaction notes
+<a id="dated-interaction-notes"></a>
+<a id="dated-interaction-notes-us14"></a>
+
+### Interaction notes (US14)
 
 `note INDEX d/yyyy-MM-dd [t/TYPE] [o/OUTCOME] n/NOTE` appends an interaction note to the person at the displayed
 client index. It works for clients and prospects, preserves the current filter, and does not replace earlier entries.
@@ -1266,6 +1272,138 @@ note 2 d/2026-10-06 n/Discussed next steps.
 
 These cases are covered in `DeleteIntegrationTest`. Parser whitespace and integer boundaries are covered in
 `DeleteCommandParserTest`.
+
+### Interaction notes
+
+Use a separate test folder with fictional records. Recreate this setup before each numbered group below:
+
+```text
+clear
+add r/Client n/John Doe e/john@example.com p/91234567
+add r/Prospect n/Jane Tan e/jane@example.com p/98765432
+note 2 d/2020-02-29 t/CALL o/PENDING n/Discussed retirement planning.
+note 2 d/2020-03-02 n/Sent policy details.
+```
+
+John has no notes. Jane has two notes, numbered chronologically. Run each group's test cases in order.
+Rejected commands should leave both records, their notes and the current filter unchanged.
+
+1. Adding notes with `note`
+
+   1. Prerequisites: Prepare the records above and run `list`.
+
+   2. Test case: `note 1 d/2020-03-01 n/Shared https://example.com/plans; discussed option A/B.`<br>
+      Expected: `Added interaction note for John Doe.` The note appears immediately with type and outcome
+      `UNSPECIFIED`; Jane's notes are unchanged.
+
+   3. Test case: `note 2 d/2020-02-28 t/meeting o/successful n/Reviewed goals.`<br>
+      Expected: `Added interaction note for Jane Tan.` The new note appears first, with type `MEETING` and outcome
+      `SUCCESSFUL`. The existing notes become numbers 2 and 3.
+
+   4. Test case: Repeat `note 2 d/2020-02-28 t/meeting o/successful n/Reviewed goals.`<br>
+      Expected: `This interaction note already exists for this contact.` No fourth note is added.
+
+   5. Test case: `note`, `note 1 n/Missing date`, or `note 1 d/2020-03-01`<br>
+      Expected, respectively: `Person index is required.`,
+      `Interaction date is required: use d/yyyy-MM-dd before n/NOTE.`, or
+      `Interaction note is required: use n/NOTE after the date.`
+
+   6. Test case: `note 1 d/2020-03-01 n/` or the same command with only spaces after `n/`<br>
+      Expected: `Interaction note cannot be empty.`
+
+   7. Test case: `note 1 d/2020-02-30 n/Invalid date`<br>
+      Expected: `Interaction date must be a valid date in yyyy-MM-dd format.`
+
+   8. Test case: `note 1 d/2020-03-01 t/EMAIL n/Unsupported type`<br>
+      Expected: `Interaction type must be MEETING, CALL, MESSAGE, OTHER, or UNSPECIFIED.`
+
+   9. Test case: `note 0 d/2020-03-01 n/Test` or `note abc d/2020-03-01 n/Test`<br>
+      Expected: `Index must be a positive integer.`
+
+   10. Test case: `note 3 d/2020-03-01 n/Test`<br>
+       Expected: `The person index provided is invalid.`
+
+2. Editing notes with `noteedit`
+
+   1. Prerequisites: Recreate the setup above and run `find Jane`. Jane remains contact 2, despite being the only result.
+
+   2. Test case: `noteedit 2 1 n/Discussed insurance renewal.`<br>
+      Expected: `Updated interaction note 1 for Jane Tan.` Only the first note's text changes; its date,
+      type `CALL` and outcome `PENDING` are preserved. The search remains active.
+
+   3. Test case: `noteedit 2 2 d/2020-02-28`<br>
+      Expected: `Updated interaction note 2 for Jane Tan.` The edited note now appears first with its text
+      `Sent policy details.` unchanged. The former first note becomes number 2.
+
+   4. Test case: `noteedit 2 2 d/2020-03-01 n/Confirmed renewal details.`<br>
+      Expected: `Updated interaction note 2 for Jane Tan.` Both fields change; type `CALL` and outcome `PENDING`
+      remain. John and the current filter are unchanged.
+
+   5. Test case: `noteedit 1 1 n/Hidden contact` or `noteedit 3 1 n/No contact`<br>
+      Expected: `The person index provided is invalid.`
+
+   6. Test case: `noteedit 2 3 n/No note`<br>
+      Expected: `The interaction note index provided is invalid.`
+
+   7. Test case: `noteedit 0 1 n/Test`, `noteedit 2 0 n/Test`, or `noteedit 2 abc n/Test`<br>
+      Expected: `Index must be a positive integer.`
+
+   8. Test case: `noteedit`, `noteedit 2 1`, or `noteedit 2 1 x/Unsupported`<br>
+      Expected: Invalid command format feedback showing the `noteedit` usage.
+
+   9. Test case: `noteedit 2 1 n/` or the same command with only spaces after `n/`<br>
+      Expected: `Interaction note cannot be empty.`
+
+   10. Test case: `noteedit 2 1 d/2020-02-30`<br>
+       Expected: `Interaction date must be a valid date in yyyy-MM-dd format.`
+
+   11. Test case: `list`, then `noteedit 1 1 n/No history`<br>
+       Expected: `The interaction note index provided is invalid.` John's empty history is unchanged.
+
+3. Deleting notes with `notedelete`
+
+   1. Prerequisites: Recreate the setup above and run `find Jane`.
+
+   2. Test case: `notedelete 1 1` or `notedelete 3 1`<br>
+      Expected: `The person index provided is invalid.` Jane remains visible at contact index 2.
+
+   3. Test case: `notedelete 2 3`<br>
+      Expected: `The interaction note index provided is invalid.`
+
+   4. Test case: `notedelete 0 1`, `notedelete 2 0`, or `notedelete 2 abc`<br>
+      Expected: `Index must be a positive integer.`
+
+   5. Test case: `notedelete`, `notedelete 2`, or `notedelete 2 1 extra`<br>
+      Expected: Invalid command format feedback showing the `notedelete` usage.
+
+   6. Test case: `notedelete 2 1`<br>
+      Expected: `Deleted interaction note 1 for Jane Tan (2020-02-29): Discussed retirement planning.`
+      Only that note is removed. `Sent policy details.` becomes note 1; the search remains active.
+
+   7. Test case: `notedelete 2 1`<br>
+      Expected: `Deleted interaction note 1 for Jane Tan (2020-03-02): Sent policy details.`
+      Jane's empty interaction-note section is hidden. Other contact details remain unchanged.
+
+   8. Test case: `notedelete 2 1` again<br>
+      Expected: `The interaction note index provided is invalid.` The empty history is unchanged.
+
+4. Saving additions, edits and deletions across restarts
+
+   1. Prerequisites: Recreate the setup above.
+
+   2. Test case: `note 1 d/2020-03-01 n/First discussion.`, then `exit`. Reopen the app from the same test folder
+      and run `list`.<br>
+      Expected: John's new note and both of Jane's original notes remain.
+
+   3. Test case: `noteedit 2 1 n/Corrected discussion.`, then `exit`. Reopen from the same folder and run `list`.<br>
+      Expected: Jane's first note retains its original date, type and outcome, with text `Corrected discussion.`
+      Her second note and John's note remain unchanged.
+
+   4. Test case: `notedelete 2 2`, then `exit`. Reopen from the same folder and run `list`.<br>
+      Expected: `Sent policy details.` remains absent. Jane's corrected note and John's note are retained.
+
+   5. Test case: `notedelete 2 1`, then `exit`. Reopen from the same folder and run `list`.<br>
+      Expected: Jane still has no interaction notes; John's note remains.
 
 ### Finding persons by relationship
 
