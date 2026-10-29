@@ -229,13 +229,15 @@ omitted filter types evaluate as matched, while the supplied filter types must a
 ### Tagging a person
 
 `TagCommandParser` reads the first whitespace-separated argument as the displayed-list index and validates each
-remaining argument with `ParserUtil#parseTags(Collection<String>)`. Tag names use the existing alphanumeric-only
-`Tag` validation. `TagCommand` resolves the visible person against its index in the complete list using
-`Command#getVisiblePersonAtIndex`. It then intersects the supplied and existing tag sets. Tag equality is
-case-insensitive, so a non-empty intersection raises a `CommandException` listing the duplicate tags and leaves the
-contact unchanged. Otherwise, the command unions the supplied and existing tags and replaces the immutable `Person`
-through `Model#setPerson`, preserving every non-tag field and the active list filter. The existing JSON adapter
-persists a successfully updated set.
+remaining argument with `ParserUtil#parseTag(String)`. Tag names use the existing alphanumeric-only
+`Tag` validation. It retains the parsed values long enough to detect repeated input before collecting them into a
+set. Because `Tag` equality is case-insensitive, inputs such as `priority PRIORITY` raise a `ParseException` listing
+the duplicate tags. `TagCommand` resolves the visible person against its index in the complete list using
+`Command#getVisiblePersonAtIndex`. It then intersects the supplied and existing tag sets. A non-empty intersection
+raises a `CommandException` listing the tags already on the contact and leaves the contact unchanged. Otherwise, the
+command unions the supplied and existing tags and replaces the immutable `Person` through `Model#setPerson`,
+preserving every non-tag field and the active list filter. The existing JSON adapter persists a successfully updated
+set.
 
 `AddCommandParser` uses the same validation and accepts zero or more `t/TAG` fields. Unlike the required name,
 relationship, email and phone prefixes, `t/` is deliberately repeatable so a new person can be created with several

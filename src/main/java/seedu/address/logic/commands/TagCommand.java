@@ -20,6 +20,7 @@ public class TagCommand extends Command {
     public static final String MESSAGE_USAGE = "Parameters: INDEX TAG [MORE_TAGS...]";
     public static final String MESSAGE_SUCCESS = "Added tags to %s: %s";
     public static final String MESSAGE_DUPLICATE_TAGS = "This contact already has the following tag(s): %s";
+    public static final String MESSAGE_DUPLICATE_INPUT_TAGS = "Duplicate tags provided: %s";
 
     private final Index index;
     private final Set<Tag> tags;

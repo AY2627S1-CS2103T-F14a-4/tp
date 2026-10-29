@@ -133,6 +133,8 @@ Format: `tag INDEX TAG [MORE_TAGS...]`
 * Each `TAG` must contain only letters and numbers, with no spaces.
 * Existing tags are preserved. Tags are compared case-insensitively, so adding `PRIORITY` when `priority` exists
   produces an error and no tags are added.
+* Tags supplied in the same command must also be unique case-insensitively. For example,
+  `tag 1 priority PRIORITY` is rejected without adding either tag.
 
 Examples:
 * `tag 1 priority`

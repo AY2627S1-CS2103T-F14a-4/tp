@@ -23,8 +23,18 @@ public class TagCommandParserTest {
 
     @Test
     public void parse_validIndexAndTags_success() {
-        assertParseSuccess(parser, " 1 priority referral priority ",
+        assertParseSuccess(parser, " 1 priority referral ",
                 new TagCommand(INDEX_FIRST_PERSON, Set.of(new Tag("priority"), new Tag("referral"))));
+    }
+
+    @Test
+    public void parse_duplicateTags_failure() {
+        assertParseFailure(parser, "1 priority priority",
+                String.format(TagCommand.MESSAGE_DUPLICATE_INPUT_TAGS, "[priority]"));
+        assertParseFailure(parser, "1 priority PRIORITY",
+                String.format(TagCommand.MESSAGE_DUPLICATE_INPUT_TAGS, "[PRIORITY]"));
+        assertParseFailure(parser, "1 priority PRIORITY referral REFERRAL",
+                String.format(TagCommand.MESSAGE_DUPLICATE_INPUT_TAGS, "[PRIORITY, REFERRAL]"));
     }
 
     @Test
