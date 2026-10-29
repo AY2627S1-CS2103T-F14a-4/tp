@@ -24,6 +24,12 @@
   with parser validation, regression tests, User Guide and Developer Guide revisions, and the corresponding sequence
   diagrams. The resulting changes were reviewed and validated before submission.
 
+* Phu Xien (`PhuXien`) used OpenAI Codex to assist with implementation reviews, test planning, and documentation
+  improvements for the `find`, `tag`, and `tagdelete` features. This included assistance with auditing parser and
+  predicate behavior, reviewing tag addition and confirmed deletion flows, revising the User Guide and Developer
+  Guide, and refining the corresponding sequence diagrams. The resulting changes were reviewed and validated before
+  submission.
+
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Setting up, getting started**
@@ -1236,9 +1242,77 @@ note 2 d/2026-10-06 n/Discussed next steps.
 These cases are covered in `DeleteIntegrationTest`. Parser whitespace and integer boundaries are covered in
 `DeleteCommandParserTest`.
 
-### Finding persons by relationship
+### Managing tags
 
-1. Filtering clients and prospects
+Use a separate test folder with fictional records. Enter each setup command on a separate line:
+
+```text
+clear
+add r/Client n/John Doe e/john@example.com p/91234567 t/referral
+add r/Prospect n/Jane Tan e/jane@example.com p/98765432
+```
+
+#### Adding tags: `tag`
+
+1. Adding one or more tags
+
+   1. Test case: `tag 2 priority insurance`<br>
+      Expected: Jane Tan gains both tags. Her relationship and contact details remain unchanged.
+
+   2. Test case: `find r/prospect`, followed by `tag 2 followup`<br>
+      Expected: Jane Tan gains `followup`. The command uses her unchanged full-list index even in filtered results.
+
+2. Rejecting invalid or duplicate tags
+
+   1. Test case: `tag 2 PRIORITY warm`<br>
+      Expected: An error reports that `PRIORITY` already exists. Matching is case-insensitive, and `warm` is not
+      added because the command is all-or-nothing.
+
+   2. Test cases: `tag 2 close-friend`, `tag 3 priority`<br>
+      Expected: The first command rejects the non-alphanumeric tag; the second rejects the invalid index. Existing
+      tags and other details remain unchanged.
+
+#### Deleting tags: `tagdelete`
+
+1. Deleting selected tags after confirmation
+
+   1. Prerequisites: Run `list`. Jane Tan is at index 2 with `priority`, `insurance`, and `followup`.
+
+   2. Test case: `tagdelete 2 insurance`, followed by `YeS`<br>
+      Expected: The first command displays Jane Tan and `[insurance]` without changing her record. The confirmation
+      removes only `insurance`; confirmation matching is case-insensitive.
+
+   3. Test case: `tagdelete 1 REFERRAL`, followed by `Y`<br>
+      Expected: John Doe's `referral` tag is removed despite the different letter case.
+
+2. Cancelling or rejecting deletion
+
+   1. Test case: `tagdelete 2 missing`<br>
+      Expected: An error is shown before confirmation because Jane Tan has no such tag. No tags are removed.
+
+   2. Test case: `tagdelete 2`, followed by `maybe`, then `No`<br>
+      Expected: The first command requests deletion of every remaining tag. `maybe` is rejected and leaves the
+      confirmation pending; `No` cancels it, leaving all tags unchanged.
+
+   3. Test case: Repeat `tagdelete 2`, followed by `Y`.<br>
+      Expected: Every tag is removed from Jane Tan while her other details remain unchanged.
+
+### Finding persons
+
+1. Name filtering
+
+   1. Prerequisites: Add persons named `Alex Tan`, `Alexander Lim`, and `Anne-Marie Lee`.
+
+   2. Test case: `find Alex`<br>
+      Expected: Alex Tan and Alexander Lim are displayed because name matching is case-insensitive and contiguous.
+
+   3. Test case: `find Anne`<br>
+      Expected: Anne-Marie Lee is displayed because a keyword can match part of a hyphenated name.
+
+   4. Test cases: `find Alex123`, `find A/ex`<br>
+      Expected: Each command rejects the invalid name keyword and leaves the current list unchanged.
+
+2. Filtering clients and prospects
 
    1. Prerequisites: Add multiple clients and prospects, then display all persons using the `list` command.
 
@@ -1251,7 +1325,7 @@ These cases are covered in `DeleteIntegrationTest`. Parser whitespace and intege
    4. Test case: `find r/Client`<br>
       Expected: The same persons are displayed as for `find r/client`.
 
-2. Invalid relationship filters
+3. Invalid relationship filters
 
     <ol type="i">
       <li>
@@ -1264,13 +1338,13 @@ These cases are covered in `DeleteIntegrationTest`. Parser whitespace and intege
       </li>
     </ol>
 
-3. Combined name and relationship filtering
+4. Combined name and relationship filtering
 
    1. Test case: `find Alex r/client`.<br>
       Expected: Only clients whose names contain the contiguous text `Alex` are displayed. This includes names such
       as `Alexander`, and matching is case-insensitive.
 
-4. Tag filtering
+5. Tag filtering
 
    1. Prerequisites: Add persons tagged `friend`, `friends`, `bestfriend`, and `family`.
 
@@ -1278,7 +1352,7 @@ These cases are covered in `DeleteIntegrationTest`. Parser whitespace and intege
       Expected: The persons tagged `friend`, `friends`, and `bestfriend` are displayed. The person tagged `family`
       is not displayed.
 
-5. Remembered-detail filtering
+6. Remembered-detail filtering
 
    1. Prerequisites: Add a client named Alex with preferred channel `WhatsApp`, financial need `Retirement planning`,
       a `CALL` interaction note dated `2026-10-06` with outcome `SUCCESSFUL` and text
@@ -1293,7 +1367,7 @@ These cases are covered in `DeleteIntegrationTest`. Parser whitespace and intege
       Expected: Alex is displayed only if the record also has the `priority` tag, demonstrating `AND` across filter
       types.
 
-6. Find-result keyboard navigation
+7. Find-result keyboard navigation
 
    1. Prerequisites: Add enough persons matching the same search to require scrolling in the result list.
 

@@ -29,14 +29,14 @@ and stores records locally.
    ![Ui](images/Ui.png)
 
 5. Type a command in the command box and press Enter to execute it. The result box below the command box shows
-   the command you entered followed by its result. For example, type **`help`** and press Enter to open the help window.<br>
+   the command you entered followed by its result.
    Some example commands you can try:
 
    * `list` : Lists all contacts.
 
    * `add r/Client n/John Doe e/johnd@example.com p/98765432` : Adds a client contact named `John Doe`.
 
-   * `delete 3` : Deletes the 3rd contact shown in the current list.
+   * `delete 1` : Deletes the 1st contact shown in the current list.
 
    * `clear` : Deletes all contacts.
 
