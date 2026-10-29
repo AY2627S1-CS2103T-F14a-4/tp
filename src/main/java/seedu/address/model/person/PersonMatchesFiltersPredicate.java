@@ -56,7 +56,8 @@ public class PersonMatchesFiltersPredicate implements Predicate<Person> {
                         || StringUtil.containsSubstringIgnoreCase(action.getDueDate().toString(), keyword))
                 .orElse(false)
                 || person.getInteractionNotes().stream()
-                .anyMatch(note -> StringUtil.containsSubstringIgnoreCase(note.toString(), keyword));
+                .anyMatch(note -> StringUtil.containsSubstringIgnoreCase(note.getDate().toString(), keyword)
+                        || StringUtil.containsSubstringIgnoreCase(note.getText(), keyword));
     }
 
     @Override

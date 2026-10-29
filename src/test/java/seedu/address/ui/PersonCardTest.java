@@ -106,9 +106,9 @@ public class PersonCardTest {
         Platform.runLater(() -> {
             try {
                 Region card = new PersonCard(new PersonBuilder(ALICE)
-                        .withTags("priority", "Friends", "referral").build(), 1).getRoot();
+                        .withTags("zebra", "apple", "Banana").build(), 1).getRoot();
                 FlowPane tags = (FlowPane) card.lookup("#tags");
-                assertEquals(List.of("Friends", "priority", "referral"), tags.getChildren().stream()
+                assertEquals(List.of("apple", "Banana", "zebra"), tags.getChildren().stream()
                         .map(Label.class::cast).map(Label::getText).toList());
                 checked.complete(null);
             } catch (Throwable error) {

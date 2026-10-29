@@ -116,6 +116,7 @@ Shows a list of all persons in the client book.
 Format: `list`
 
 Each person's tags are shown with their contact and relationship details.
+Tags are displayed in alphabetical order, ignoring letter case.
 
 Each person keeps the same index when the list is filtered or their details are edited. Search and due results show
 the person's original `list` index, so use the number shown beside the person for subsequent commands. Indexes are
@@ -127,9 +128,13 @@ Adds one or more tags without removing the person's existing tags.
 
 Format: `tag INDEX TAG [MORE_TAGS...]`
 
-* `INDEX` is the number shown beside the person in the current list, including a filtered list.
-* Each `TAG` must contain only letters and numbers. Separate multiple tags with spaces.
-* Tag matching is case-insensitive. If the person already has any supplied tag, no tags are added.
+* `INDEX` must be a positive integer that refers to a person in the currently displayed list, including filtered
+  search results.
+* Each `TAG` must contain only letters and numbers, with no spaces.
+* Existing tags are preserved. Tags are compared case-insensitively, so adding `PRIORITY` when `priority` exists
+  produces an error and no tags are added.
+* Tags supplied in the same command must also be unique case-insensitively. For example,
+  `tag 1 priority PRIORITY` is rejected without adding either tag.
 
 Examples:
 
@@ -377,6 +382,7 @@ Format: `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...
 * Provide at least one filter. Each prefix may appear only once; `r/`, `t/`, and `k/` may appear in any order.
 * Matching is case-insensitive. Multiple values within the name, tag, or detail filter use **OR**. Different supplied
   filter types use **AND**.
+* Keyword order does not matter; for example, `Hans Bo` matches `Bo Hans`.
 * `k/` does not search names, phone numbers, email addresses, relationships, tags, or follow-up completion status.
 * Results keep their `list` order and indexes. The first result is selected automatically; use <kbd>Up</kbd> and
   <kbd>Down</kbd> to move through results. Selection and scrolling stop at the list boundaries. No result means no

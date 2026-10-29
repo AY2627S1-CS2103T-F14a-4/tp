@@ -110,7 +110,7 @@ public class PersonCard extends UiPart<Region> {
             interactionNotes.getChildren().add(label);
         }
         person.getTags().stream()
-                .sorted(Comparator.comparing(tag -> tag.tagName))
+                .sorted(Comparator.comparing(tag -> tag.tagName, String.CASE_INSENSITIVE_ORDER))
                 .forEach(tag -> tags.getChildren().add(new Label(tag.tagName)));
     }
 
