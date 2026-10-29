@@ -16,8 +16,8 @@ end box
 
 box Model MODEL_COLOR_T1
 participant "predicate:PersonMatchesFiltersPredicate" as Predicate MODEL_COLOR
-participant "model:Model" as Model MODEL_COLOR
-participant "filteredPersons:FilteredList<Person>" as FilteredList MODEL_COLOR
+participant "live:Model" as Live MODEL_COLOR
+participant "temporary:ModelManager" as Temp MODEL_COLOR
 end box
 
 [-> MainWindow : executeCommand("find Alex r/client t/priority k/retirement")
@@ -28,11 +28,7 @@ Logic -> Parser : parseCommand(commandText)
 activate Parser
 Parser -> FindParser : parse(arguments)
 activate FindParser
-note right of FindParser
-Tokenize the optional r/, t/ and k/ filters.
-Reject duplicate prefixes and validate supplied values.
-Require at least one name, relationship, tag or detail filter.
-end note
+note right of FindParser : Tokenize and validate filters;\nrequire at least one.
 create Predicate
 FindParser -> Predicate : new PersonMatchesFiltersPredicate(\nnameKeywords, relationship, tagKeywords, detailKeywords)
 create Command
@@ -41,35 +37,41 @@ FindParser --> Parser : command
 deactivate FindParser
 Parser --> Logic : command
 deactivate Parser
-Logic -> Command : execute(model)
+
+Logic -> Live : getClientBook(), getUserPrefs(),\ngetFilteredPersonPredicate(), getFilteredPersonComparator()
+Live --> Logic : data, preferences, currentPredicate, comparator
+create Temp
+Logic -> Temp : new ModelManager(data, preferences)
+Logic -> Temp : updateFilteredPersonList(currentPredicate, comparator)
+Logic -> Command : execute(temporary, storage)
 activate Command
-Command -> Model : updateFilteredPersonList(predicate)
-activate Model
-Model -> FilteredList : setPredicate(predicate)
+Command -> Temp : updateFilteredPersonList(predicate)
+activate Temp
 loop for each source person
-    FilteredList -> Predicate : test(person)
-    note right of Predicate
-    Names: any keyword (OR)
-    Relationship: exact match
-    Tags: any keyword (OR)
-    Details: any keyword across preferences, financial
-    information, notes, and follow-up text/date (OR)
-    Supplied filter types: all must match (AND)
-    end note
-    Predicate --> FilteredList : matches
+    Temp -> Predicate : test(person)
+    note right of Predicate : Within each multi-value filter: OR\nAcross supplied filter types: AND
+    Predicate --> Temp : matches
 end
-FilteredList --> Model
-deactivate Model
-Command -> Model : getFilteredPersonList()
-Model --> Command : matchingPersons
+deactivate Temp
+Command -> Temp : getFilteredPersonList()
+Temp --> Command : matchingPersons
 Command --> Logic : CommandResult(matchCount, selectFirstResult=true)
 deactivate Command
+
+note right of Logic : Records are unchanged; skip storage.
+Logic -> Temp : getClientBook(), getFilteredPersonPredicate(),\ngetFilteredPersonComparator()
+Temp --> Logic : data, findPredicate, comparator
+Logic -> Live : setClientBook(data)
+Logic -> Live : updateFilteredPersonList(findPredicate, comparator)
 Logic --> MainWindow : commandResult
 deactivate Logic
 MainWindow -> PersonListPanel : selectFirstPerson()
 activate PersonListPanel
-PersonListPanel -> PersonListPanel : select(0)
-PersonListPanel -> PersonListPanel : scrollTo(0)
+alt at least one match
+    PersonListPanel -> PersonListPanel : select(0); scrollTo(0)
+else no matches
+    PersonListPanel -> PersonListPanel : clearSelection()
+end
 PersonListPanel --> MainWindow
 deactivate PersonListPanel
 MainWindow -> MainWindow : enable find-result navigation\nif a person is selected

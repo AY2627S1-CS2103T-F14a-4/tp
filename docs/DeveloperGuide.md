@@ -24,6 +24,17 @@
   with parser validation, regression tests, User Guide and Developer Guide revisions, and the corresponding sequence
   diagrams. The resulting changes were reviewed and validated before submission.
 
+* Phu Xien (`PhuXien`) used OpenAI Codex to assist with implementation reviews, test planning, and documentation
+  improvements for the `find`, `tag`, and `tagdelete` features. This included assistance with auditing parser and
+  predicate behavior, reviewing tag addition and confirmed deletion flows, revising the User Guide and Developer
+  Guide, and refining the corresponding sequence diagrams. The resulting changes were reviewed and validated before
+  submission.
+
+* Nicholas Goh (**nicholas-gohh**) used Codex to assist with implementation reviews, test generation, documentation
+  improvements, and debugging for the `add`, `edit`, and storage features. This included Developer Guide and User
+  Guide revisions, parser validation, and regression testing. Nicholas reviewed and validated the changes before
+  submission.
+
 * Tan Wei Jie (`JokThreee`) used OpenAI [Codex](https://openai.com/codex/) to assist with reviewing the interaction-note
   implementation and revising its documentation, including the feature heading and manual testing instructions.
 
@@ -181,17 +192,13 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
-### Find by name, relationship, tags and remembered details
+### Find
 
 The `find` command supports four independently optional filters: name keywords, one relationship, tag keywords, and
-remembered-detail keywords. `FindCommandParser` tokenizes the `r/`, `t/`, and `k/` prefixes, rejects duplicate filter
-prefixes, and delegates relationship and tag validation to `ParserUtil`. At least one filter must be present. Name
-keywords precede the prefixed filters; multiple tag or detail keywords follow one corresponding prefix and are
-separated by whitespace. The parser splits the name preamble into independent keywords and validates each one
-against the search-keyword grammar. Ordinary name keywords contain letters with optional internal hyphens or
-apostrophes, while `s/o`, `d/o`, and `w/o` are also valid standalone keywords. Digits, other symbols, and arbitrary
-slash forms are rejected for names. Detail keywords accept any non-whitespace text so users can search remembered
-values such as times, dates, and punctuation.
+remembered-detail keywords. `FindCommandParser` tokenizes the optional `r/`, `t/`, and `k/` filters, rejects duplicate 
+prefixes, and requires at least one filter. Name keywords form the preamble and must contain letters with optional 
+internal hyphens or apostrophes, except for the accepted markers `s/o`, `d/o`, and `w/o`. Relationship and tag 
+validation is delegated to `ParserUtil`; detail keywords accept any non-whitespace text.
 
 The parser creates a `PersonMatchesFiltersPredicate`. Name keywords use case-insensitive contiguous substring
 matching and are joined with `OR`. Thus, `Alex` matches `Alexander`, while either `Anne` or `Marie` matches
@@ -204,11 +211,13 @@ predicate joins the name, relationship, tag, and detail filter results with `AND
 `find Alex David r/client t/priority referral k/retirement WhatsApp` returns clients whose name contains `Alex` or
 `David`, whose tags contain `priority` or `referral`, and whose remembered details contain `retirement` or `WhatsApp`.
 
-`FindCommand` passes the predicate to `Model#updateFilteredPersonList(Predicate<Person>)`, which updates the
-`FilteredList<Person>` observed by the UI. Filtering does not reorder the source list, so matching persons retain the
-same order and indexes as in the `list` command. `PersonListPanel` looks up each filtered person in the complete list
-when rendering its index. Index-based commands use `Command#getVisiblePersonAtIndex` to resolve that complete-list
-index and reject it if the corresponding person is not in the current filter.
+The parsing rules are  summarised in the table below:
+| Filter | Matching within the filter |
+|:--|:--|
+| Name | Case-insensitive contiguous match against names; any keyword matches. |
+| Relationship | Exact `Relationship` equality. |
+| Tag | Case-insensitive contiguous match against tag names; any keyword matches. |
+| Remembered detail | Case-insensitive contiguous match against contact preferences, financial fields, interaction-note date/type/outcome/text, or follow-up action/due date; any keyword matches. |
 
 The successful `CommandResult` returned by `FindCommand` includes a selection request. `MainWindow` responds by
 calling `PersonListPanel#selectFirstPerson`, which selects the first filtered person and scrolls it into view, or
@@ -239,9 +248,9 @@ command unions the supplied and existing tags and replaces the immutable `Person
 preserving every non-tag field and the active list filter. The existing JSON adapter persists a successfully updated
 set.
 
-`AddCommandParser` uses the same validation and accepts zero or more `t/TAG` fields. Unlike the required name,
-relationship, email and phone prefixes, `t/` is deliberately repeatable so a new person can be created with several
-tags. The parser collects those values into a set before constructing the `Person`.
+`AddCommandParser` reuses the same tag validation for repeatable `t/TAG` fields. `PersonCard` sorts the stored tags
+before rendering them in its `FlowPane`. Both commands run on a temporary model, which is saved before its state is
+committed to the live model.
 
 `PersonCard` renders the complete tag set in its existing `FlowPane`, sorting tags alphabetically by name while
 ignoring case. The list view observes the model, so tags supplied by `add` or appended by `tag` appear with the
@@ -1409,8 +1418,77 @@ Rejected commands should leave both records, their notes and the current filter 
       Expected: Jane still has no interaction notes; John's note remains.
 
 ### Finding persons by relationship
+### Managing tags
 
-1. Filtering clients and prospects
+Use a separate test folder with fictional records. Enter each setup command on a separate line:
+
+```text
+clear
+add r/Client n/John Doe e/john@example.com p/91234567 t/referral
+add r/Prospect n/Jane Tan e/jane@example.com p/98765432
+```
+
+#### Adding tags: `tag`
+
+1. Adding one or more tags
+
+   1. Test case: `tag 2 priority insurance`<br>
+      Expected: Jane Tan gains both tags. Her relationship and contact details remain unchanged.
+
+   2. Test case: `find r/prospect`, followed by `tag 2 followup`<br>
+      Expected: Jane Tan gains `followup`. The command uses her unchanged full-list index even in filtered results.
+
+2. Rejecting invalid or duplicate tags
+
+   1. Test case: `tag 2 PRIORITY warm`<br>
+      Expected: An error reports that `PRIORITY` already exists. Matching is case-insensitive, and `warm` is not
+      added because the command is all-or-nothing.
+
+   2. Test cases: `tag 2 close-friend`, `tag 3 priority`<br>
+      Expected: The first command rejects the non-alphanumeric tag; the second rejects the invalid index. Existing
+      tags and other details remain unchanged.
+
+#### Deleting tags: `tagdelete`
+
+1. Deleting selected tags after confirmation
+
+   1. Prerequisites: Run `list`. Jane Tan is at index 2 with `priority`, `insurance`, and `followup`.
+
+   2. Test case: `tagdelete 2 insurance`, followed by `YeS`<br>
+      Expected: The first command displays Jane Tan and `[insurance]` without changing her record. The confirmation
+      removes only `insurance`; confirmation matching is case-insensitive.
+
+   3. Test case: `tagdelete 1 REFERRAL`, followed by `Y`<br>
+      Expected: John Doe's `referral` tag is removed despite the different letter case.
+
+2. Cancelling or rejecting deletion
+
+   1. Test case: `tagdelete 2 missing`<br>
+      Expected: An error is shown before confirmation because Jane Tan has no such tag. No tags are removed.
+
+   2. Test case: `tagdelete 2`, followed by `maybe`, then `No`<br>
+      Expected: The first command requests deletion of every remaining tag. `maybe` is rejected and leaves the
+      confirmation pending; `No` cancels it, leaving all tags unchanged.
+
+   3. Test case: Repeat `tagdelete 2`, followed by `Y`.<br>
+      Expected: Every tag is removed from Jane Tan while her other details remain unchanged.
+
+### Finding persons
+
+1. Name filtering
+
+   1. Prerequisites: Add persons named `Alex Tan`, `Alexander Lim`, and `Anne-Marie Lee`.
+
+   2. Test case: `find Alex`<br>
+      Expected: Alex Tan and Alexander Lim are displayed because name matching is case-insensitive and contiguous.
+
+   3. Test case: `find Anne`<br>
+      Expected: Anne-Marie Lee is displayed because a keyword can match part of a hyphenated name.
+
+   4. Test cases: `find Alex123`, `find A/ex`<br>
+      Expected: Each command rejects the invalid name keyword and leaves the current list unchanged.
+
+2. Filtering clients and prospects
 
    1. Prerequisites: Add multiple clients and prospects, then display all persons using the `list` command.
 
@@ -1423,7 +1501,7 @@ Rejected commands should leave both records, their notes and the current filter 
    4. Test case: `find r/Client`<br>
       Expected: The same persons are displayed as for `find r/client`.
 
-2. Invalid relationship filters
+3. Invalid relationship filters
 
     <ol type="i">
       <li>
@@ -1436,13 +1514,13 @@ Rejected commands should leave both records, their notes and the current filter 
       </li>
     </ol>
 
-3. Combined name and relationship filtering
+4. Combined name and relationship filtering
 
    1. Test case: `find Alex r/client`.<br>
       Expected: Only clients whose names contain the contiguous text `Alex` are displayed. This includes names such
       as `Alexander`, and matching is case-insensitive.
 
-4. Tag filtering
+5. Tag filtering
 
    1. Prerequisites: Add persons tagged `friend`, `friends`, `bestfriend`, and `family`.
 
@@ -1450,21 +1528,22 @@ Rejected commands should leave both records, their notes and the current filter 
       Expected: The persons tagged `friend`, `friends`, and `bestfriend` are displayed. The person tagged `family`
       is not displayed.
 
-5. Remembered-detail filtering
+6. Remembered-detail filtering
 
    1. Prerequisites: Add a client named Alex with preferred channel `WhatsApp`, financial need `Retirement planning`,
-      an interaction note dated `2026-10-06` containing `Discussed university fund`, and follow-up text
-      `Call about investment review` due on `2026-12-15`. Add another client without those details.
+      a `CALL` interaction note dated `2026-10-06` with outcome `SUCCESSFUL` and text
+      `Discussed university fund`, and follow-up text `Call about investment review` due on `2026-12-15`. Add another
+      client without those details.
 
-   2. Test cases: `find k/WhatsApp`, `find k/retire`, `find k/university`, `find k/2026-10-06`, and
-      `find k/investment`, `find k/2026-12-15`, and `find k/2026-12`.<br>
+   2. Test cases: `find k/WhatsApp`, `find k/retire`, `find k/CALL`, `find k/success`, `find k/university`,
+      `find k/2026-10-06`, `find k/investment`, `find k/2026-12-15`, and `find k/2026-12`.<br>
       Expected: Alex is displayed for every search. Matching is case-insensitive and accepts contiguous partial text.
 
    3. Test case: `find Alex r/client t/priority k/retirement`.<br>
       Expected: Alex is displayed only if the record also has the `priority` tag, demonstrating `AND` across filter
       types.
 
-6. Find-result keyboard navigation
+7. Find-result keyboard navigation
 
    1. Prerequisites: Add enough persons matching the same search to require scrolling in the result list.
 
