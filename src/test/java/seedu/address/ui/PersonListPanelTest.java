@@ -15,7 +15,6 @@ import javafx.collections.FXCollections;
 import javafx.scene.Scene;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.layout.StackPane;
 
 public class PersonListPanelTest {
@@ -75,46 +74,6 @@ public class PersonListPanelTest {
                 panel.selectPreviousPerson();
 
                 assertEquals(-1, list.getSelectionModel().getSelectedIndex());
-                checked.complete(null);
-            } catch (Throwable error) {
-                checked.completeExceptionally(error);
-            }
-        });
-        checked.get(10, TimeUnit.SECONDS);
-    }
-
-    @Test
-    public void pixelScrolling_movesIncrementallyWithoutChangingSelection() throws Exception {
-        CompletableFuture<Void> checked = new CompletableFuture<>();
-        Platform.runLater(() -> {
-            try {
-                PersonListPanel panel = new PersonListPanel(FXCollections.observableArrayList(getTypicalPersons()));
-                StackPane root = new StackPane(panel.getRoot());
-                new Scene(root, 600, 200);
-                root.applyCss();
-                root.layout();
-                ListView<?> list = (ListView<?>) root.lookup("#personListView");
-                VirtualFlow<?> virtualFlow = (VirtualFlow<?>) list.lookup(".virtual-flow");
-                int initiallyVisibleIndex = virtualFlow.getFirstVisibleCell().getIndex();
-                list.getSelectionModel().select(1);
-
-                panel.scrollDown();
-                root.layout();
-
-                double firstScrollPosition = virtualFlow.getPosition();
-                assertTrue(firstScrollPosition > 0);
-                assertEquals(initiallyVisibleIndex, virtualFlow.getFirstVisibleCell().getIndex());
-                assertEquals(1, list.getSelectionModel().getSelectedIndex());
-
-                panel.scrollDown();
-                root.layout();
-                double secondScrollPosition = virtualFlow.getPosition();
-                assertTrue(secondScrollPosition > firstScrollPosition);
-
-                panel.scrollUp();
-                root.layout();
-                assertTrue(virtualFlow.getPosition() < secondScrollPosition);
-                assertEquals(1, list.getSelectionModel().getSelectedIndex());
                 checked.complete(null);
             } catch (Throwable error) {
                 checked.completeExceptionally(error);

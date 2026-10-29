@@ -95,15 +95,6 @@ public class MainWindowTest {
                 ListView<?> personListView = (ListView<?>) scene.lookup("#personListView");
                 assertEquals(-1, personListView.getSelectionModel().getSelectedIndex());
 
-                scene.getRoot().resize(600, 400);
-                scene.getRoot().applyCss();
-                scene.getRoot().layout();
-                VirtualFlow<?> virtualFlow = (VirtualFlow<?>) personListView.lookup(".virtual-flow");
-                commandTextField.fireEvent(keyPressed(KeyCode.DOWN, true));
-                scene.getRoot().layout();
-                assertTrue(virtualFlow.getPosition() > 0);
-                assertEquals(-1, personListView.getSelectionModel().getSelectedIndex());
-
                 personListView.getSelectionModel().select(0);
                 commandTextField.fireEvent(keyPressed(KeyCode.DOWN));
                 assertEquals(0, personListView.getSelectionModel().getSelectedIndex());
@@ -209,10 +200,6 @@ public class MainWindowTest {
     }
 
     private KeyEvent keyPressed(KeyCode keyCode) {
-        return keyPressed(keyCode, false);
-    }
-
-    private KeyEvent keyPressed(KeyCode keyCode, boolean isShiftDown) {
-        return new KeyEvent(KeyEvent.KEY_PRESSED, "", "", keyCode, isShiftDown, false, false, false);
+        return new KeyEvent(KeyEvent.KEY_PRESSED, "", "", keyCode, false, false, false, false);
     }
 }

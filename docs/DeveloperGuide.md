@@ -212,12 +212,10 @@ calling `PersonListPanel#selectFirstPerson`, which selects the first filtered pe
 clears the selection if the result list is empty. `MainWindow` enables an explicit find-result navigation state only
 when that selection request produces a selected person. The state is reset whenever another command is submitted,
 including an invalid command, so selecting a person with the mouse or executing a non-find command does not activate
-or retain find-result navigation. While the state is active, a key-event filter on `MainWindow` handles unmodified
+or retain find-result navigation. While the state is active, a key-event filter on `MainWindow` handles the
 <kbd>Up</kbd> and <kbd>Down</kbd> arrow keys and asks `PersonListPanel` to select the previous or next result and scroll
-to that index. <kbd>Shift</kbd>+<kbd>Up</kbd> and <kbd>Shift</kbd>+<kbd>Down</kbd> instead call `VirtualFlow#scrollPixels`
-with a small fixed increment, allowing any displayed list to be scrolled without changing its selection. Selection
-navigation remains at the corresponding boundary when the first or last result is reached. Keeping both forms of
-navigation at the window level allows them to work while the command box retains keyboard focus.
+to that index. Selection remains at the corresponding boundary when the first or last result is reached. Keeping
+this navigation at the window level allows it to work while the command box retains keyboard focus.
 
 The following sequence shows a combined search. The `FilteredList` applies the predicate to each source person;
 omitted filter types evaluate as matched, while the supplied filter types must all match.
@@ -1349,13 +1347,6 @@ These cases are covered in `DeleteIntegrationTest`. Parser whitespace and intege
    7. Test case: Enter a `find` command with matches, then execute `list` and press either arrow key while the command
       box has focus.<br>
       Expected: Executing the non-find command disables find-result navigation.
-
-   8. Test case: Run `list`, then hold <kbd>Shift</kbd> and press <kbd>Down</kbd> repeatedly.<br>
-      Expected: The list scrolls downward in small increments, comparable to mouse-wheel scrolling. No person is
-      selected and the scrolling stops at the bottom of the list.
-
-   9. Test case: Keep holding <kbd>Shift</kbd> and press <kbd>Up</kbd> repeatedly.<br>
-      Expected: The list scrolls upward in small increments without changing the selection and stops at the top.
 
 ### Saving data
 

@@ -8,7 +8,6 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.layout.Region;
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.model.person.Person;
@@ -18,7 +17,6 @@ import seedu.address.model.person.Person;
  */
 public class PersonListPanel extends UiPart<Region> {
     private static final String FXML = "PersonListPanel.fxml";
-    private static final double SCROLL_INCREMENT = 40.0;
     private final Logger logger = LogsCenter.getLogger(PersonListPanel.class);
     private final ObservableList<Person> allPersons;
 
@@ -75,23 +73,6 @@ public class PersonListPanel extends UiPart<Region> {
     /** Returns whether a displayed person is currently selected. */
     boolean hasSelectedPerson() {
         return personListView.getSelectionModel().getSelectedIndex() >= 0;
-    }
-
-    /** Scrolls the displayed list upward by a small increment without changing the selection. */
-    void scrollUp() {
-        scrollByPixels(-SCROLL_INCREMENT);
-    }
-
-    /** Scrolls the displayed list downward by a small increment without changing the selection. */
-    void scrollDown() {
-        scrollByPixels(SCROLL_INCREMENT);
-    }
-
-    private void scrollByPixels(double pixels) {
-        VirtualFlow<?> virtualFlow = (VirtualFlow<?>) personListView.lookup(".virtual-flow");
-        if (virtualFlow != null) {
-            virtualFlow.scrollPixels(pixels);
-        }
     }
 
     private void selectAndScrollTo(int index) {

@@ -31,8 +31,6 @@ and stores records locally.
 5. Type a command in the command box and press Enter to execute it. The result box below the command box shows
    the command you entered followed by its result, wrapping long text to fit the available width. For example, type
    **`help`** and press Enter to open the help window.<br>
-   Hold <kbd>Shift</kbd> and press <kbd>Down</kbd> or <kbd>Up</kbd> to scroll the current contact list a small amount,
-   similar to using the mouse wheel. This does not change the selected contact.<br>
    Some example commands you can try:
 
    * `list` : Lists all contacts.
@@ -405,8 +403,7 @@ Format: `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...
   <kbd>Up</kbd> arrow key to select the next or previous result respectively. The list scrolls automatically to keep
   the selected result visible, and navigation stops at the first and last results. If there are no matches, no
   person is selected. Find-result navigation remains active until another command is submitted; selecting a person
-  with the mouse without first running `find` does not activate it. <kbd>Shift</kbd>+<kbd>Down</kbd> and
-  <kbd>Shift</kbd>+<kbd>Up</kbd> scroll any currently displayed list incrementally without changing the selection.
+  with the mouse without first running `find` does not activate it.
 
 Examples:
 * `find John` returns `john` and `John Doe`
