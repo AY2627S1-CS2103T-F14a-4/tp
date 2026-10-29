@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
+import java.time.MonthDay;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
@@ -42,9 +44,37 @@ public class NextActionDuePredicateTest {
     }
 
     @Test
+    public void earliestQualifyingDate_mixedEvents_ignoresCompletedAndFutureActions() {
+        Person person = new PersonBuilder().withRecurringReminders(
+                new RecurringReminder("Later", MonthDay.from(TODAY.plusDays(20))),
+                new RecurringReminder("Earlier", MonthDay.from(TODAY.plusDays(5)))).build();
+        assertEquals(Optional.of(TODAY.plusDays(5)), predicate.earliestQualifyingDate(person));
+        assertEquals(Optional.of(TODAY.plusDays(5)), predicate.earliestQualifyingDate(
+                person.withNextAction(new NextAction("Call", TODAY.minusDays(1), true))));
+        assertEquals(Optional.of(TODAY.plusDays(5)), predicate.earliestQualifyingDate(
+                person.withNextAction(new NextAction("Call", TODAY.plusDays(1), false))));
+        assertEquals(Optional.of(TODAY.minusDays(1)), predicate.earliestQualifyingDate(
+                person.withNextAction(new NextAction("Call", TODAY.minusDays(1), false))));
+    }
+
+    @Test
+    public void earliestQualifyingDate_remindersAcrossYearBoundary_includesOnlyNextThirtyDays() {
+        LocalDate today = LocalDate.of(2026, 12, 20);
+        NextActionDuePredicate yearEnd = new NextActionDuePredicate(today);
+        for (int offset : new int[] {0, 30, 31}) {
+            Person person = new PersonBuilder().withRecurringReminders(
+                    new RecurringReminder("Renewal", MonthDay.from(today.plusDays(offset)))).build();
+            Optional<LocalDate> expected = offset <= 30 ? Optional.of(today.plusDays(offset)) : Optional.empty();
+            assertEquals(expected, yearEnd.earliestQualifyingDate(person));
+            assertEquals(expected.isPresent(), yearEnd.test(person));
+        }
+    }
+
+    @Test
     public void equals() {
         assertEquals(predicate, predicate);
         assertEquals(predicate, new NextActionDuePredicate(TODAY));
+        assertEquals(predicate.hashCode(), new NextActionDuePredicate(TODAY).hashCode());
         assertNotEquals(predicate, new NextActionDuePredicate(TODAY.plusDays(1)));
         assertNotEquals(predicate, null);
         assertNotEquals(predicate, TODAY);

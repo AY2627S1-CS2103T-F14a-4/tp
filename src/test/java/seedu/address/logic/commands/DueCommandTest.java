@@ -191,6 +191,7 @@ public class DueCommandTest {
     public void equals() {
         assertEquals(command, command);
         assertEquals(command, new DueCommand(Clock.fixed(CLOCK.instant(), CLOCK.getZone())));
+        assertEquals(command.hashCode(), new DueCommand(Clock.fixed(CLOCK.instant(), CLOCK.getZone())).hashCode());
         assertNotEquals(command, new DueCommand(Clock.fixed(CLOCK.instant().plusSeconds(1), CLOCK.getZone())));
         assertNotEquals(command, new DueCommand(CLOCK.withZone(ZoneId.of("UTC"))));
         assertNotEquals(command, null);

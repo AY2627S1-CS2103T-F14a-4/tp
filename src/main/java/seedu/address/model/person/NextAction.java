@@ -11,6 +11,8 @@ import seedu.address.commons.util.ToStringBuilder;
 
 /** An immutable follow-up, with a description, due date and completion status. */
 public class NextAction {
+    public static final int MAX_ACTION_LENGTH = 200;
+    public static final int MAX_DUE_YEAR = 9999;
     public static final String MESSAGE_ACTION_CONSTRAINTS = "Next action must contain 1 to 200 characters.";
     public static final String MESSAGE_INVALID_DATE = "Due date must be a valid date in yyyy-MM-dd format.";
 
@@ -21,12 +23,20 @@ public class NextAction {
     /** Creates a follow-up after stripping surrounding whitespace from its description. */
     public NextAction(String action, LocalDate dueDate, boolean completed) {
         requireAllNonNull(action, dueDate);
-        String trimmedAction = action.strip();
-        checkArgument(!trimmedAction.isEmpty() && trimmedAction.length() <= 200, MESSAGE_ACTION_CONSTRAINTS);
-        checkArgument(dueDate.getYear() >= 1 && dueDate.getYear() <= 9999, MESSAGE_INVALID_DATE);
-        this.action = trimmedAction;
+        String normalizedAction = parseAction(action);
+        checkArgument(dueDate.getYear() >= 1 && dueDate.getYear() <= MAX_DUE_YEAR, MESSAGE_INVALID_DATE);
+        this.action = normalizedAction;
         this.dueDate = dueDate;
         this.completed = completed;
+    }
+
+    /** Validates and strips surrounding whitespace from a follow-up description. */
+    public static String parseAction(String action) {
+        requireAllNonNull(action);
+        String trimmedAction = action.strip();
+        checkArgument(!trimmedAction.isEmpty() && trimmedAction.length() <= MAX_ACTION_LENGTH,
+                MESSAGE_ACTION_CONSTRAINTS);
+        return trimmedAction;
     }
 
     /** Parses a valid date in years 0001 to 9999 with exactly two month/day digits. */

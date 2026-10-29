@@ -12,6 +12,7 @@ import seedu.address.commons.util.ToStringBuilder;
 
 /** An immutable labelled yearly date, independent of a person's one-off next action. */
 public class RecurringReminder {
+    public static final int MAX_LABEL_LENGTH = 50;
     public static final String MESSAGE_LABEL_CONSTRAINTS =
             "Reminder label must contain 1 to 50 characters, without control characters or slashes.";
     public static final String MESSAGE_INVALID_DATE = "Yearly date must be a valid date in MM-dd format.";
@@ -30,7 +31,7 @@ public class RecurringReminder {
     public static String parseLabel(String label) {
         requireAllNonNull(label);
         String trimmed = label.strip();
-        checkArgument(!trimmed.isEmpty() && trimmed.length() <= 50 && !trimmed.contains("/")
+        checkArgument(!trimmed.isEmpty() && trimmed.length() <= MAX_LABEL_LENGTH && !trimmed.contains("/")
                 && trimmed.chars().noneMatch(Character::isISOControl), MESSAGE_LABEL_CONSTRAINTS);
         return trimmed;
     }

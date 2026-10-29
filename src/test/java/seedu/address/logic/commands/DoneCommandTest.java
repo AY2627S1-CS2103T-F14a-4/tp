@@ -125,6 +125,8 @@ public class DoneCommandTest {
         DoneCommand command = new DoneCommand(INDEX_FIRST_PERSON);
         assertEquals(command, command);
         assertEquals(command, new DoneCommand(INDEX_FIRST_PERSON));
+        assertEquals(command.hashCode(),
+                new DoneCommand(Index.fromZeroBased(INDEX_FIRST_PERSON.getZeroBased())).hashCode());
         assertNotEquals(command, new DoneCommand(INDEX_SECOND_PERSON));
         assertNotEquals(command, null);
         assertNotEquals(command, new ClearCommand());

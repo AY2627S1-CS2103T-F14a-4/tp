@@ -4,6 +4,7 @@ import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.util.Objects;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.commons.util.ToStringBuilder;
@@ -54,6 +55,11 @@ public class NextCommand extends Command {
     public boolean equals(Object other) {
         return other == this || other instanceof NextCommand command
                 && index.equals(command.index) && nextAction.equals(command.nextAction) && clock.equals(command.clock);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(index.getZeroBased(), nextAction, clock);
     }
 
     @Override
