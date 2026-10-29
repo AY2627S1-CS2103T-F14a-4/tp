@@ -220,47 +220,32 @@ omitted filter types evaluate as matched, while the supplied filter types must a
 
 ### Tagging a person
 
-`TagCommandParser` reads the first whitespace-separated argument as the displayed-list index and validates each
-remaining argument with `ParserUtil#parseTags(Collection<String>)`. Tag names use the existing alphanumeric-only
-`Tag` validation. `TagCommand` resolves the visible person against its index in the complete list using
-`Command#getVisiblePersonAtIndex`. It then intersects the supplied and existing tag sets. Tag equality is
-case-insensitive, so a non-empty intersection raises a `CommandException` listing the duplicate tags and leaves the
-contact unchanged. Otherwise, the command unions the supplied and existing tags and replaces the immutable `Person`
-through `Model#setPerson`, preserving every non-tag field and the active list filter. The existing JSON adapter
-persists a successfully updated set.
+`TagCommandParser` parses a displayed-list index followed by one or more alphanumeric tag names.
+`TagCommand` uses `Command#getVisiblePersonAtIndex` to require that the original full-list index is also visible in
+the active filter. It compares tags case-insensitively. If any supplied tag already exists, the entire command fails;
+otherwise, it replaces the immutable `Person` with a copy containing the union of both tag sets.
 
-`AddCommandParser` uses the same validation and accepts zero or more `t/TAG` fields. Unlike the required name,
-relationship, email and phone prefixes, `t/` is deliberately repeatable so a new person can be created with several
-tags. The parser collects those values into a set before constructing the `Person`.
+`AddCommandParser` reuses the same tag validation for repeatable `t/TAG` fields. `PersonCard` sorts the stored tags
+before rendering them in its `FlowPane`. Both commands run on a temporary model, which is saved before its state is
+committed to the live model.
 
-`PersonCard` renders the complete tag set in its existing `FlowPane`, sorting tags by name for deterministic display.
-The list view observes the model, so tags supplied by `add` or appended by `tag` appear with the person's contact and
-relationship details without a manual refresh. The `list` command restores all persons while retaining those tags.
-
-The following sequence shows tags being appended to a person in the currently displayed list. Parsing and index
-validation complete before the immutable `Person` is replaced and the updated client book is saved.
+The following sequence shows a successful `tag` command and its duplicate-tag alternative.
 
 <puml src="diagrams/TagSequenceDiagram.puml" alt="Tagging a person sequence" />
 
 ### Deleting tags from a person
 
-`TagDeleteCommandParser` reads the displayed-list index and an optional set of tag names. An empty set means all
-tags; otherwise, `TagDeleteCommand` requires every supplied tag to exist on the person. Matching uses the same
-case-insensitive `Tag` equality as tag addition. Missing tags, a person with no tags, or an invalid displayed index
-raises a `CommandException` before confirmation or mutation.
+`TagDeleteCommandParser` parses a displayed-list index and zero or more tags. No tags means delete all;
+otherwise, every supplied tag must exist. `TagDeleteCommand#getConfirmationMessage` validates the visible person and
+the case-insensitive tag set before any mutation, then reports the exact stored tags that would be removed.
 
-Tag deletion uses a two-phase Logic flow. The initial `Logic#execute(String)` call parses and validates the command,
-stores the pending `TagDeleteCommand`, and returns a `CommandResult` containing `Are you sure you want to delete
-this?`, the contact name, the exact stored tags that will be removed, and the accepted responses. `MainWindow`
-displays the result through the existing result box below the command box.
+`LogicManager` holds the validated command while confirmation is pending. `y` or `yes` executes it, while `n` or
+`no` discards it; matching ignores case and surrounding whitespace. Other input is rejected without clearing the
+pending command. On confirmation, the command validates again, updates a temporary model, and relies on the common
+save-before-commit flow. Thus, cancellation, invalid input, validation failure, or save failure leaves the live model
+unchanged.
 
-While a deletion is pending, `LogicManager` interprets the next command-box input as a confirmation response instead
-of parsing it as a new command. `y` and `yes` execute the stored command; `n` and `no` discard it. Matching is
-case-insensitive and ignores surrounding whitespace. Any other response raises a `CommandException` and leaves the
-command pending. A confirmed command copies the person's tag set, clears it or removes the selected tags, replaces
-the immutable `Person` through `Model#setPerson`, and saves the updated client book.
-
-The following sequence shows the confirmation gate before selected tags are deleted.
+The following sequence shows the confirmation gate and each response path.
 
 <puml src="diagrams/TagDeleteSequenceDiagram.puml" alt="Deleting tags with confirmation sequence" />
 

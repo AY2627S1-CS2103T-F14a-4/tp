@@ -123,40 +123,36 @@ renumbered only after a person is deleted.
 
 ### Adding tags to a person: `tag`
 
-Adds one or more tags to a person in the currently displayed list.
+Adds one or more tags without removing the person's existing tags.
 
 Format: `tag INDEX TAG [MORE_TAGS...]`
 
-* `INDEX` must be a positive integer that refers to a person in the currently displayed list, including filtered
-  search results.
-* Each `TAG` must contain only letters and numbers, with no spaces.
-* Existing tags are preserved. Tags are compared case-insensitively, so adding `PRIORITY` when `priority` exists
-  produces an error and no tags are added.
+* `INDEX` is the number shown beside the person in the current list, including a filtered list.
+* Each `TAG` must contain only letters and numbers. Separate multiple tags with spaces.
+* Tag matching is case-insensitive. If the person already has any supplied tag, no tags are added.
 
 Examples:
-* `tag 1 priority`
-* `tag 2 referral insurance`
+
+* `tag 1 priority` adds `priority` to person `1`.
+* `tag 2 referral insurance` adds both tags to person `2`.
 
 ### Deleting tags from a person: `tagdelete`
 
-Deletes all or selected tags from a person in the currently displayed list.
+Deletes selected tags, or all tags, after confirmation.
 
 Format: `tagdelete INDEX [TAG...]`
 
-* `INDEX` must be a positive integer that refers to a person in the currently displayed list, including filtered
-  search results.
-* Leave `TAG` empty to delete every tag from the person.
-* Supply one or more whitespace-separated tags to delete only those tags. Tag matching is case-insensitive.
-* If any supplied tag does not belong to the person, an error is shown and no tags are deleted.
-* Before deletion, the result box below the command box asks `Are you sure you want to delete this?` and displays the
-  contact name and exact tags that will be removed. Type `Y` or `Yes` in the command box to proceed, or `N` or `No`
-  to cancel without changing the person. Responses are case-insensitive.
-* While confirmation is pending, other inputs produce an error and the deletion remains pending until a valid
-  confirmation response is entered.
+* `INDEX` is the number shown beside the person in the current list, including a filtered list.
+* Omit `TAG` to delete all tags. Otherwise, separate the tags to delete with spaces.
+* Tag matching is case-insensitive. If the person does not have every supplied tag, no tags are deleted.
+* The result box shows the person and tags to be deleted. Enter `Y` or `Yes` to confirm, or `N` or `No` to cancel.
+  Responses are case-insensitive.
+* Until you confirm or cancel, any other input is rejected and the deletion remains pending.
 
 Examples:
-* `tagdelete 1` deletes every tag from the first displayed person after confirmation.
-* `tagdelete 1 friend referral` deletes the `friend` and `referral` tags after confirmation.
+
+* `tagdelete 1` requests deletion of every tag from person `1`.
+* `tagdelete 1 friend referral` requests deletion of only `friend` and `referral` from person `1`.
 
 ### Editing a person: `edit`
 
