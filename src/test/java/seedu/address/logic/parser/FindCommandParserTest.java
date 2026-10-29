@@ -1,5 +1,6 @@
 package seedu.address.logic.parser;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.Messages.getErrorMessageForDuplicatePrefixes;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_DETAIL_KEYWORD;
@@ -22,6 +23,12 @@ import seedu.address.model.tag.Tag;
 public class FindCommandParserTest {
 
     private FindCommandParser parser = new FindCommandParser();
+
+    @Test
+    public void usageMessage_containsOnlyParameters() {
+        assertEquals("Parameters: [KEYWORD [MORE_KEYWORDS]...] [r/RELATIONSHIP] "
+                + "[t/TAG [MORE_TAGS...]] [k/DETAIL_KEYWORD [MORE_KEYWORDS...]]", FindCommand.MESSAGE_USAGE);
+    }
 
     @Test
     public void parse_emptyArg_throwsParseException() {

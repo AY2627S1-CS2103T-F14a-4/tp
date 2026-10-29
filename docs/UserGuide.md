@@ -29,7 +29,8 @@ and stores records locally.
    ![Ui](images/Ui.png)
 
 5. Type a command in the command box and press Enter to execute it. The result box below the command box shows
-   the command you entered followed by its result. For example, type **`help`** and press Enter to open the help window.<br>
+   the command you entered followed by its result, wrapping long text to fit the available width. For example, type
+   **`help`** and press Enter to open the help window.<br>
    Some example commands you can try:
 
    * `list` : Lists all contacts.
@@ -398,10 +399,11 @@ Format: `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...
 * Put name keywords before any prefixed filter. Tags follow a single `t/`, and detail keywords follow a single
   `k/`; values within each filter are separated by spaces. The `r/`, `t/`, and `k/` filters may appear in any order.
 * Filtered persons retain the same order and indexes as in the `list` command.
-* After a successful `find`, the first matching person is selected automatically. Press the <kbd>Down</kbd> or
-  <kbd>Up</kbd> arrow key to select the next or previous result respectively. The list scrolls automatically to keep
-  the selected result visible, and navigation stops at the first and last results. If there are no matches, no
-  person is selected.
+* After a successful `find`, the first matching person is selected automatically. Press the unmodified
+  <kbd>Down</kbd> or <kbd>Up</kbd> arrow key to select the next or previous result respectively. The list scrolls
+  automatically to keep the selected result visible, and navigation stops at the first and last results. If there
+  are no matches, no person is selected. Find-result navigation remains active until another command is submitted;
+  selecting a person with the mouse without first running `find` does not activate it.
 
 Examples:
 * `find John` returns `john` and `John Doe`
