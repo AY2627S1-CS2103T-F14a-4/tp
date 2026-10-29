@@ -1,7 +1,6 @@
 package seedu.address.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.address.testutil.TypicalPersons.getTypicalClientBook;
@@ -23,7 +22,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import seedu.address.logic.Logic;
 import seedu.address.logic.LogicManager;
@@ -60,17 +58,11 @@ public class MainWindowTest {
 
                 Scene scene = stage.getScene();
                 TextField commandTextField = (TextField) scene.lookup("#commandTextField");
-                StackPane resultDisplayPlaceholder = (StackPane) scene.lookup("#resultDisplayPlaceholder");
-                assertFalse(resultDisplayPlaceholder.isVisible());
-                assertFalse(resultDisplayPlaceholder.isManaged());
-
                 commandTextField.setText("foo");
                 commandTextField.fireEvent(new ActionEvent());
 
                 TextArea resultDisplay = (TextArea) scene.lookup("#resultDisplay");
                 assertEquals("Command: foo\n" + MESSAGE_UNKNOWN_COMMAND, resultDisplay.getText());
-                assertTrue(resultDisplayPlaceholder.isVisible());
-                assertTrue(resultDisplayPlaceholder.isManaged());
                 checked.complete(null);
             } catch (Throwable error) {
                 checked.completeExceptionally(error);

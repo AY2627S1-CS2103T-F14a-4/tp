@@ -122,8 +122,6 @@ public class MainWindow extends UiPart<Stage> {
 
         resultDisplay = new ResultDisplay();
         resultDisplayPlaceholder.getChildren().add(resultDisplay.getRoot());
-        resultDisplayPlaceholder.visibleProperty().bind(resultDisplay.getRoot().visibleProperty());
-        resultDisplayPlaceholder.managedProperty().bind(resultDisplay.getRoot().managedProperty());
 
         StatusBarFooter statusBarFooter = new StatusBarFooter(dataFilePath);
         statusbarPlaceholder.getChildren().add(statusBarFooter.getRoot());
