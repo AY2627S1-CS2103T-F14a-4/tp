@@ -12,7 +12,7 @@ import seedu.address.storage.Storage;
 /**
  * Deletes a client or prospect identified using its displayed index from the client list.
  */
-public class DeleteCommand extends Command {
+public class DeleteCommand extends Command implements ConfirmableCommand {
 
     public static final String COMMAND_WORD = "delete";
 
@@ -23,6 +23,10 @@ public class DeleteCommand extends Command {
 
     public static final String MESSAGE_DELETE_PERSON_SUCCESS = "%1$s %2$s has been deleted successfully.";
     public static final String MESSAGE_INVALID_INDEX = "No client exists at index %d.";
+    public static final String MESSAGE_CONFIRMATION = "Are you sure you want to delete this?\n"
+            + "Contact: %s\n"
+            + "Enter Y/Yes to confirm or N/No to cancel.";
+    public static final String MESSAGE_CANCELLED = "Person deletion cancelled.";
 
     private final Index targetIndex;
 
@@ -31,10 +35,25 @@ public class DeleteCommand extends Command {
     }
 
     @Override
-    public CommandResult execute(Model model, Storage storage) throws CommandException {
+    public String getConfirmationMessage(Model model) throws CommandException {
+        Person person = getValidatedPerson(model);
+        return String.format(MESSAGE_CONFIRMATION, person.getName());
+    }
+
+    @Override
+    public String getCancellationMessage() {
+        return MESSAGE_CANCELLED;
+    }
+
+    private Person getValidatedPerson(Model model) throws CommandException {
         requireNonNull(model);
         String invalidIndexMessage = String.format(MESSAGE_INVALID_INDEX, targetIndex.getOneBased());
-        Person personToDelete = getVisiblePersonAtIndex(model, targetIndex, invalidIndexMessage);
+        return getVisiblePersonAtIndex(model, targetIndex, invalidIndexMessage);
+    }
+
+    @Override
+    public CommandResult execute(Model model, Storage storage) throws CommandException {
+        Person personToDelete = getValidatedPerson(model);
         model.deletePerson(personToDelete);
         return new CommandResult(String.format(MESSAGE_DELETE_PERSON_SUCCESS,
                 personToDelete.getRelationship(), personToDelete.getName().fullName));

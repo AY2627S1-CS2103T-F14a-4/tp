@@ -10,7 +10,7 @@ import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.commands.Command;
 import seedu.address.logic.commands.CommandResult;
-import seedu.address.logic.commands.TagDeleteCommand;
+import seedu.address.logic.commands.ConfirmableCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.ClientBookParser;
 import seedu.address.logic.parser.exceptions.ParseException;
@@ -34,7 +34,7 @@ public class LogicManager implements Logic {
     private final Model model;
     private final Storage storage;
     private final ClientBookParser clientBookParser;
-    private TagDeleteCommand pendingTagDeleteCommand;
+    private Command pendingCommand;
 
     /**
      * Constructs a {@code LogicManager} with the given {@code Model} and {@code Storage}.
@@ -48,31 +48,32 @@ public class LogicManager implements Logic {
     @Override
     public CommandResult execute(String commandText) throws CommandException, ParseException {
         logger.info("----------------[USER COMMAND][" + commandText + "]");
-        if (pendingTagDeleteCommand != null) {
-            return handleTagDeleteConfirmation(commandText);
+        if (pendingCommand != null) {
+            return handleConfirmation(commandText);
         }
 
         Command command = clientBookParser.parseCommand(commandText);
-        if (command instanceof TagDeleteCommand tagDeleteCommand) {
-            String confirmationMessage = tagDeleteCommand.getConfirmationMessage(model);
-            pendingTagDeleteCommand = tagDeleteCommand;
+        if (command instanceof ConfirmableCommand confirmableCommand) {
+            String confirmationMessage = confirmableCommand.getConfirmationMessage(model);
+            pendingCommand = command;
             return new CommandResult(confirmationMessage);
         }
         return executeCommand(command);
     }
 
-    private CommandResult handleTagDeleteConfirmation(String commandText) throws CommandException {
+    private CommandResult handleConfirmation(String commandText) throws CommandException {
         String response = commandText.strip().toLowerCase(Locale.ROOT);
         if (response.equals("n") || response.equals("no")) {
-            pendingTagDeleteCommand = null;
-            return new CommandResult(TagDeleteCommand.MESSAGE_CANCELLED);
+            String cancellationMessage = ((ConfirmableCommand) pendingCommand).getCancellationMessage();
+            pendingCommand = null;
+            return new CommandResult(cancellationMessage);
         }
         if (!response.equals("y") && !response.equals("yes")) {
-            throw new CommandException(TagDeleteCommand.MESSAGE_INVALID_CONFIRMATION);
+            throw new CommandException(ConfirmableCommand.MESSAGE_INVALID_CONFIRMATION);
         }
 
-        TagDeleteCommand confirmedCommand = pendingTagDeleteCommand;
-        pendingTagDeleteCommand = null;
+        Command confirmedCommand = pendingCommand;
+        pendingCommand = null;
         return executeCommand(confirmedCommand);
     }
 

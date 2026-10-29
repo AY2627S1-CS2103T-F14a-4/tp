@@ -15,7 +15,7 @@ import seedu.address.model.tag.Tag;
 import seedu.address.storage.Storage;
 
 /** Deletes all or selected tags from a person in the currently displayed list. */
-public class TagDeleteCommand extends Command {
+public class TagDeleteCommand extends Command implements ConfirmableCommand {
     public static final String COMMAND_WORD = "tagdelete";
     public static final String MESSAGE_USAGE = COMMAND_WORD
             + ": Deletes all or selected tags from the person identified by the index in the displayed list.\n"
@@ -25,7 +25,7 @@ public class TagDeleteCommand extends Command {
             + "Contact: %s\n"
             + "Tags to delete: %s\n"
             + "Enter Y/Yes to confirm or N/No to cancel.";
-    public static final String MESSAGE_INVALID_CONFIRMATION = "Please enter Y/Yes or N/No.";
+    public static final String MESSAGE_INVALID_CONFIRMATION = ConfirmableCommand.MESSAGE_INVALID_CONFIRMATION;
     public static final String MESSAGE_CANCELLED = "Tag deletion cancelled.";
     public static final String MESSAGE_DELETE_ALL_SUCCESS = "Deleted all tags from %s.";
     public static final String MESSAGE_DELETE_SELECTED_SUCCESS = "Deleted tags from %s: %s";
@@ -43,6 +43,7 @@ public class TagDeleteCommand extends Command {
     }
 
     /** Returns a confirmation message describing the tags that will be deleted without changing the model. */
+    @Override
     public String getConfirmationMessage(Model model) throws CommandException {
         Person person = getValidatedPerson(model);
         Set<Tag> actualTagsToDelete = new HashSet<>(person.getTags());
@@ -50,6 +51,11 @@ public class TagDeleteCommand extends Command {
             actualTagsToDelete.retainAll(tagsToDelete);
         }
         return String.format(MESSAGE_CONFIRMATION, person.getName(), formatTags(actualTagsToDelete));
+    }
+
+    @Override
+    public String getCancellationMessage() {
+        return MESSAGE_CANCELLED;
     }
 
     @Override

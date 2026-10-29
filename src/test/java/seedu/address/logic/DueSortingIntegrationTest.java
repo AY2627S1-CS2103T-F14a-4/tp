@@ -72,6 +72,8 @@ public class DueSortingIntegrationTest {
         assertEquals(List.of(zed, alice), model.getFilteredPersonList());
         assertTrue(model.getClientBook().getPersonList().get(2).getNextAction().orElseThrow().isCompleted());
         logic.execute("delete 2");
+        assertEquals(List.of(zed, alice), model.getFilteredPersonList());
+        logic.execute("yes");
         assertEquals(List.of(alice), model.getFilteredPersonList());
         assertEquals(List.of(alice, model.getClientBook().getPersonList().get(1)),
                 storage.readClientBook().orElseThrow().getPersonList());

@@ -12,6 +12,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import seedu.address.logic.commands.DeleteCommand;
+import seedu.address.logic.commands.TagDeleteCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.Model;
@@ -62,7 +64,7 @@ public class DeleteIntegrationTest {
     @Test
     public void execute_deleteClient_preservesProspectDetailsAfterReopening() throws Exception {
         assertEquals("Client John Doe has been deleted successfully.",
-                logic.execute("delete 1").getFeedbackToUser());
+                confirmDelete("delete 1"));
         assertEquals(List.of(prospect), logic.getFilteredPersonList());
         assertSavedPersons(prospect);
     }
@@ -70,7 +72,7 @@ public class DeleteIntegrationTest {
     @Test
     public void execute_deleteProspect_preservesClientAfterReopening() throws Exception {
         assertEquals("Prospect Jane Tan has been deleted successfully.",
-                logic.execute("delete 2").getFeedbackToUser());
+                confirmDelete("delete 2"));
         assertEquals(List.of(client), logic.getFilteredPersonList());
         assertSavedPersons(client);
     }
@@ -80,7 +82,7 @@ public class DeleteIntegrationTest {
         logic.execute("find Jane");
         assertEquals(List.of(prospect), logic.getFilteredPersonList());
         assertEquals("Prospect Jane Tan has been deleted successfully.",
-                logic.execute("delete 2").getFeedbackToUser());
+                confirmDelete("delete 2"));
         assertEquals(List.of(), logic.getFilteredPersonList());
         logic.execute("list");
         assertEquals(List.of(client), logic.getFilteredPersonList());
@@ -92,17 +94,17 @@ public class DeleteIntegrationTest {
         logic.execute("find r/prospect");
         assertEquals(List.of(prospect), logic.getFilteredPersonList());
         assertEquals("Prospect Jane Tan has been deleted successfully.",
-                logic.execute("delete 2").getFeedbackToUser());
+                confirmDelete("delete 2"));
         assertEquals(List.of(), logic.getFilteredPersonList());
         assertSavedPersons(client);
     }
 
     @Test
     public void execute_deleteRemainingRecord_reindexesAndSavesEmptyList() throws Exception {
-        logic.execute("delete 1");
+        confirmDelete("delete 1");
         assertEquals(List.of(prospect), logic.getFilteredPersonList());
         assertEquals("Prospect Jane Tan has been deleted successfully.",
-                logic.execute("  delete 1  ").getFeedbackToUser());
+                confirmDelete("  delete 1  "));
         assertEquals(List.of(), logic.getFilteredPersonList());
         assertSavedPersons();
 
@@ -133,6 +135,90 @@ public class DeleteIntegrationTest {
         assertRejectedWithoutChanges("delete 1", CommandException.class, "No client exists at index 1.");
         assertEquals(List.of(), logic.getFilteredPersonList());
         assertSavedPersons(client, prospect);
+    }
+
+    @Test
+    public void execute_confirmation_acceptsAllYesVariants() throws Exception {
+        for (String response : List.of("y", "Y", "yes", "Yes", "  yEs  ")) {
+            setUp();
+            String savedBefore = Files.readString(clientBookStorage.getClientBookFilePath());
+            assertEquals("Are you sure you want to delete this?\nContact: John Doe\n"
+                    + "Enter Y/Yes to confirm or N/No to cancel.", logic.execute("delete 1").getFeedbackToUser());
+            assertEquals(List.of(client, prospect), logic.getFilteredPersonList());
+            assertEquals(savedBefore, Files.readString(clientBookStorage.getClientBookFilePath()));
+            assertEquals("Client John Doe has been deleted successfully.",
+                    logic.execute(response).getFeedbackToUser());
+            assertSavedPersons(prospect);
+        }
+    }
+
+    @Test
+    public void execute_cancel_preservesFilterAndSavedFileAndClearsPendingCommand() throws Exception {
+        for (String response : List.of("n", "N", "no", "No", "  nO  ")) {
+            setUp();
+            logic.execute("find Jane");
+            String savedBefore = Files.readString(clientBookStorage.getClientBookFilePath());
+            assertEquals(String.format(DeleteCommand.MESSAGE_CONFIRMATION, prospect.getName()),
+                    logic.execute("delete 2").getFeedbackToUser());
+            assertEquals("Person deletion cancelled.", logic.execute(response).getFeedbackToUser());
+            assertEquals(List.of(prospect), logic.getFilteredPersonList());
+            assertEquals(savedBefore, Files.readString(clientBookStorage.getClientBookFilePath()));
+            assertSavedPersons(client, prospect);
+            logic.execute("list");
+            assertEquals(List.of(client, prospect), logic.getFilteredPersonList());
+        }
+    }
+
+    @Test
+    public void execute_invalidConfirmation_staysPendingUntilConfirmed() throws Exception {
+        logic.execute("delete 2");
+        for (String response : List.of("", "maybe", "list", "delete 1", "tagdelete 2")) {
+            assertRejectedWithoutChanges(response, CommandException.class,
+                    TagDeleteCommand.MESSAGE_INVALID_CONFIRMATION);
+        }
+        assertEquals("Prospect Jane Tan has been deleted successfully.", logic.execute("YES").getFeedbackToUser());
+        assertSavedPersons(client);
+    }
+
+    @Test
+    public void execute_invalidIndex_doesNotLeaveConfirmationPending() throws Exception {
+        assertRejectedWithoutChanges("delete 3", CommandException.class, "No client exists at index 3.");
+        logic.execute("find Jane");
+        assertRejectedWithoutChanges("delete 1", CommandException.class, "No client exists at index 1.");
+        logic.execute("list");
+        assertEquals(List.of(client, prospect), logic.getFilteredPersonList());
+        assertSavedPersons(client, prospect);
+    }
+
+    @Test
+    public void execute_tagDeleteAfterCancelledPersonDelete_preservesExistingConfirmationFlow() throws Exception {
+        logic.execute("delete 2");
+        logic.execute("no");
+        assertEquals("Are you sure you want to delete this?\nContact: Jane Tan\nTags to delete: [referral]\n"
+                + "Enter Y/Yes to confirm or N/No to cancel.",
+                logic.execute("tagdelete 2 referral").getFeedbackToUser());
+        assertRejectedWithoutChanges("delete 2", CommandException.class, "Please enter Y/Yes or N/No.");
+        assertEquals("Tag deletion cancelled.", logic.execute("N").getFeedbackToUser());
+        logic.execute("tagdelete 2 referral");
+        assertEquals("Deleted tags from Jane Tan: [referral]", logic.execute("Y").getFeedbackToUser());
+        Person updatedProspect = prospect.withTags(java.util.Set.of());
+        assertSavedPersons(client, updatedProspect);
+        assertEquals("Prospect Jane Tan has been deleted successfully.", confirmDelete("delete 2"));
+        assertSavedPersons(client);
+    }
+
+    /** Requests confirmation, verifies no mutation or save yet, then confirms deletion. */
+    private String confirmDelete(String command) throws Exception {
+        List<Person> recordsBefore = List.copyOf(model.getClientBook().getPersonList());
+        List<Person> displayedBefore = List.copyOf(logic.getFilteredPersonList());
+        String savedBefore = Files.readString(clientBookStorage.getClientBookFilePath());
+        int personIndex = Integer.parseInt(command.strip().split("\\s+")[1]) - 1;
+        assertEquals(String.format(DeleteCommand.MESSAGE_CONFIRMATION, recordsBefore.get(personIndex).getName()),
+                logic.execute(command).getFeedbackToUser());
+        assertEquals(recordsBefore, model.getClientBook().getPersonList());
+        assertEquals(displayedBefore, logic.getFilteredPersonList());
+        assertEquals(savedBefore, Files.readString(clientBookStorage.getClientBookFilePath()));
+        return logic.execute("yes").getFeedbackToUser();
     }
 
     /** Verifies both in-memory records and the result of reopening the saved JSON file. */
