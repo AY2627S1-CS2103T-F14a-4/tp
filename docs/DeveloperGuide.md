@@ -243,9 +243,10 @@ set.
 relationship, email and phone prefixes, `t/` is deliberately repeatable so a new person can be created with several
 tags. The parser collects those values into a set before constructing the `Person`.
 
-`PersonCard` renders the complete tag set in its existing `FlowPane`, sorting tags by name for deterministic display.
-The list view observes the model, so tags supplied by `add` or appended by `tag` appear with the person's contact and
-relationship details without a manual refresh. The `list` command restores all persons while retaining those tags.
+`PersonCard` renders the complete tag set in its existing `FlowPane`, sorting tags alphabetically by name while
+ignoring case. The list view observes the model, so tags supplied by `add` or appended by `tag` appear with the
+person's contact and relationship details without a manual refresh. The `list` command restores all persons while
+retaining those tags.
 
 The following sequence shows tags being appended to a person in the currently displayed list. Parsing and index
 validation complete before the immutable `Person` is replaced and the updated client book is saved.

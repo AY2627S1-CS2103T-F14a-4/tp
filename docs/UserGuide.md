@@ -117,6 +117,7 @@ Shows a list of all persons in the client book.
 Format: `list`
 
 Each person's tags are shown with their contact and relationship details.
+Tags are displayed in alphabetical order, ignoring letter case.
 
 Each person keeps the same index when the list is filtered or their details are edited. Search and due results show
 the person's original `list` index, so use the number shown beside the person for subsequent commands. Indexes are
