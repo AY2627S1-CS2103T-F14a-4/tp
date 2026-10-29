@@ -10,8 +10,8 @@ participant "command:TagCommand" as Command LOGIC_COLOR
 end box
 
 box Model MODEL_COLOR_T1
-participant "model:Model" as Model MODEL_COLOR
-participant "original:Person" as Person MODEL_COLOR
+participant "live:Model" as Live MODEL_COLOR
+participant "temporary:ModelManager" as Temp MODEL_COLOR
 end box
 
 box Storage STORAGE_COLOR_T1
@@ -34,37 +34,33 @@ TagParser --> Parser : command
 deactivate TagParser
 Parser --> Logic : command
 deactivate Parser
-Logic -> Command : execute(model)
+Logic -> Live : getClientBook(), getUserPrefs(),\ngetFilteredPersonPredicate(), getFilteredPersonComparator()
+Live --> Logic : data, preferences, predicate, comparator
+create Temp
+Logic -> Temp : new ModelManager(data, preferences)
+Logic -> Temp : updateFilteredPersonList(predicate, comparator)
+Logic -> Command : execute(temporary, storage)
 activate Command
-Command -> Model : getFilteredPersonList()
-Model --> Command : displayedPersons
-note right of Command : Reject an out-of-range index before changing data.
-Command -> Person : getTags()
-Person --> Command : existingTags
-note right of Command
-Intersect existingTags with supplied tags.
-Case-insensitive Tag equality detects repeats.
-end note
+Command -> Temp : getClientBook().getPersonList(),\ngetFilteredPersonList()
+Temp --> Command : complete and visible persons
+note right of Command : Resolve the original index;\nreject a hidden person.
+Command -> Command : compare existing and supplied tags\ncase-insensitively
 alt at least one supplied tag already exists
-    Command --> Logic : CommandException listing duplicate tags
+    Command --> Logic : CommandException(duplicate tags)
     deactivate Command
     [<-- Logic : error message
 else all supplied tags are new
-Command -> Command : union existingTags with supplied tags
-Command -> Person : withTags(updatedTags)
-Person --> Command : updatedPerson
-Command -> Model : setPerson(original, updatedPerson)
-note right of Model
-Replace the immutable Person while preserving all other fields.
-The observable list updates the PersonCard and retains its active filter.
-end note
-Command --> Logic : CommandResult
-deactivate Command
-Logic -> Model : getClientBook()
-Model --> Logic : clientBook
-Logic -> Storage : saveClientBook(clientBook)
-Storage --> Logic
-[<-- Logic : CommandResult
+    Command -> Command : updated = person.withTags(existing + supplied)
+    Command -> Temp : setPerson(person, updated)
+    Command --> Logic : CommandResult
+    deactivate Command
+    Logic -> Temp : getClientBook()
+    Temp --> Logic : updated client book
+    Logic -> Storage : saveClientBook(updated client book)
+    Storage --> Logic : save completed
+    Logic -> Live : setClientBook(updated client book)
+    Logic -> Live : updateFilteredPersonList(predicate, comparator)
+    [<-- Logic : CommandResult
 end
 deactivate Logic
 @enduml

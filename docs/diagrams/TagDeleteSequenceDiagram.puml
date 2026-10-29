@@ -9,12 +9,13 @@ end box
 box Logic LOGIC_COLOR_T1
 participant ":LogicManager" as Logic LOGIC_COLOR
 participant ":ClientBookParser" as Parser LOGIC_COLOR
+participant ":TagDeleteCommandParser" as TagDeleteParser LOGIC_COLOR
 participant "command:TagDeleteCommand" as Command LOGIC_COLOR
 end box
 
 box Model MODEL_COLOR_T1
-participant "model:Model" as Model MODEL_COLOR
-participant "original:Person" as Person MODEL_COLOR
+participant "live:Model" as Live MODEL_COLOR
+participant "temporary:ModelManager" as Temp MODEL_COLOR
 end box
 
 box Storage STORAGE_COLOR_T1
@@ -26,16 +27,23 @@ activate Ui
 Ui -> Logic : execute(commandText)
 activate Logic
 Logic -> Parser : parseCommand(commandText)
+activate Parser
+Parser -> TagDeleteParser : parse(arguments)
+activate TagDeleteParser
+create Command
+TagDeleteParser -> Command : new TagDeleteCommand(index, tags)
+TagDeleteParser --> Parser : command
+deactivate TagDeleteParser
 Parser --> Logic : command
-Logic -> Command : validate(model)
+deactivate Parser
+Logic -> Command : getConfirmationMessage(live)
 activate Command
-Command -> Model : getFilteredPersonList()
-Model --> Command : displayedPersons
-Command -> Person : getTags()
-Person --> Command : existingTags
+Command -> Live : getClientBook().getPersonList(),\ngetFilteredPersonList()
+Live --> Command : complete and visible persons
+note right of Command : Validate the person and tags;\nresolve the exact stored tags.
 Command --> Logic : confirmation message with contact and tags
 deactivate Command
-note right of Logic : Store command as pendingTagDeleteCommand.
+Logic -> Logic : store pendingTagDeleteCommand
 Logic --> Ui : CommandResult
 deactivate Logic
 Ui -> Ui : display confirmation in result box
@@ -48,27 +56,32 @@ Ui -> Logic : execute("yes")
 activate Logic
 
 alt response is n or no, case-insensitively
+    Logic -> Logic : clear pending command
     Logic --> Ui : CommandResult("Tag deletion cancelled.")
 else response is neither confirmation nor cancellation
     Logic --> Ui : CommandException("Please enter Y/Yes or N/No.")
     note right of Logic : Keep the deletion pending.
 else response is y or yes, case-insensitively
-    Logic -> Command : pendingTagDeleteCommand.execute(model)
+    Logic -> Logic : clear pending command
+    Logic -> Live : getClientBook(), getUserPrefs(),\ngetFilteredPersonPredicate(), getFilteredPersonComparator()
+    Live --> Logic : data, preferences, predicate, comparator
+    create Temp
+    Logic -> Temp : new ModelManager(data, preferences)
+    Logic -> Temp : updateFilteredPersonList(predicate, comparator)
+    Logic -> Command : execute(temporary, storage)
     activate Command
-    Command -> Model : getFilteredPersonList()
-    Model --> Command : displayedPersons
-    Command -> Person : getTags()
-    Person --> Command : existingTags
-    Command -> Command : remove selected tags from a copy
-    Command -> Person : withTags(updatedTags)
-    Person --> Command : updatedPerson
-    Command -> Model : setPerson(original, updatedPerson)
+    Command -> Temp : getClientBook().getPersonList(),\ngetFilteredPersonList()
+    Temp --> Command : complete and visible persons
+    Command -> Command : validate again; build person copy\nwithout selected tags
+    Command -> Temp : setPerson(person, updated)
     Command --> Logic : CommandResult
     deactivate Command
-    Logic -> Model : getClientBook()
-    Model --> Logic : clientBook
-    Logic -> Storage : saveClientBook(clientBook)
-    Storage --> Logic
+    Logic -> Temp : getClientBook()
+    Temp --> Logic : updated client book
+    Logic -> Storage : saveClientBook(updated client book)
+    Storage --> Logic : save completed
+    Logic -> Live : setClientBook(updated client book)
+    Logic -> Live : updateFilteredPersonList(predicate, comparator)
     Logic --> Ui : CommandResult
 end
 deactivate Logic

@@ -29,15 +29,14 @@ and stores records locally.
    ![Ui](images/Ui.png)
 
 5. Type a command in the command box and press Enter to execute it. The result box below the command box shows
-   the command you entered followed by its result, wrapping long text to fit the available width. For example, type
-   **`help`** and press Enter to open the help window.<br>
+   the command you entered followed by its result.
    Some example commands you can try:
 
    * `list` : Lists all contacts.
 
    * `add r/Client n/John Doe e/johnd@example.com p/98765432` : Adds a client contact named `John Doe`.
 
-   * `delete 3` : Deletes the 3rd contact shown in the current list.
+   * `delete 1` : Deletes the 1st contact shown in the current list.
 
    * `clear` : Deletes all contacts.
 
@@ -124,40 +123,36 @@ renumbered only after a person is deleted.
 
 ### Adding tags to a person: `tag`
 
-Adds one or more tags to a person in the currently displayed list.
+Adds one or more tags without removing the person's existing tags.
 
 Format: `tag INDEX TAG [MORE_TAGS...]`
 
-* `INDEX` must be a positive integer that refers to a person in the currently displayed list, including filtered
-  search results.
-* Each `TAG` must contain only letters and numbers, with no spaces.
-* Existing tags are preserved. Tags are compared case-insensitively, so adding `PRIORITY` when `priority` exists
-  produces an error and no tags are added.
+* `INDEX` is the number shown beside the person in the current list, including a filtered list.
+* Each `TAG` must contain only letters and numbers. Separate multiple tags with spaces.
+* Tag matching is case-insensitive. If the person already has any supplied tag, no tags are added.
 
 Examples:
-* `tag 1 priority`
-* `tag 2 referral insurance`
+
+* `tag 1 priority` adds `priority` to person `1`.
+* `tag 2 referral insurance` adds both tags to person `2`.
 
 ### Deleting tags from a person: `tagdelete`
 
-Deletes all or selected tags from a person in the currently displayed list.
+Deletes selected tags, or all tags, after confirmation.
 
 Format: `tagdelete INDEX [TAG...]`
 
-* `INDEX` must be a positive integer that refers to a person in the currently displayed list, including filtered
-  search results.
-* Leave `TAG` empty to delete every tag from the person.
-* Supply one or more whitespace-separated tags to delete only those tags. Tag matching is case-insensitive.
-* If any supplied tag does not belong to the person, an error is shown and no tags are deleted.
-* Before deletion, the result box below the command box asks `Are you sure you want to delete this?` and displays the
-  contact name and exact tags that will be removed. Type `Y` or `Yes` in the command box to proceed, or `N` or `No`
-  to cancel without changing the person. Responses are case-insensitive.
-* While confirmation is pending, other inputs produce an error and the deletion remains pending until a valid
-  confirmation response is entered.
+* `INDEX` is the number shown beside the person in the current list, including a filtered list.
+* Omit `TAG` to delete all tags. Otherwise, separate the tags to delete with spaces.
+* Tag matching is case-insensitive. If the person does not have every supplied tag, no tags are deleted.
+* The result box shows the person and tags to be deleted. Enter `Y` or `Yes` to confirm, or `N` or `No` to cancel.
+  Responses are case-insensitive.
+* Until you confirm or cancel, any other input is rejected and the deletion remains pending.
 
 Examples:
-* `tagdelete 1` deletes every tag from the first displayed person after confirmation.
-* `tagdelete 1 friend referral` deletes the `friend` and `referral` tags after confirmation.
+
+* `tagdelete 1` requests deletion of every tag from person `1`.
+* `tagdelete 1 friend referral` requests deletion of only `friend` and `referral` from person `1`.
 
 ### Editing a person: `edit`
 
@@ -305,7 +300,8 @@ Invalid input leaves existing notes unchanged.
 
 Backdated notes are placed in chronological order. Notes with the same date retain their existing order;
 new notes with that date appear after them. Displayed note numbers update to match this order.
-Use `find k/KEYWORD` to search interaction note dates and text together with other remembered details.
+Use `find k/KEYWORD` to search interaction note dates, types, outcomes and text together with other remembered
+details.
 
 ### Editing a dated interaction note: `noteedit`
 
@@ -367,65 +363,33 @@ Deletion cannot be undone. Invalid input does not change existing records.
 
 ### Locating persons by name, relationship, tags or remembered details: `find`
 
-Finds persons using any combination of name keywords, relationship, tags and remembered-detail keywords.
+Filters persons by name, relationship, tags, remembered details, or any combination of these.
 
 Format: `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...]] [k/DETAIL_KEYWORD [MORE_KEYWORDS...]]`
 
-* Every filter is optional, but at least one name keyword, relationship, tag or detail keyword must be provided.
-* Each whitespace-separated name keyword is validated independently. A keyword may contain letters with internal
-  hyphens (`-`) or apostrophes (`'`), or it may be the standalone relationship marker `s/o`, `d/o`, or `w/o`.
-  Digits, other symbols, and arbitrary slash forms are not allowed.
-* Name keywords, relationship values and tags are case-insensitive; for example, `hans` matches `Hans`, and `client`
-  matches `Client`.
-* Keyword order does not matter; for example, `Hans Bo` matches `Bo Hans`.
-* Keyword searches consider only names.
-* Each name keyword matches any contiguous part of a name. For example, `Alex` matches `Alexander`, while `Aex`
-  does not. A keyword can also match part of a hyphenated name, so either `Anne` or `Marie` matches `Anne-Marie Tan`.
-* Persons matching at least one keyword are returned (an `OR` search); for example, `Hans Bo` returns `Hans Gruber` and `Bo Yang`.
-* `RELATIONSHIP` must be either `client` or `prospect` and is case-insensitive.
-* Each `TAG` keyword must be alphanumeric and matches any contiguous part of a tag. For example, `t/friend`
-  matches `friend`, `friends`, and `bestfriend`. A person with at least one matching tag keyword matches the tag
-  filter.
-* Each whitespace-separated `DETAIL_KEYWORD` after `k/` performs a case-insensitive contiguous search across the
-  preferred contact channel, preferred contact timing, financial need, priority, area of interest, and every
-  interaction note's date and text, plus the follow-up action text and due date. Follow-up completion status is not
-  searched. Names, phone numbers, email addresses, relationships and tags are also not searched by `k/` because they
-  have their own filters or identifying fields.
-* Detail keywords may contain punctuation and digits, such as `6:30`, `A/B`, or `2026-10-06`. A person matching at
-  least one supplied detail keyword matches the detail filter (an `OR` search).
-* When filter types are combined, a result must match every supplied filter type. For example, a search with names,
-  a relationship, tags and details must match at least one name keyword **and** the relationship **and** at least
-  one tag **and** at least one detail keyword.
-* Put name keywords before any prefixed filter. Tags follow a single `t/`, and detail keywords follow a single
-  `k/`; values within each filter are separated by spaces. The `r/`, `t/`, and `k/` filters may appear in any order.
-* Filtered persons retain the same order and indexes as in the `list` command.
-* After a successful `find`, the first matching person is selected automatically. Press the unmodified
-  <kbd>Down</kbd> or <kbd>Up</kbd> arrow key to select the next or previous result respectively. The list scrolls
-  automatically to keep the selected result visible, and navigation stops at the first and last results. If there
-  are no matches, no person is selected. Find-result navigation remains active until another command is submitted;
-  selecting a person with the mouse without first running `find` does not activate it.
+| Filter         | Syntax and matching rule                                                                                                                                                                                                                          |
+|:---------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| KEYWORD        | Write one or more name keywords before any prefixed filter. Each keyword matches contiguous text in names only. Each keyword contains letters with optional internal hyphens or apostrophes; `s/o`, `d/o`, and `w/o` are also accepted.           |
+| RELATIONSHIP   | Use `r/client` or `r/prospect`. The value must match the relationship exactly.                                                                                                                                                                    |
+| TAG            | Put one or more alphanumeric keywords after one `t/`. Each keyword matches contiguous text in a tag; for example, `friend` matches `friend`, `friends`, and `bestfriend`.                                                                         |
+| DETAIL_KEYWORD | Put one or more non-whitespace keywords after one `k/`. Punctuation and digits are accepted. This searches contact preferences, financial information, interaction-note dates, types, outcomes and text, and follow-up action text and due dates. |
+
+* Provide at least one filter. Each prefix may appear only once; `r/`, `t/`, and `k/` may appear in any order.
+* Matching is case-insensitive. Multiple values within the name, tag, or detail filter use **OR**. Different supplied
+  filter types use **AND**.
+* `k/` does not search names, phone numbers, email addresses, relationships, tags, or follow-up completion status.
+* Results keep their `list` order and indexes. The first result is selected automatically; use <kbd>Up</kbd> and
+  <kbd>Down</kbd> to move through results. Selection and scrolling stop at the list boundaries. No result means no
+  selection.
 
 Examples:
-* `find John` returns `john` and `John Doe`
-* `find Alex` returns `Alex` and `Alexander`.
-* `find Anne` and `find Marie` both return `Anne-Marie Tan`.
-* `find alex david` returns `Alex Yeoh`, `David Li`<br>
+
+* `find alex david` returns names containing `alex` or `david`, such as `Alex Yeoh` and `David Li`.<br>
   ![result for 'find alex david'](images/findAlexDavidResult.png)
 * `find r/client` returns all clients.
-* `find r/Prospect` returns all prospects.
-* `find alex david r/prospect` returns prospects whose names contain `alex` or `david` as contiguous text.
-* `find s/o` returns persons whose names contain `s/o` as a standalone component.
-* `find Jack s/o` returns persons whose names contain either `Jack` or `s/o`.
-* `find t/friend` returns persons with tags such as `friend`, `friends`, or `bestfriend`.
-* `find t/referral priority` returns persons tagged `referral` or `priority`.
-* `find k/retirement` returns persons whose preferences, financial information, or interaction notes contain
-  `retirement`.
-* `find k/WhatsApp 2026-10-06` returns persons whose remembered details contain `WhatsApp` or whose interaction notes
-  contain the date `2026-10-06`.
-* `find k/investment` returns persons whose follow-up action text contains `investment`, as well as matches in the
-  other remembered-detail fields.
-* `find k/2026-12-15` returns persons with an interaction note dated `2026-12-15` or a follow-up due on that date.
-  Partial date searches such as `find k/2026-12` work because date matching is contiguous.
+* `find Jack s/o` returns names containing `Jack` or the standalone marker `s/o`.
+* `find t/friend referral` returns persons with a tag containing `friend` or `referral`.
+* `find k/WhatsApp 2026-10-06` returns persons whose remembered details contain either value.
 * `find alex r/client t/priority referral k/retirement WhatsApp` returns clients named `alex` who have a `priority`
   or `referral` tag and whose remembered details contain `retirement` or `WhatsApp`.
 
