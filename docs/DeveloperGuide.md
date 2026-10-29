@@ -199,8 +199,8 @@ matching and are joined with `OR`. Thus, `Alex` matches `Alexander`, while eithe
 `OR`; for example, `friend` matches both `friend` and `friends`. Detail keywords search the two contact preferences,
 the three financial-information fields, each interaction note's date and text, and the follow-up action text and due
 date. Dates use their ISO `yyyy-MM-dd` representation, so both full dates and contiguous fragments match. Follow-up
-completion status is excluded. Detail keywords are joined with `OR`. The predicate joins the name, relationship,
-tag, and detail filter results with `AND`. For example,
+completion status, interaction type, and interaction outcome are excluded. Detail keywords are joined with `OR`. The
+predicate joins the name, relationship, tag, and detail filter results with `AND`. For example,
 `find Alex David r/client t/priority referral k/retirement WhatsApp` returns clients whose name contains `Alex` or
 `David`, whose tags contain `priority` or `referral`, and whose remembered details contain `retirement` or `WhatsApp`.
 

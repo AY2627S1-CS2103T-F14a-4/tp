@@ -18,7 +18,8 @@ public class PersonMatchesFiltersPredicateTest {
             .withFinancialNeed("Retirement planning").withPriority("Protect family income")
             .withAreaOfInterest("Life insurance")
             .withInteractionNotes(new InteractionNote(LocalDate.of(2026, 10, 6),
-                    "Discussed university fund and option A/B"))
+                    "Discussed university fund and option A/B", InteractionType.MEETING,
+                    InteractionOutcome.SUCCESSFUL))
             .withNextAction(new NextAction("Call about investment review", LocalDate.of(2026, 12, 15), false))
             .build();
 
@@ -91,6 +92,8 @@ public class PersonMatchesFiltersPredicateTest {
         assertDetailKeywordDoesNotMatch("Friends");
         assertDetailKeywordDoesNotMatch("amy@gmail.com");
         assertDetailKeywordDoesNotMatch("85355255");
+        assertDetailKeywordDoesNotMatch("MEETING");
+        assertDetailKeywordDoesNotMatch("SUCCESSFUL");
         assertDetailKeywordDoesNotMatch("2027-12-15");
     }
 

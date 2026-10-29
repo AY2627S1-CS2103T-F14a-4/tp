@@ -389,8 +389,8 @@ Format: `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...
 * Each whitespace-separated `DETAIL_KEYWORD` after `k/` performs a case-insensitive contiguous search across the
   preferred contact channel, preferred contact timing, financial need, priority, area of interest, and every
   interaction note's date and text, plus the follow-up action text and due date. Follow-up completion status is not
-  searched. Names, phone numbers, email addresses, relationships and tags are also not searched by `k/` because they
-  have their own filters or identifying fields.
+  searched. Interaction type and outcome are also excluded. Names, phone numbers, email addresses, relationships and
+  tags are not searched by `k/` because they have their own filters or identifying fields.
 * Detail keywords may contain punctuation and digits, such as `6:30`, `A/B`, or `2026-10-06`. A person matching at
   least one supplied detail keyword matches the detail filter (an `OR` search).
 * When filter types are combined, a result must match every supplied filter type. For example, a search with names,
