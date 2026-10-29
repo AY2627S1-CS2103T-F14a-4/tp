@@ -13,11 +13,9 @@
 
 ## **Acknowledgements**
 
-* Junhan Liu (`ZachL1113`) used OpenAI ChatGPT/Codex to draft the v1.3 delete integration tests, additional parser
-  boundary tests, and the accompanying delete documentation. This assistance covers `DeleteIntegrationTest`,
-  the new cases in `DeleteCommandParserTest`, the UG delete section additions, and the DG deletion test instructions.
-  Codex also helped correct the UG product/download references and synchronise UG/DG find instructions with the
-  combined name-and-relationship search already merged in PR #67.
+* Liu Junhan (`ZachL1113`) used OpenAI ChatGPT/Codex to assist with implementation, testing and documentation for
+  `delete`, `next`, `due`, `done`, `reschedule`, `remind` and `unremind`, including the related bug fixes
+  and the delete confirmation. Liu Junhan directed the work, reviewed the changes and tested them before submission.
 
 * Koey Xian Han (`KoeyXianHan123`) used OpenAI ChatGPT and Codex to assist with implementation reviews, debugging,
   test generation, and documentation improvements for the `info` and `contact` features. This included assistance
@@ -531,220 +529,198 @@ Automated and manual regression checks are described in the [Testing guide](Test
 
 ### Follow-ups
 
-Each `Person` has zero or one immutable `NextAction`: an action description, a `LocalDate` due date,
-and a boolean completion status. Absence is exposed through `Person#getNextAction()` as an empty `Optional`.
-The value participates in full person equality and hashing, but does not affect duplicate identity detection.
-`Person#withNextAction` creates a replacement person while preserving all unrelated information.
-`EditCommand`, `InfoCommand` and `NoteCommand` must carry this field into their replacement persons.
+Each `Person` has zero or one immutable `NextAction` containing a description, a `LocalDate` due date
+and a completion flag. `Person#getNextAction()` exposes absence as an empty `Optional`;
+`Person#withNextAction` replaces the action while preserving unrelated fields. The value participates in
+full equality and hashing, but not duplicate identity detection.
+
+All indexed follow-up commands resolve people through `Command#getVisiblePersonAtIndex`: the index is the
+original one-based position in the complete client book, and that person must also be visible under the
+current filter. Filtering and due-date sorting do not renumber contacts. Invalid or hidden indices report
+`The person index provided is invalid.`. Rejected commands leave data, the active filter and sorting unchanged.
+
+`next` and `reschedule` share description and date validation: descriptions contain 1–200 Java string
+characters after surrounding whitespace is stripped; dates use exactly `yyyy-MM-dd`, strict calendar
+validation and years 0001–9999. At execution, both commands reject a requested date before
+`LocalDate.now(clock)` with `Follow-up date cannot be before today.`. Their default clock uses
+`Clock.systemDefaultZone()`; tests inject fixed clocks. Calendar parsing, model construction and storage
+still accept historical dates so saved follow-ups remain loadable as they become overdue.
+
+The parsers use `ParserUtil#parseIndex` and `ArgumentTokenizer`. Space-prefixed `a/` and `d/` delimit
+fields in commands that recognise them; they cannot appear literally within an action description.
+Other text, including URLs, is accepted. Repeated recognised prefixes produce
+`Multiple values specified for the following single-valued field(s): ` followed by the duplicated prefixes.
+The error tables below cover command-specific failures; `NAME`, `LABEL` and `N` stand for actual values.
 
 #### Recording or replacing an action
 
-`ClientBookParser` routes `next` to `NextCommandParser`, which uses `ArgumentTokenizer` for `a/` and `d/`.
-The parser validates the index through `ParserUtil#parseIndex`, rejects duplicate prefixes, and distinguishes
-missing action/date fields. `NextAction` strips surrounding description whitespace and checks a length of
-1–200 Java string characters. Its date parser enforces the four-digit-year/two-digit-month/two-digit-day shape
-and strict calendar validation. Both parsing and model construction restrict the year to 1–9999;
-year zero is rejected, including when loading JSON. Calendar parsing and the model continue to
-accept historical dates so existing saved follow-ups remain loadable as they become overdue.
+`ClientBookParser` routes `next INDEX a/ACTION d/yyyy-MM-dd` to `NextCommandParser`. It validates the
+index, duplicate prefixes, required fields, calendar date and description before constructing `NextCommand`.
+The command checks visibility and the execution-date rule above, then calls `Model#setPerson` with
+`Person#withNextAction`. Creation and replacement both set `completed = false`, including when replacing
+completed work. Success reports `Next action for NAME has been updated successfully.`.
 
 ##### Validation errors
 
-Input | Error message
-------|--------------
-`next` | `Person index is required.`
-`next 1 d/2026-10-20` | `Next action is required: use a/ACTION.`
-`next 1 a/Call` or `next 1 a/Call d/` | `Due date is required: use d/yyyy-MM-dd.`
-`next 0 a/Call d/2026-10-20` or a negative/non-integer index | `Index must be a positive integer.`
-`next 99 a/Call d/2026-10-20` when fewer than 99 people are displayed | `The person index provided is invalid.`
-`next 1 a/ d/2026-10-20` or an action over 200 characters | `Next action must contain 1 to 200 characters.`
-`next 1 a/Call d/2026-02-30` | `Due date must be a valid date in yyyy-MM-dd format.`
-`next 1 a/Call d/2026-10-25` when today is `2026-10-26` | `Follow-up date cannot be before today.`
+Condition | Error message
+----------|--------------
+Missing index | `Person index is required.`
+Zero, negative, non-integer, overflowing or multiple indices | `Index must be a positive integer.`
+Missing `a/` | `Next action is required: use a/ACTION.`
+Missing or blank `d/` | `Due date is required: use d/yyyy-MM-dd.`
+Blank or overlong action | `Next action must contain 1 to 200 characters.`
+Invalid calendar date, format or year | `Due date must be a valid date in yyyy-MM-dd format.`
 
-Repeated `a/` or `d/` prefixes produce the standard duplicate-prefix error. Space-prefixed `a/` and `d/`
-are reserved delimiters and cannot appear literally within the description. URLs such as `https://example.com`
-and other text are accepted.
-
-`NextCommand` resolves the visible person against its index in the complete list, rejects invalid indices,
-and checks the requested date against `LocalDate.now(clock)` before any mutation. Both new and
-replacement follow-ups must be dated today or later; past dates produce
-`Follow-up date cannot be before today.`. The default clock uses `Clock.systemDefaultZone()`;
-tests inject a fixed clock to cover today, tomorrow, yesterday, and local-zone boundaries.
-Validation belongs to the command rather than the date value or storage adapter so previously
-saved overdue follow-ups continue to load and appear in `due`. The parser remains responsible for
-strict date format/calendar validation. The command then passes the replacement person to
-`Model#setPerson`. Both new and replacement actions have
-`completed = false`. The observable list updates the card. `LogicManager` then saves through the existing
-storage pipeline; the command itself does not write files.
+The shared visibility, past-date and duplicate-prefix checks above also apply.
 
 <puml src="diagrams/NextSequenceDiagram.puml" alt="Next command sequence diagram" />
 
 Diagram source: [NextSequenceDiagram.puml](diagrams/NextSequenceDiagram.puml).
-The diagram shows the successful path, assuming the example date is today or later.
-Parser failures, invalid displayed indices and past replacement dates stop before mutation;
-save failures follow the existing `LogicManager` error handling.
+The diagram shows the successful path with a date that is today or later.
 
 #### Completing an action
 
-`ClientBookParser` routes `done INDEX` to `DoneCommandParser`. Empty arguments report
-`Person index is required.`; otherwise `ParserUtil#parseIndex` validates the entire argument string,
-rejecting zero, negative, non-integer and multiple indices.
-
-`DoneCommand` first resolves the visible person against its index in the complete list, then checks that the selected
-person has a next action. These checks occur before any model mutation and report, respectively,
-`Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX` and `NAME has no next action to complete.`.
+`ClientBookParser` routes `done INDEX` to `DoneCommandParser`, which validates the entire argument as one
+index. `DoneCommand` checks visibility, then the presence of an action. `NextAction#markCompleted()` keeps
+the description and date and sets `completed = true`; `Person#withNextAction` and `Model#setPerson` preserve
+all other fields. Success reports `Next action for NAME has been marked as completed.`.
+An already completed action returns `Next action for NAME is already completed.` without mutation.
+Yearly reminders are unaffected. The current filter and comparator remain active; in the due view, a person
+stays visible only if another qualifying event remains.
 
 ##### Validation errors
 
-The command checks these conditions in the order shown; a rejected command leaves all data and the current filter
-unchanged:
-
 Condition | Error message
 ----------|--------------
-The index is outside the currently displayed list | `The person index provided is invalid.`
-The person has no next action | `NAME has no next action to complete.`
-
-`done` without an index reports `Person index is required.`. Zero, negative numbers, non-integers, and extra
-arguments such as `done 1 2` report `Index must be a positive integer.`.
-
-If the action is already completed, the command returns a normal `CommandResult` with
-`Next action for NAME is already completed.` without calling `Model#setPerson` or changing the filter.
-
-`NextAction#markCompleted()` returns a new object with the original description and date and
-`completed = true`. `DoneCommand` passes it to `Person#withNextAction` and calls `Model#setPerson`,
-preserving every unrelated person field and the current filter. The card displays `Completed` through the
-existing observable-list update. `LogicManager` saves through the existing JSON storage pipeline and returns
-`Next action for NAME has been marked as completed.`.
-
-Tests cover the immutable completed copy, preserved description/date and person fields, filtered display
-indices, out-of-range indices, absent actions, repeated completion, unchanged data on errors, command equality,
-string representation, parser validation and routing through `ClientBookParser`.
+Missing index | `Person index is required.`
+Zero, negative, non-integer, overflowing or multiple indices | `Index must be a positive integer.`
+No next action after visibility validation | `NAME has no next action to complete.`
 
 #### Rescheduling existing follow-ups
 
-`ClientBookParser` routes `reschedule INDEX d/yyyy-MM-dd [a/ACTION]` to
-`RescheduleCommandParser`. It reuses the existing `a/` and `d/` prefixes, index parsing,
-`NextAction.parseDate` and description validation. The parser validates calendar dates and format;
-`RescheduleCommand` resolves the client with `Command.getVisiblePersonAtIndex`, using its original
-full-list index and rejecting clients hidden by the current filter, as `next` and `done` do.
-It additionally rejects dates before today at execution with
-`Follow-up date cannot be before today.`. Its default clock uses the system's local zone, with an
-injectable `Clock` for deterministic tests. Duplicate prefixes, missing dates, invalid inputs and
-past replacement dates fail before model mutation. `NextAction.parseDate` remains a calendar
-validator, so existing stored overdue follow-ups remain loadable.
+`ClientBookParser` routes `reschedule INDEX d/yyyy-MM-dd [a/ACTION]` to `RescheduleCommandParser`.
+The parser reuses the shared date and description validation; omitting `a/` keeps the existing description.
+After parsing, `RescheduleCommand` checks visibility, the presence of an action, then the execution-date rule,
+in that order. `NextAction#reschedule` creates a pending copy, reopening completed work, and
+`Person#withNextAction` and `Model#setPerson` preserve all other fields.
+Success reports `Follow-up for NAME has been rescheduled successfully.`.
 
-A separate minimal command keeps `next` creation/replacement semantics unchanged while permitting
-an omitted description and requiring an existing follow-up. `RescheduleCommand` resolves the displayed
-index, rejects a person without a follow-up, then calls `NextAction.reschedule` and
-`Person.withNextAction` before `Model#setPerson`. The immutable copy always resets `completed`
-to `false`, so rescheduling completed work reopens it. A follow-up rescheduled for today is included
-when `due` is run again; a future follow-up remains pending and is excluded until its due date.
-All other person fields and the active filter are preserved. A due action moved into the future
-is therefore automatically removed from that filtered view.
+The active filter and comparator are retained and re-evaluated. Moving an action into the future removes
+its person from `due` only if no upcoming yearly reminder still qualifies; moving it to today makes the
+action qualify. Changing the date can also reorder the due view without changing full-list indices.
 
-`LogicManager` persists the updated person through the existing `JsonAdaptedNextAction`; no JSON
-schema change or migration is required. Parser/command tests cover invalid inputs, displayed indices,
-missing follow-ups, date-only and description changes, reopening completed actions, rejection of
-past dates without mutation, local-zone date boundaries and due-filter updates. Model and JSON
-round-trip tests verify immutable rescheduling, pending status and preservation of optional fields.
+##### Validation errors
+
+Condition | Error message
+----------|--------------
+Missing index | `Person index is required.`
+Zero, negative, non-integer, overflowing or multiple indices | `Index must be a positive integer.`
+Missing or blank `d/` | `Due date is required: use d/yyyy-MM-dd.`
+Supplied action is blank or overlong | `Next action must contain 1 to 200 characters.`
+Invalid calendar date, format or year | `Due date must be a valid date in yyyy-MM-dd format.`
+No follow-up after visibility validation | `NAME has no follow-up to reschedule. Use next to create one.`
+
+The shared visibility, past-date and duplicate-prefix checks above also apply.
 
 #### Yearly recurring reminders
 
-`ClientBookParser` dispatches `remind INDEX a/LABEL d/MM-dd` to `RemindCommandParser`, which reuses
-`ParserUtil.parseIndex` and the existing action/date prefixes. It rejects duplicate/missing prefixes and
-constructs an immutable `RecurringReminder`. Labels are stripped, limited to 50 characters and reject
-control characters and slashes. The date is a strictly formatted `MonthDay`; no year or general recurrence
-rule is stored.
+`ClientBookParser` dispatches `remind INDEX a/LABEL d/MM-dd` to `RemindCommandParser` and
+`unremind INDEX a/LABEL` to `UnremindCommandParser`. Both validate the index before duplicate and required
+prefix checks. `RecurringReminder#parseLabel` strips surrounding whitespace and requires 1–50 Java string
+characters without ISO control characters or slashes. `RecurringReminder#parseDate` requires a real
+`MonthDay` written as exactly `MM-dd`; February 29 is accepted. No year or general recurrence rule is stored.
+`unremind` recognises only `a/`: a trailing `d/` becomes part of the label and fails slash validation.
 
-`RemindCommand` resolves the client through `Command.getVisiblePersonAtIndex`, retaining the original
-full-list index after filtering and rejecting hidden clients. It uses `Person.withRecurringReminder` through
-`Model.setPerson`. Case-insensitive label matching updates a reminder in place and retains the existing
-label's display spelling; otherwise it appends with the supplied spelling. `equalsIgnoreCase` performs
-lookup for upserts and deletion, and `TreeSet(String.CASE_INSENSITIVE_ORDER)` enforces the same equivalence
-for model and storage uniqueness. This policy is locale-independent and does not lowercase saved labels.
-Reminder value equality retains display spelling as metadata.
+After visibility validation, `RemindCommand` uses `Person#withRecurringReminder` and `Model#setPerson`.
+A case-insensitive label match updates the date in place while retaining the stored display spelling;
+another label appends a reminder. Success reports `Yearly reminder for NAME has been updated successfully.`.
+`UnremindCommand` finds the label ignoring case, then uses `Person#withoutRecurringReminder` and
+`Model#setPerson`. Success reports `Yearly reminder "LABEL" for NAME has been removed successfully.`,
+using the stored label spelling. Both commands preserve unrelated fields, the filter and sorting.
+Removing the last qualifying reminder hides a person from `due` unless a due next action still qualifies.
 
-`Person` defensively copies its reminder list, enforces unique labels ignoring case, and includes it in equality, hashing
-and every copy path. Existing `edit`, `info` and note mutation commands pass the list through their person
-copies. `add` syntax and existing constructors are unchanged; older constructors default to an empty list.
+`equalsIgnoreCase` handles lookup; `TreeSet(String.CASE_INSENSITIVE_ORDER)` enforces unique labels in the
+model and storage. Display spelling participates in reminder value equality. `Person` defensively copies
+its reminder list and includes it in equality, hashing and all copy paths.
 
-`JsonAdaptedRecurringReminder` stores `{ "label": "Birthday", "date": "02-29" }` within the person's
-`recurringReminders` array. `JsonAdaptedPerson` validates each element and rejects null elements or duplicate
-labels, including case variants such as `Birthday` and `birthday`. A missing, null or empty array loads
-as an empty list, preserving compatibility with old JSON.
-Persistence uses the existing `LogicManager`/storage path, including backup and restore.
+`RecurringReminder#nextOccurrence(today)` uses this year's occurrence, or next year's if it has passed.
+`MonthDay#atYear` maps February 29 to February 28 in non-leap years. Past annual occurrences do not
+accumulate as overdue reminders. `PersonCard` shows `Yearly | YYYY-MM-DD: LABEL`; `done` affects only
+the one-off action.
 
-`ClientBookParser` separately dispatches `unremind INDEX a/LABEL` to `UnremindCommandParser`, which reuses
-`RecurringReminder.parseLabel` for the same label validation as creation. `UnremindCommand` uses the
-same `getVisiblePersonAtIndex` helper, then finds the label ignoring case before any mutation. A missing match (including an empty
-reminder list) reports a `CommandException`. `Person.withoutRecurringReminder` creates an immutable copy
-without that label and preserves every other field. `Model.setPerson` re-evaluates the active due filter;
-removing the last qualifying yearly reminder hides the person unless a due action still qualifies.
-The existing persistence path saves deletions. `remind` continues to require a valid nonempty date;
-its empty date syntax is not overloaded for deletion, consistent with the separate `notedelete` command.
+##### Validation errors
 
-`RecurringReminder.nextOccurrence(today)` computes this year's occurrence or next year's if it has passed.
-`MonthDay.atYear` maps February 29 to February 28 in non-leap years. `NextActionDuePredicate` retains its
-existing incomplete due-action condition and additionally accepts a next occurrence 0–30 days from its
-captured execution date. The 30-day horizon uses `ChronoUnit.DAYS`, supports year rollover, and has no
-accumulated overdue annual occurrence. `PersonCard` shows labels and next dates in the existing card;
-`done` still changes only `NextAction`.
+Condition | Error message
+----------|--------------
+Missing, zero, negative, non-integer, overflowing or multiple indices | `Index must be a positive integer.`
+`remind` missing either required prefix, after index/duplicate checks | `remind INDEX a/LABEL d/MM-dd`
+`unremind` missing `a/`, after index/duplicate checks | `unremind INDEX a/LABEL`
+Blank, overlong or invalid label | `Reminder label must contain 1 to 50 characters, without control characters or slashes.`
+Blank, invalid or incorrectly formatted yearly date | `Yearly date must be a valid date in MM-dd format.`
+`unremind` label has no match after visibility validation | `NAME has no yearly reminder matching label "LABEL".`
+
+The shared visibility and duplicate-prefix checks above also apply. An empty `d/` does not delete a reminder.
 
 #### Viewing due actions
 
-`ClientBookParser` routes argument-free `due` to `DueCommand`; any arguments are rejected with
-`The due command takes no arguments.`. On each execution, `DueCommand` obtains today's date using
-`LocalDate.now(clock)` and calls `Model#updateFilteredPersonList` with a new `NextActionDuePredicate`.
-The predicate includes people with an incomplete next action whose date is today or earlier, or a yearly
-reminder whose next occurrence is within 30 days inclusive (US22).
-This replaces any previous search filter without changing stored people. Completing an action through
-`done` replaces the person, so the observable filtered list automatically excludes that person unless
-an upcoming yearly reminder still qualifies.
+`ClientBookParser` routes argument-free `due` to `DueCommand`. Each execution captures
+`LocalDate.now(clock)` and supplies a new `NextActionDuePredicate` and comparator to
+`Model#updateFilteredPersonList`, replacing any previous filter. A person qualifies once if they have an
+incomplete next action dated today or earlier, or a yearly reminder whose next occurrence falls 0–30 days
+from the captured date, inclusive. Completed and future one-off actions do not qualify on their own.
+The default clock uses the system's local zone; rerunning `due` refreshes the captured date after midnight.
 
-The default constructor uses `Clock.systemDefaultZone()`. Tests inject a `Clock.fixed` with an explicit
-zone to make the date boundary deterministic. The predicate captures the execution date; rerunning `due`
-refreshes it after midnight. Empty results report `No follow-ups are due and no yearly reminders are upcoming.`;
-otherwise the command reports the number of matching people, counting a person only once.
+Results sort by the earliest qualifying action or reminder date ascending, so overdue actions come first.
+Ties use name ignoring case, then exact spelling. `ModelManager` exposes a `SortedList` over its
+`FilteredList`; sorting changes neither stored contact order nor the original indices used by commands.
+Replacing a person re-evaluates membership and order. `list` and `find` clear the comparator and return
+to the original contact order.
 
-The due view is sorted by the earliest qualifying action or yearly-reminder date ascending, then name
-ignoring case, with exact spelling as a final
-tie-breaker (#138). `ModelManager` exposes a `SortedList` over its existing `FilteredList`, so sorting
-does not mutate or persist the backing contact order. The model stores both its current predicate and
-comparator. `LogicManager` carries both across its temporary-model execution and successful commit;
-indexed commands continue to use the displayed client indices from the complete client book,
-independent of sorted row positions. Replacing a person
-updates the active order automatically. The original single-argument filter update clears sorting,
-so `list` and `find` retain their original contact-order behaviour. Tests cover date/name ties, stored
-order, live updates, and indexed commands through the complete logic/storage path.
+Nonempty results report `N person(s) with due follow-ups or yearly reminders in the next 30 days.`;
+empty results report `No follow-ups are due and no yearly reminders are upcoming.`.
+
+##### Validation errors
+
+Condition | Error message
+----------|--------------
+Any arguments to `due` | `The due command takes no arguments.`
 
 #### Persistence and card display
 
-`JsonAdaptedPerson` stores an optional `nextAction` object through `JsonAdaptedNextAction`:
+`LogicManager` executes commands on a temporary model carrying the active predicate and comparator.
+Changed data is saved before the temporary state is committed to the live model; a save failure leaves
+the live state unchanged. Commands do not write follow-up files themselves.
+
+`JsonAdaptedPerson` stores optional `nextAction` through `JsonAdaptedNextAction`:
 
 ```json
 "nextAction": {
   "action": "Send retirement proposal",
-  "dueDate": "2026-10-20",
+  "dueDate": "2026-11-02",
   "completed": false
 }
 ```
 
-Missing or null `nextAction` fields load as absence, preserving compatibility with old files. An object
-with invalid or missing action/date/completion fields is rejected through `IllegalValueException`.
-Both pending and completed states survive a JSON round trip.
+Missing or null `nextAction` loads as absence. Invalid or missing action/date/completion values are rejected
+through `IllegalValueException`. Both pending and completed actions survive a JSON round trip.
+`JsonAdaptedRecurringReminder` stores each reminder as `{ "label": "Birthday", "date": "02-29" }` in
+`recurringReminders`. A missing, null or empty array loads as an empty list; null elements and duplicate
+labels, including case variants, are rejected. The existing backup/restore path preserves both fields.
 
-`PersonCard` hides and unmanages the follow-up label when absent. Otherwise it displays text and color:
-completed takes precedence; incomplete dates earlier than today are overdue; remaining actions are pending.
-The label wraps long descriptions using the available card width. Status is evaluated when a card is constructed;
-there is no background midnight timer. Restarting the app refreshes all card labels after a date change.
+`PersonCard` hides and unmanages absent follow-ups. Otherwise, completed status takes precedence;
+incomplete dates earlier than today show `Overdue`, and remaining actions show `Pending`. Long text wraps.
+Status and reminder next occurrences are evaluated when a card is constructed; there is no midnight timer.
+Restarting refreshes all cards after a date change.
 
 #### Validation and regression tests
 
-US18 tests cover missing/duplicate prefixes, zero/negative/non-integer/overflow indices, displayed-list bounds,
-empty and whitespace-only actions, 200/201-character descriptions, trimming, invalid dates (`2026-02-30`),
-leap days, rejection of newly scheduled past dates without mutation, today/future acceptance,
-local clock-zone boundaries, replacement reset, filtered indices, preservation of unrelated fields,
-old JSON, historical follow-ups remaining visible in `due`, invalid stored values, completion round
-trips and card display/wrapping.
+Parser and command tests cover missing/duplicate prefixes, index boundaries and hidden contacts,
+blank/overlong descriptions and labels, strict dates, leap days, local-zone boundaries, past-date rejection,
+replacement and rescheduling resets, repeated completion, case-insensitive reminder updates/deletion,
+field preservation and unchanged data on errors. Model, JSON and integration tests cover old files,
+invalid stored values, round trips, historical overdue actions, the inclusive reminder window and year
+rollover. `DueSortingIntegrationTest` verifies date/name ties, original indices, stored order and live
+membership/order updates through logic and storage. Card tests cover status display and wrapping.
 
 ### Backing up and restoring records
 
@@ -1219,6 +1195,33 @@ contact 2 ch/Email tm/Weekends
    remains Retirement, Medium, Insurance; Alex's details are unchanged.
 
 ### Deleting a client/prospect
+
+#### Command behaviour and feedback
+
+`ClientBookParser` routes `delete INDEX` to `DeleteCommandParser`. It trims surrounding whitespace,
+requires exactly one argument, then uses `ParserUtil#parseIndex`. `DeleteCommand` resolves the original
+full-list index through `Command#getVisiblePersonAtIndex`; a hidden person is rejected even if that index
+exists in the full list. The same indices apply after `find` or due-date sorting.
+
+`Model#deletePerson` removes the entire record, including its financial information, contact preferences,
+tags, interaction notes, next action and yearly reminders. Other records retain their details; remaining
+full-list indices shift down. The active filter and comparator are retained. `LogicManager` saves the
+temporary model before committing it to the live model, so command or save failures leave live data unchanged.
+There is no confirmation prompt or undo. Success reports `RELATIONSHIP NAME has been deleted successfully.`,
+for example `Client John Doe has been deleted successfully.` or `Prospect Jane Tan has been deleted successfully.`.
+
+##### Validation errors
+
+Condition | Error message
+----------|--------------
+Missing index | `Client index is required.`
+More than one argument | `Delete command only accepts a client index.`
+Zero, negative, non-integer or overflowing index | `Client index must be a positive integer.`
+Index is outside the full list or its person is hidden | `No client exists at index N.`
+
+Checks run in the order shown. Rejection preserves the data, filter and sorting.
+
+#### Manual regression checks
 
 Use a separate test folder with fictional records. Run these commands to prepare the test data:
 

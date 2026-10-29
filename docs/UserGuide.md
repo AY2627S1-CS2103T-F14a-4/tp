@@ -401,195 +401,126 @@ Examples:
 
 ### Deleting a client/prospect: `delete`
 
-Deletes a client or prospect, including their financial information and interaction notes.
+Deletes a client or prospect and all their recorded details.
 
 Format: `delete INDEX`
 
-Use the positive index number shown beside the person you want to delete. Only one index is accepted;
-spaces before and after it are ignored. The remaining records are renumbered after deletion.
+* Use the index shown beside the person, including in search or `due` results.
+* Delete one person at a time. The person must be visible in the current list.
+* Deletion is saved automatically and cannot be undone. Check the name and index first.
+* Other people's details stay unchanged. Their indices update after deletion; any search stays active.
 
-For example, `list` followed by `delete 2` deletes the second person in the full list.
-After `find Jane`, use Jane's unchanged index shown in the search results; for example, use `delete 2` if Jane was
-index 2 in the full list. The search stays active; use `list` to see everyone who remains.
+Examples:
 
-The success message includes the person's relationship and name: `Client John Doe has been deleted successfully.`
-or `Prospect Jane Tan has been deleted successfully.`
-
-Deletion is saved automatically and cannot be undone, so check the displayed name and index before proceeding.
-Other records and their details are kept.
-
-If a delete command is rejected, the records and search results stay unchanged:
-
-Input | Error message
-------|--------------
-`delete` | `Client index is required.`
-`delete 1 2` or `delete 1 abc` | `Delete command only accepts a client index.`
-`delete 0`, `delete -1`, `delete abc`, or `delete 1.5` | `Client index must be a positive integer.`
-`delete 3` when index 3 is not displayed | `No client exists at index 3.`
+* `list`, then `delete 2` deletes the person shown at index 2.
+* `find Jane`, then `delete 2` deletes Jane if the index shown beside her is 2.
 
 ### Recording the next action: `next`
 
-Records one follow-up for a client or prospect in the currently displayed list.
+Records or replaces a client or prospect's next follow-up.
 
 Format: `next INDEX a/ACTION d/yyyy-MM-dd`
 
-* Use the positive index shown beside the person. After `find`, use the index in those results.
-* Both prefixes are required, may appear in either order, and must each appear exactly once.
-  Separate the index and prefixes with spaces.
-* The action must contain 1–200 characters after surrounding whitespace is removed.
-* The due date must be a real date in years `0001` to `9999`, with exactly four year digits
-  and two month/day digits. The date must be today or later, using your computer's local date
-  when the command executes. This applies both when creating and replacing a follow-up.
-  For example, `0000-01-01`, `2026-02-30`
-  and `2026-2-03` are rejected.
-* Each person has at most one next action. Running `next` again replaces the previous action and date,
-  and resets its status to pending, even if the previous action was completed.
-* The person's contact details, financial information, tags and interaction notes are preserved.
+* Use the index shown beside the person. They must be visible in the current list.
+* Supply both `a/` and `d/` once each, in either order.
+* The action must contain 1–200 characters, excluding spaces at the start and end.
+* Use a real date in `yyyy-MM-dd` format, such as `2026-11-02`. It must be today or later.
+* Each person has one next action. Replacing it sets it to pending and keeps their other details.
 
-Example, if today is `2026-10-26`: `next 1 a/Send retirement proposal d/2026-11-02`.
-When trying examples, use today or a future date from your computer's local calendar.
+Examples:
 
-The success message is `Next action for NAME has been updated successfully.`
-The card shows the description, due date and a text status: `Pending`, `Overdue`, or `Completed`.
-An incomplete action becomes overdue when its date is earlier than the computer's current local date.
-An action due today is pending. Cards without a next action do not show this area.
-If the app stays open overnight, restart it to refresh all card labels.
+* `next 1 a/Send retirement proposal d/2026-11-02` sets a follow-up for the person at index 1.
+* `next 1 a/Call about revised proposal d/2026-11-05` replaces that person's previous follow-up.
 
-Rejected commands leave the person's data unchanged.
+Use today or a future date when trying these examples.
 
 ### Rescheduling a follow-up: `reschedule`
 
-Changes the date of an existing follow-up without requiring you to retype its description.
+Changes an existing follow-up's date and, optionally, its description.
 
 Format: `reschedule INDEX d/yyyy-MM-dd [a/ACTION]`
 
-* `INDEX` is the positive client index shown beside the person. After `find`, indices keep their
-  positions in the complete client list: if the results show 1 and 3, use 3 for the second result.
-  An index not currently displayed is rejected.
-* `d/` is required. Use a real date in years `0001`–`9999`, written with exactly four year digits
-  and two month/day digits, as for `next`. The replacement date must be today or later, using
-  your computer's local date when the command executes. Past dates report
-  `Follow-up date cannot be before today.` without changing any record.
-* Omit `a/` to keep the existing description, or supply it to replace the description.
-  A supplied description must contain 1–200 characters after trimming surrounding whitespace.
-  Duplicate `a/` or `d/` prefixes are rejected.
-* The person must already have a follow-up. Otherwise, the command reports
-  `NAME has no follow-up to reschedule. Use next to create one.` without changing any record.
-* Rescheduling resets completion status to pending, including for previously completed work.
-  A follow-up rescheduled for today appears in `due` again; one moved to a future date remains
-  pending until it becomes due. Other contact information is preserved.
-* The current filter remains active. If a follow-up is moved into the future while viewing `due`,
-  its person disappears from that view; the remaining client indices do not change.
+* Use the index shown beside the person. They must be visible and already have a follow-up.
+* Supply `d/` once, with a real date in `yyyy-MM-dd` format that is today or later.
+* Leave out `a/` to keep the description, or supply it once with a new description of 1–200 characters.
+* Rescheduling sets the follow-up to pending, even if it was completed. Other details stay unchanged.
+* A future follow-up leaves `due` unless the person also has an upcoming yearly reminder.
 
 Examples:
 
-* `reschedule 1 d/2026-11-02` — change only the follow-up date.
-* `reschedule 1 d/2026-11-02 a/Send revised proposal` — change the date and description.
+* `reschedule 1 d/2026-11-02` changes the date and keeps the description.
+* `reschedule 1 d/2026-11-05 a/Send revised proposal` changes both the date and description.
 
-The success message is `Follow-up for NAME has been rescheduled successfully.`.
-Invalid indices, date formats and descriptions report the same validation messages as `next`.
-Changes are saved automatically.
+Use today or a future date when trying these examples.
 
 ### Completing a follow-up: `done`
 
-Marks the next action of a client or prospect in the currently displayed list as completed.
+Marks a client or prospect's next action as completed.
 
 Format: `done INDEX`
 
-Use the positive index shown beside the person. After `find`, use the index in the search results.
-For example, `done 1` completes the first displayed person's next action. The action description and
-its date are kept, and the card shows `Completed`. Contact details, financial information, tags and
-interaction notes are preserved. The current search filter remains active.
-
-The success message is `Next action for NAME has been marked as completed.`
-If the action is already completed, repeating `done` returns the normal message
-`Next action for NAME is already completed.` without changing the record or current filter.
-Running `next` for that person later replaces the action and resets its status to pending.
-
-If a `done` command is rejected, the record and current filter remain unchanged.
-
-### Setting a yearly reminder: `remind`
-
-Sets a birthday, policy renewal or other yearly relationship date for a client or prospect.
-
-Format: `remind INDEX a/LABEL d/MM-dd`
+* Use the index shown beside the person. They must be visible and have a next action.
+* The description, date and other contact details stay unchanged. Repeating `done` is safe.
+* Yearly reminders are unaffected. In `due`, the person stays visible if they have an upcoming reminder.
+* Use `next` to replace a completed action, or `reschedule` to make it pending again.
 
 Examples:
 
-* `remind 1 a/Birthday d/11-10`
-* `remind 1 a/Policy renewal d/12-01`
-* `remind 1 a/birthday d/11-11` updates the existing `Birthday` reminder to November 11, keeping its display spelling.
+* `done 2` completes the next action of the person shown at index 2.
+* `done 2` again leaves that action completed without changing its details.
 
-Use the client index shown beside the person. After `find`, indices keep their positions in the full
-client list: if results show 1 and 3, use 3 for the second result; hidden index 2 is rejected.
-The label must contain 1–50 characters after trimming
-surrounding whitespace; control characters and `/` are not accepted. Label matching ignores case:
-`Birthday`, `birthday` and `BIRTHDAY` refer to the same reminder. A matching label updates the date and
-keeps the existing display spelling; another label adds a reminder with the supplied spelling. The `a/`
-and `d/` fields are both required and cannot be repeated. An empty `d/` is invalid; use `unremind` to delete.
+### Setting a yearly reminder: `remind`
 
-Use exactly two month and day digits, with a real calendar date: `02-29` is accepted, while `2-29`,
-`02-30` and `2026-11-10` are rejected. Dates repeat every year. February 29 is observed on February 28
-in non-leap years. If this year's occurrence has passed, the next occurrence is next year.
+Sets a birthday, policy renewal or other date that repeats every year.
 
-The contact card shows each label and its next occurrence as `Yearly | YYYY-MM-DD: LABEL`.
-Reminders survive restarting ClientBook and do not replace the person's one-off next action or other
-optional information. `done` completes only that one-off next action; yearly reminders continue annually.
-Only yearly dates are supported; reminders have no completion history.
+Format: `remind INDEX a/LABEL d/MM-dd`
+
+* Use the index shown beside the person. They must be visible in the current list.
+* Supply `a/` and `d/` once each, in either order. Labels must contain 1–50 characters after trimming,
+  without tabs, line breaks or `/`.
+* Use a real date in `MM-dd` format, such as `11-10`. February 29 falls on February 28 in non-leap years.
+* Labels ignore case. Reusing a label updates its date and keeps its spelling; a new label adds a reminder.
+* Reminders are saved automatically and repeat annually. They do not replace the next action, and `done`
+  does not complete them.
+
+Examples:
+
+* `remind 1 a/Birthday d/11-10` adds a birthday reminder for November 10.
+* `remind 1 a/Policy renewal d/12-01` adds a separate reminder for December 1.
+* `remind 1 a/birthday d/11-11` changes the existing `Birthday` reminder to November 11.
 
 ### Removing a yearly reminder: `unremind`
 
-Removes one yearly reminder from a client or prospect in the currently displayed list.
+Removes one yearly reminder from a client or prospect.
 
 Format: `unremind INDEX a/LABEL`
 
-For example, `unremind 1 a/birthday` removes the visible client at index 1's `Birthday` reminder, ignoring
-label case. Multi-word labels work too: `unremind 1 a/Policy renewal`. The label follows the same
-1–50-character validation and surrounding-whitespace trimming as `remind`. The `a/` field is required
-and cannot be repeated; no date is accepted.
+* Use the index shown beside the person. They must be visible in the current list.
+* Supply `a/` once with an existing reminder's label. Matching ignores case; do not include a date.
+* Labels follow the same rules as `remind`. Other reminders and contact details stay unchanged.
+* Removal is saved automatically. The person leaves `due` only if no due action or upcoming reminder remains.
 
-An invalid displayed index reports the usual invalid-index error. An unmatched label or a person without
-reminders reports `NAME has no yearly reminder matching label "LABEL".` and changes nothing. Successful
-deletion preserves all other reminders, the next action, notes, preferences and other contact information,
-and remains deleted after restarting ClientBook.
+Examples:
 
-While `due` is active, removing the last qualifying reminder makes the person disappear unless they
-still have an incomplete due/overdue next action. Other qualifying reminders keep the person visible.
-Remaining client indices do not change when a reminder removes someone from the due view.
-Use the client index shown beside the person, or use `list` to view everyone.
+* `unremind 1 a/birthday` removes the reminder labelled `Birthday`.
+* `unremind 1 a/Policy renewal` removes the reminder labelled `Policy renewal`.
 
 ### Viewing due follow-ups and upcoming reminders: `due`
 
-Shows every client or prospect with an incomplete next action due today or earlier, or a yearly reminder
-whose next occurrence is within 30 days, including today and the date exactly 30 days from today.
+Shows people with follow-ups to complete or yearly reminders coming up soon.
 
 Format: `due`
 
-* Includes incomplete actions due today and overdue actions, using your computer's local date. Previously
-  saved follow-ups are retained as they become overdue; the new-date restriction in `next` does
-  not prevent loading them or showing them here.
-* Past yearly occurrences roll forward to next year and do not accumulate overdue reminders.
-* Completed and future one-off actions do not qualify by themselves. A person without a next action
-  still appears when a yearly reminder qualifies.
-* A person appears once even if several actions or reminders qualify; cards show all their yearly dates.
-* Replaces any previous `find` filter. Results are sorted by the earliest qualifying action or reminder date,
-  with overdue actions first. Equal dates are ordered alphabetically by name, ignoring case;
-  exact spelling breaks case-only ties.
-* Use the displayed client index for subsequent commands. Sorting does not change those indices.
-  After `done INDEX`, the person disappears only if they have no upcoming yearly reminders.
-  Remaining client indices do not change.
-* Sorting changes only the displayed view, not saved contact order. `list` and `find` return to the
-  original contact order. Run `due` again to refresh the date after midnight; refreshing the displayed
-  cards also updates their computed next occurrence.
+* Includes incomplete next actions due today or earlier, and yearly reminders from today through 30 days ahead.
+* Completed actions and future next actions do not appear unless the person also has an upcoming reminder.
+* Each person appears once, ordered by their earliest due date, with overdue follow-ups first.
+* Replaces any current search. Use the index shown beside the person for other commands; `list` shows everyone again.
+* Do not add arguments. Run `due` again after midnight to update which follow-ups and reminders are shown.
 
-For example, if today is `2026-10-26`, an incomplete action dated `2026-10-25` qualifies, while a future
-one-off action dated `2026-10-27` does not. `remind 1 a/Birthday d/11-10` qualifies in `due` because
-November 10 is 15 days away. A reminder dated `11-26` falls outside the 30-day window.
+Examples:
 
-The result message is `2 person(s) with due follow-ups or yearly reminders in the next 30 days.` when two
-people match, or `No follow-ups are due and no yearly reminders are upcoming.` when nobody matches.
-
-Arguments are not accepted: `due 1` reports `The due command takes no arguments.`.
+* `due` shows everyone with a due follow-up or an upcoming yearly reminder.
+* `due`, then `done 2` completes the next action of the person shown at index 2, if they have one.
 
 ### Clearing all entries: `clear`
 
