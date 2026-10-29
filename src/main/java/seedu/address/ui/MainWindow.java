@@ -3,6 +3,7 @@ package seedu.address.ui;
 import java.nio.file.Path;
 import java.util.logging.Logger;
 
+import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Rectangle2D;
@@ -70,6 +71,7 @@ public class MainWindow extends UiPart<Stage> {
 
         // Configure the UI
         setWindowDefaultSize(logic.getGuiSettings());
+        configureResultDisplayHeight();
 
         setAccelerators();
 
@@ -78,6 +80,17 @@ public class MainWindow extends UiPart<Stage> {
 
     public Stage getPrimaryStage() {
         return primaryStage;
+    }
+
+    /** Keeps the preferred result height at normal sizes, relaxing it as the window shrinks. */
+    private void configureResultDisplayHeight() {
+        double compactMinHeight = resultDisplayPlaceholder.getMinHeight();
+        double preferredHeight = resultDisplayPlaceholder.getPrefHeight();
+        double normalWindowHeight = new GuiSettings().getWindowHeight();
+        resultDisplayPlaceholder.minHeightProperty().bind(Bindings.createDoubleBinding(
+                () -> Math.max(compactMinHeight, preferredHeight
+                        - Math.max(0, normalWindowHeight - primaryStage.getHeight())),
+                primaryStage.heightProperty()));
     }
 
     private void setAccelerators() {

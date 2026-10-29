@@ -25,6 +25,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.Region;
 import javafx.stage.Stage;
 import seedu.address.logic.Logic;
 import seedu.address.logic.LogicManager;
@@ -43,6 +44,63 @@ public class MainWindowTest {
     @BeforeAll
     public static void startToolkit() throws Exception {
         JavaFxTestUtil.startToolkit();
+    }
+
+    @Test
+    public void layout_normalWindow_keepsPreferredResultHeight() throws Exception {
+        assertResultDisplayLayout(600, false);
+    }
+
+    @Test
+    public void layout_minimumWindow_shrinksResultAndRestoresItOnResize() throws Exception {
+        assertResultDisplayLayout(340, true);
+    }
+
+    private void assertResultDisplayLayout(double windowHeight, boolean expectShrink) throws Exception {
+        CompletableFuture<Void> checked = new CompletableFuture<>();
+        Platform.runLater(() -> {
+            Stage stage = new Stage();
+            try {
+                Path clientBookPath = temporaryFolder.resolve("clientbook.json");
+                Storage storage = new StorageManager(new JsonClientBookStorage(clientBookPath),
+                        new JsonUserPrefsStorage(temporaryFolder.resolve("userprefs.json")));
+                Logic logic = new LogicManager(new ModelManager(getTypicalClientBook(), new UserPrefs()), storage);
+                MainWindow mainWindow = new MainWindow(stage, logic, clientBookPath);
+                mainWindow.fillInnerParts();
+
+                Scene scene = stage.getScene();
+                Region resultPane = (Region) scene.lookup("#resultDisplayPlaceholder");
+                assertEquals(600, new UserPrefs().getGuiSettings().getWindowHeight());
+                assertEquals(340, stage.getMinHeight());
+                stage.setHeight(windowHeight);
+                // Reserve space for native decorations without depending on the OS window manager.
+                scene.getRoot().resize(740, windowHeight - 40);
+                scene.getRoot().applyCss();
+                scene.getRoot().layout();
+                if (expectShrink) {
+                    assertTrue(resultPane.getHeight() >= 50);
+                    assertTrue(resultPane.getHeight() < 140);
+                } else {
+                    assertEquals(140, resultPane.getHeight(), 0.01);
+                }
+                Region commandPane = (Region) scene.lookup("#commandBoxPlaceholder");
+                Region statusPane = (Region) scene.lookup("#statusbarPlaceholder");
+                assertTrue(commandPane.getHeight() > 0);
+                assertTrue(statusPane.getHeight() > 0);
+                assertTrue(statusPane.getBoundsInParent().getMaxY() <= scene.getRoot().getLayoutBounds().getHeight());
+
+                stage.setHeight(600);
+                scene.getRoot().resize(740, 560);
+                scene.getRoot().layout();
+                assertEquals(140, resultPane.getHeight(), 0.01);
+                checked.complete(null);
+            } catch (Throwable error) {
+                checked.completeExceptionally(error);
+            } finally {
+                stage.close();
+            }
+        });
+        checked.get(10, TimeUnit.SECONDS);
     }
 
     @Test
