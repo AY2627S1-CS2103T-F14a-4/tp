@@ -212,10 +212,11 @@ calling `PersonListPanel#selectFirstPerson`, which selects the first filtered pe
 clears the selection if the result list is empty. `MainWindow` enables an explicit find-result navigation state only
 when that selection request produces a selected person. The state is reset whenever another command is submitted,
 including an invalid command, so selecting a person with the mouse or executing a non-find command does not activate
-or retain find-result navigation. While the state is active, a key-event filter on `MainWindow` handles the
+or retain find-result navigation. While the state is active, a key-event filter on `MainWindow` handles unmodified
 <kbd>Up</kbd> and <kbd>Down</kbd> arrow keys and asks `PersonListPanel` to select the previous or next result and scroll
-to that index. Selection remains at the corresponding boundary when the first or last result is reached. Keeping
-this navigation at the window level allows it to work while the command box retains keyboard focus.
+to that index. Modified arrow keys are left to the focused control. Selection remains at the corresponding boundary
+when the first or last result is reached. Keeping this navigation at the window level allows it to work while the
+command box retains keyboard focus.
 
 The following sequence shows a combined search. The `FilteredList` applies the predicate to each source person;
 omitted filter types evaluate as matched, while the supplied filter types must all match.
@@ -1340,11 +1341,15 @@ These cases are covered in `DeleteIntegrationTest`. Parser whitespace and intege
    5. Test case: Enter a `find` command with no matches, then press either arrow key.<br>
       Expected: No person is selected and arrow-key navigation does not occur.
 
-   6. Test case: Display persons without using `find`, select a person with the mouse, return focus to the command
+   6. Test case: After a successful `find`, press <kbd>Shift</kbd>, <kbd>Ctrl</kbd>, <kbd>Alt</kbd>, or <kbd>Meta</kbd>
+      together with an arrow key.<br>
+      Expected: Find-result navigation does not change the selected person.
+
+   7. Test case: Display persons without using `find`, select a person with the mouse, return focus to the command
       box, and press either arrow key.<br>
       Expected: The find-result navigation handler does not change the selected person.
 
-   7. Test case: Enter a `find` command with matches, then execute `list` and press either arrow key while the command
+   8. Test case: Enter a `find` command with matches, then execute `list` and press either arrow key while the command
       box has focus.<br>
       Expected: Executing the non-find command disables find-result navigation.
 

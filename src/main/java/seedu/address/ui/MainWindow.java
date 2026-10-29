@@ -131,6 +131,9 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     private void handlePersonListNavigation(KeyEvent event) {
+        if (event.isShiftDown() || event.isControlDown() || event.isAltDown() || event.isMetaDown()) {
+            return;
+        }
         if (!findResultNavigationActive || !personListPanel.hasSelectedPerson()) {
             return;
         }

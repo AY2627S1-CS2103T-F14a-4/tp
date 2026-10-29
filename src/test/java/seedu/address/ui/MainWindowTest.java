@@ -110,6 +110,15 @@ public class MainWindowTest {
                 commandTextField.fireEvent(keyPressed(KeyCode.UP));
                 assertEquals(0, personListView.getSelectionModel().getSelectedIndex());
 
+                commandTextField.fireEvent(keyPressed(KeyCode.DOWN, true, false, false, false));
+                assertEquals(0, personListView.getSelectionModel().getSelectedIndex());
+                commandTextField.fireEvent(keyPressed(KeyCode.DOWN, false, true, false, false));
+                assertEquals(0, personListView.getSelectionModel().getSelectedIndex());
+                commandTextField.fireEvent(keyPressed(KeyCode.DOWN, false, false, true, false));
+                assertEquals(0, personListView.getSelectionModel().getSelectedIndex());
+                commandTextField.fireEvent(keyPressed(KeyCode.DOWN, false, false, false, true));
+                assertEquals(0, personListView.getSelectionModel().getSelectedIndex());
+
                 commandTextField.setText("foo");
                 commandTextField.fireEvent(new ActionEvent());
                 commandTextField.fireEvent(keyPressed(KeyCode.DOWN));
@@ -201,5 +210,11 @@ public class MainWindowTest {
 
     private KeyEvent keyPressed(KeyCode keyCode) {
         return new KeyEvent(KeyEvent.KEY_PRESSED, "", "", keyCode, false, false, false, false);
+    }
+
+    private KeyEvent keyPressed(KeyCode keyCode, boolean isShiftDown, boolean isControlDown,
+                                boolean isAltDown, boolean isMetaDown) {
+        return new KeyEvent(KeyEvent.KEY_PRESSED, "", "", keyCode,
+                isShiftDown, isControlDown, isAltDown, isMetaDown);
     }
 }
