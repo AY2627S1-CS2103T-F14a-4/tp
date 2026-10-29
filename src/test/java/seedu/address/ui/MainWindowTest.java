@@ -35,6 +35,7 @@ import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.Storage;
 import seedu.address.storage.StorageManager;
 
+/** Contains JavaFX integration tests for command feedback and find-result navigation. */
 public class MainWindowTest {
 
     @TempDir
@@ -95,11 +96,13 @@ public class MainWindowTest {
                 ListView<?> personListView = (ListView<?>) scene.lookup("#personListView");
                 assertEquals(-1, personListView.getSelectionModel().getSelectedIndex());
 
+                // A selection made outside find must not activate arrow-key navigation.
                 personListView.getSelectionModel().select(0);
                 commandTextField.fireEvent(keyPressed(KeyCode.DOWN));
                 assertEquals(0, personListView.getSelectionModel().getSelectedIndex());
                 personListView.getSelectionModel().clearSelection();
 
+                // A successful find selects its first result and enables unmodified arrow keys.
                 commandTextField.setText("find e");
                 commandTextField.fireEvent(new ActionEvent());
 
@@ -110,6 +113,7 @@ public class MainWindowTest {
                 commandTextField.fireEvent(keyPressed(KeyCode.UP));
                 assertEquals(0, personListView.getSelectionModel().getSelectedIndex());
 
+                // Modified arrow keys remain available for normal text-field behavior.
                 commandTextField.fireEvent(keyPressed(KeyCode.DOWN, true, false, false, false));
                 assertEquals(0, personListView.getSelectionModel().getSelectedIndex());
                 commandTextField.fireEvent(keyPressed(KeyCode.DOWN, false, true, false, false));
@@ -119,6 +123,7 @@ public class MainWindowTest {
                 commandTextField.fireEvent(keyPressed(KeyCode.DOWN, false, false, false, true));
                 assertEquals(0, personListView.getSelectionModel().getSelectedIndex());
 
+                // Either a failed command or a later non-find command ends find navigation.
                 commandTextField.setText("foo");
                 commandTextField.fireEvent(new ActionEvent());
                 commandTextField.fireEvent(keyPressed(KeyCode.DOWN));
@@ -132,6 +137,7 @@ public class MainWindowTest {
                 commandTextField.fireEvent(keyPressed(KeyCode.DOWN));
                 assertEquals(0, personListView.getSelectionModel().getSelectedIndex());
 
+                // An empty find result leaves no selection for arrow keys to move.
                 commandTextField.setText("find Nobody");
                 commandTextField.fireEvent(new ActionEvent());
                 assertEquals(0, personListView.getItems().size());
@@ -199,6 +205,7 @@ public class MainWindowTest {
         checked.get(10, TimeUnit.SECONDS);
     }
 
+    /** Asserts that the requested list cell is fully contained in the visible list viewport. */
     private void assertCellIsFullyVisible(VirtualFlow<?> virtualFlow, int index) {
         IndexedCell<?> cell = virtualFlow.getVisibleCell(index);
         assertNotNull(cell);
@@ -208,10 +215,12 @@ public class MainWindowTest {
         assertTrue(cellBounds.getMaxY() <= viewportBounds.getMaxY());
     }
 
+    /** Creates an unmodified key-press event. */
     private KeyEvent keyPressed(KeyCode keyCode) {
         return new KeyEvent(KeyEvent.KEY_PRESSED, "", "", keyCode, false, false, false, false);
     }
 
+    /** Creates a key-press event with explicit modifier states. */
     private KeyEvent keyPressed(KeyCode keyCode, boolean isShiftDown, boolean isControlDown,
                                 boolean isAltDown, boolean isMetaDown) {
         return new KeyEvent(KeyEvent.KEY_PRESSED, "", "", keyCode,

@@ -159,6 +159,7 @@ public class FindCommandTest {
         return new NameContainsKeywordsPredicate(List.of(userInput.split("\\s+")));
     }
 
+    /** Creates the command result expected after a successful find. */
     private CommandResult expectedFindResult(String message) {
         return new CommandResult(message, false, false, false, true);
     }

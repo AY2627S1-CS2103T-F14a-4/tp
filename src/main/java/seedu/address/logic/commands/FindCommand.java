@@ -14,7 +14,8 @@ import seedu.address.model.person.Person;
 import seedu.address.storage.Storage;
 
 /**
- * Finds and lists all persons in the client book who match the specified search criterion.
+ * Filters the displayed person list using the specified search predicate.
+ * A successful execution reports the number of matching persons and requests that the first result be selected.
  */
 public class FindCommand extends Command {
 
@@ -34,6 +35,7 @@ public class FindCommand extends Command {
         this.predicate = requireNonNull(predicate);
     }
 
+    /** Updates the displayed person list to contain only people accepted by this command's predicate. */
     @Override
     public CommandResult execute(Model model, Storage storage) {
         requireNonNull(model);

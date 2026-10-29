@@ -14,6 +14,7 @@ import seedu.address.model.tag.Tag;
 /** Parses an index followed by an optional list of whitespace-separated tags. */
 public class TagDeleteCommandParser implements Parser<TagDeleteCommand> {
 
+    /** Parses a displayed index and an optional list of tags to delete. */
     @Override
     public TagDeleteCommand parse(String args) throws ParseException {
         requireNonNull(args);

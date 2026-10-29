@@ -14,7 +14,10 @@ import seedu.address.model.person.Person;
 import seedu.address.model.tag.Tag;
 import seedu.address.storage.Storage;
 
-/** Deletes all or selected tags from a person in the currently displayed list. */
+/**
+ * Deletes all tags, or a selected set of tags, from a person identified by an index in the displayed list.
+ * The command validates the requested tags and requires confirmation before changing and saving the person.
+ */
 public class TagDeleteCommand extends Command implements ConfirmableCommand {
     public static final String COMMAND_WORD = "tagdelete";
     public static final String MESSAGE_USAGE = COMMAND_WORD
@@ -58,6 +61,7 @@ public class TagDeleteCommand extends Command implements ConfirmableCommand {
         return MESSAGE_CANCELLED;
     }
 
+    /** Deletes either every tag or the selected tags from the person at the displayed index. */
     @Override
     public CommandResult execute(Model model, Storage storage) throws CommandException {
         Person personToUpdate = getValidatedPerson(model);
@@ -75,6 +79,7 @@ public class TagDeleteCommand extends Command implements ConfirmableCommand {
         return new CommandResult(successMessage);
     }
 
+    /** Returns the targeted person after validating the index, stored tags and requested tags. */
     private Person getValidatedPerson(Model model) throws CommandException {
         requireAllNonNull(model);
         Person person = getVisiblePersonAtIndex(model, index,
@@ -91,6 +96,7 @@ public class TagDeleteCommand extends Command implements ConfirmableCommand {
         return person;
     }
 
+    /** Returns tag names in a stable order for confirmation, success and error messages. */
     private static String formatTags(Set<Tag> tags) {
         return tags.stream().map(tag -> tag.tagName).sorted().toList().toString();
     }

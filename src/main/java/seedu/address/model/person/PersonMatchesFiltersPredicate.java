@@ -26,6 +26,7 @@ public class PersonMatchesFiltersPredicate implements Predicate<Person> {
         this.detailKeywords = List.copyOf(requireNonNull(detailKeywords));
     }
 
+    /** Returns whether the person matches every supplied filter category. */
     @Override
     public boolean test(Person person) {
         boolean matchesName = nameKeywords.isEmpty()
@@ -40,6 +41,7 @@ public class PersonMatchesFiltersPredicate implements Predicate<Person> {
         return matchesName && matchesRelationship && matchesTags && matchesDetails;
     }
 
+    /** Returns whether the keyword occurs in any remembered-detail field included in find. */
     private static boolean containsDetailKeyword(Person person, String keyword) {
         return person.getPreferredContactChannel()
                 .map(channel -> StringUtil.containsSubstringIgnoreCase(channel.value, keyword)).orElse(false)
