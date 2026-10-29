@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.ContactCommand;
 import seedu.address.logic.commands.ContactCommand.ContactDescriptor;
+import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.PreferredContactChannel;
 import seedu.address.model.person.PreferredContactTiming;
 
@@ -224,6 +225,42 @@ public class ContactCommandParserTest {
             assertParseFailure(parser, "2 ch/Phone " + parameter, message);
         }
         assertParseFailure(parser, "1 /ch Email", message);
+    }
+
+    @Test
+    public void parse_unsupportedSlashParametersInPreamble_parameterError() {
+        for (String parameter : List.of("/pr hi", "/unknown value", "/pr/hi", "/pr", "/")) {
+            for (String fields : List.of("", " ch/Phone", " tm/Evenings", " ch/- tm/-")) {
+                String input = "2 " + parameter + fields;
+                assertParseFailure(parser, input, ContactCommandParser.MESSAGE_INVALID_PARAMETER);
+                assertThrows(ParseException.class, ContactCommandParser.MESSAGE_INVALID_PARAMETER, () ->
+                        new ClientBookParser().parseCommand("contact " + input));
+            }
+        }
+    }
+
+    @Test
+    public void parse_invalidIndexWithUnsupportedSlashParameters_indexError() {
+        for (String index : List.of("", "0", "abc", "-1", "1.5", "1 2", "2147483648")) {
+            for (String fields : List.of("/pr hi", "/pr hi ch/Phone", "/pr hi tm/Evenings")) {
+                String input = index + " " + fields;
+                assertParseFailure(parser, input, ParserUtil.MESSAGE_INVALID_INDEX);
+                assertThrows(ParseException.class, ParserUtil.MESSAGE_INVALID_INDEX, () ->
+                        new ClientBookParser().parseCommand("contact " + input));
+            }
+        }
+    }
+
+    @Test
+    public void parse_slashParametersInsideValues_preservesFreeText() throws Exception {
+        for (String value : List.of("Phone/WhatsApp", "Email xx/After 6 pm", "Email /pr hi",
+                "Call /unknown!", "\u5ba2\u6237: /pr + Phone/WhatsApp!")) {
+            ContactCommand expected = new ContactCommand(INDEX_SECOND_PERSON,
+                    new PreferredContactChannel(value), new PreferredContactTiming(value));
+            String input = "2 ch/" + value + " tm/" + value;
+            assertParseSuccess(parser, input, expected);
+            assertEquals(expected, new ClientBookParser().parseCommand("contact " + input));
+        }
     }
 
     @Test

@@ -374,7 +374,7 @@ validation and atomicity, descriptor states, original filtered indices, and pers
 <a id="dated-interaction-notes"></a>
 <a id="dated-interaction-notes-us14"></a>
 
-### Interaction notes (US14)
+### Interaction notes
 
 `note INDEX d/yyyy-MM-dd [t/TYPE] [o/OUTCOME] n/NOTE` appends an interaction note to the person at the displayed
 client index. It works for clients and prospects, preserves the current filter, and does not replace earlier entries.
@@ -430,7 +430,7 @@ or outcome.
 This feature provides adding, displaying, editing and deleting dated notes, with chronological sorting and
 structured type/outcome metadata. Searching interaction notes (US16) remains outside this feature.
 
-#### Interaction type and outcome (US15)
+#### Interaction type and outcome
 
 `InteractionType` contains `MEETING`, `CALL`, `MESSAGE`, `OTHER`, and `UNSPECIFIED`.
 `InteractionOutcome` contains `SUCCESSFUL`, `UNSUCCESSFUL`, `PENDING`, and `UNSPECIFIED`.

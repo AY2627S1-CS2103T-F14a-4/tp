@@ -22,6 +22,7 @@ public class ContactCommandParser implements Parser<ContactCommand> {
     private static final Pattern CONTACT_PREFIX = Pattern.compile("(?<= )(ch/|tm/)");
     private static final Pattern MISTYPED_PREFIX = Pattern.compile(
             "(?<= )(?:/(?:ch|tm)(?=\\s|/|$)|cch/|chh/|ttm/|tmm/)");
+    private static final Pattern PREAMBLE_PARAMETER = Pattern.compile("(?<=\\s)/|" + MISTYPED_PREFIX.pattern());
 
     @Override
     public ContactCommand parse(String args) throws ParseException {
@@ -29,7 +30,8 @@ public class ContactCommandParser implements Parser<ContactCommand> {
         ArgumentMultimap fields = tokenizeRawValues(" " + args);
         Index index = parseContactIndex(fields.getPreamble());
         fields.verifyNoDuplicatePrefixesFor(PREFIX_CONTACT_CHANNEL, PREFIX_CONTACT_TIMING);
-        if (MISTYPED_PREFIX.matcher(" " + args).find()) {
+        if (PREAMBLE_PARAMETER.matcher(" " + fields.getPreamble()).find()
+                || MISTYPED_PREFIX.matcher(" " + args).find()) {
             throw new ParseException(MESSAGE_INVALID_PARAMETER);
         }
         if (fields.getValue(PREFIX_CONTACT_CHANNEL).isEmpty() && fields.getValue(PREFIX_CONTACT_TIMING).isEmpty()) {
@@ -51,10 +53,10 @@ public class ContactCommandParser implements Parser<ContactCommand> {
         }
     }
 
-    /** Validates the index before reporting a recognized parameter mistake in the preamble. */
+    /** Validates the index before reporting an unsupported parameter in the preamble. */
     private static Index parseContactIndex(String preamble) throws ParseException {
         String text = " " + preamble;
-        Matcher matcher = MISTYPED_PREFIX.matcher(text);
+        Matcher matcher = PREAMBLE_PARAMETER.matcher(text);
         return ParserUtil.parseIndex(matcher.find() ? text.substring(0, matcher.start()) : text);
     }
 
