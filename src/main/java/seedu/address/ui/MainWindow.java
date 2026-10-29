@@ -3,6 +3,7 @@ package seedu.address.ui;
 import java.nio.file.Path;
 import java.util.logging.Logger;
 
+import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Rectangle2D;
@@ -28,6 +29,8 @@ import seedu.address.logic.parser.exceptions.ParseException;
 public class MainWindow extends UiPart<Stage> {
 
     private static final String FXML = "MainWindow.fxml";
+    private static final double RESULT_DISPLAY_COMPACT_MIN_HEIGHT = 50;
+    private static final double RESULT_DISPLAY_PREFERRED_HEIGHT = 140;
 
     private final Logger logger = LogsCenter.getLogger(getClass());
 
@@ -70,6 +73,7 @@ public class MainWindow extends UiPart<Stage> {
 
         // Configure the UI
         setWindowDefaultSize(logic.getGuiSettings());
+        configureResultDisplayHeight();
 
         setAccelerators();
 
@@ -78,6 +82,23 @@ public class MainWindow extends UiPart<Stage> {
 
     public Stage getPrimaryStage() {
         return primaryStage;
+    }
+
+    /** Keeps the preferred result height at normal sizes, relaxing it as the window shrinks. */
+    private void configureResultDisplayHeight() {
+        resultDisplayPlaceholder.minHeightProperty().bind(Bindings.createDoubleBinding(() ->
+                resultDisplayMinHeight(primaryStage.getHeight()),
+                primaryStage.heightProperty()));
+    }
+
+    /** Returns a finite minimum height, including before the stage has a usable height. */
+    static double resultDisplayMinHeight(double stageHeight) {
+        if (!Double.isFinite(stageHeight) || stageHeight <= 0) {
+            return RESULT_DISPLAY_PREFERRED_HEIGHT;
+        }
+        double normalWindowHeight = new GuiSettings().getWindowHeight();
+        return Math.max(RESULT_DISPLAY_COMPACT_MIN_HEIGHT, RESULT_DISPLAY_PREFERRED_HEIGHT
+                - Math.max(0, normalWindowHeight - stageHeight));
     }
 
     private void setAccelerators() {
