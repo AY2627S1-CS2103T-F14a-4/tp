@@ -177,44 +177,33 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
-### Find by name, relationship, tags and remembered details
+### Find
 
 The `find` command supports four independently optional filters: name keywords, one relationship, tag keywords, and
-remembered-detail keywords. `FindCommandParser` tokenizes the `r/`, `t/`, and `k/` prefixes, rejects duplicate filter
-prefixes, and delegates relationship and tag validation to `ParserUtil`. At least one filter must be present. Name
-keywords precede the prefixed filters; multiple tag or detail keywords follow one corresponding prefix and are
-separated by whitespace. The parser splits the name preamble into independent keywords and validates each one
-against the search-keyword grammar. Ordinary name keywords contain letters with optional internal hyphens or
-apostrophes, while `s/o`, `d/o`, and `w/o` are also valid standalone keywords. Digits, other symbols, and arbitrary
-slash forms are rejected for names. Detail keywords accept any non-whitespace text so users can search remembered
-values such as times, dates, and punctuation.
+remembered-detail keywords. `FindCommandParser` tokenizes the optional `r/`, `t/`, and `k/` filters, rejects duplicate 
+prefixes, and requires at least one filter. Name keywords form the preamble and must contain letters with optional 
+internal hyphens or apostrophes, except for the accepted markers `s/o`, `d/o`, and `w/o`. Relationship and tag 
+validation is delegated to `ParserUtil`; detail keywords accept any non-whitespace text.
 
-The parser creates a `PersonMatchesFiltersPredicate`. Name keywords use case-insensitive contiguous substring
-matching and are joined with `OR`. Thus, `Alex` matches `Alexander`, while either `Anne` or `Marie` matches
-`Anne-Marie Tan`. Tag keywords use the same case-insensitive contiguous substring matching and are also joined with
-`OR`; for example, `friend` matches both `friend` and `friends`. Detail keywords search the two contact preferences,
-the three financial-information fields, each interaction note's date and text, and the follow-up action text and due
-date. Dates use their ISO `yyyy-MM-dd` representation, so both full dates and contiguous fragments match. Follow-up
-completion status is excluded. Detail keywords are joined with `OR`. The predicate joins the name, relationship,
-tag, and detail filter results with `AND`. For example,
-`find Alex David r/client t/priority referral k/retirement WhatsApp` returns clients whose name contains `Alex` or
-`David`, whose tags contain `priority` or `referral`, and whose remembered details contain `retirement` or `WhatsApp`.
+The parser constructs a `PersonMatchesFiltersPredicate` with these rules:
 
-`FindCommand` passes the predicate to `Model#updateFilteredPersonList(Predicate<Person>)`, which updates the
-`FilteredList<Person>` observed by the UI. Filtering does not reorder the source list, so matching persons retain the
-same order and indexes as in the `list` command. `PersonListPanel` looks up each filtered person in the complete list
-when rendering its index. Index-based commands use `Command#getVisiblePersonAtIndex` to resolve that complete-list
-index and reject it if the corresponding person is not in the current filter.
+| Filter | Matching within the filter |
+|:--|:--|
+| Name | Case-insensitive contiguous match against names; any keyword matches. |
+| Relationship | Exact `Relationship` equality. |
+| Tag | Case-insensitive contiguous match against tag names; any keyword matches. |
+| Remembered detail | Case-insensitive contiguous match against contact preferences, financial fields, interaction-note date/type/outcome/text, or follow-up action/due date; any keyword matches. |
 
-The successful `CommandResult` returned by `FindCommand` includes a selection request. `MainWindow` responds by
-calling `PersonListPanel#selectFirstPerson`, which selects the first filtered person and scrolls it into view, or
-clears the selection if the result list is empty. A key-event filter on `MainWindow` handles the <kbd>Up</kbd> and
-<kbd>Down</kbd> arrow keys whenever a person is selected. It asks `PersonListPanel` to select the previous or next
-result and scroll to that index. Selection remains at the corresponding boundary when the first or last result is
-reached. Keeping this navigation at the window level allows it to work while the command box retains keyboard focus.
+An omitted filter evaluates to true, while all supplied filter types must match. `FindCommand` assigns the predicate
+to the temporary model's `FilteredList`; it changes only the active view, so no storage write occurs. The common
+Logic flow then commits that view to the live model. Source order is unchanged, and `PersonListPanel` derives each
+displayed index from the complete list so later index-based commands still use the original index.
 
-The following sequence shows a combined search. The `FilteredList` applies the predicate to each source person;
-omitted filter types evaluate as matched, while the supplied filter types must all match.
+The resulting `CommandResult` asks `MainWindow` to select and scroll to the first match, or clear selection when no
+matches exist. While a person is selected, the window-level <kbd>Up</kbd>/<kbd>Down</kbd> handler moves within the
+result boundaries and keeps the command box focused.
+
+The following sequence shows a combined search and both UI-selection outcomes.
 
 <puml src="diagrams/FindSequenceDiagram.puml" alt="Find by name, relationship, tags and details sequence" />
 
@@ -1292,11 +1281,12 @@ These cases are covered in `DeleteIntegrationTest`. Parser whitespace and intege
 5. Remembered-detail filtering
 
    1. Prerequisites: Add a client named Alex with preferred channel `WhatsApp`, financial need `Retirement planning`,
-      an interaction note dated `2026-10-06` containing `Discussed university fund`, and follow-up text
-      `Call about investment review` due on `2026-12-15`. Add another client without those details.
+      a `CALL` interaction note dated `2026-10-06` with outcome `SUCCESSFUL` and text
+      `Discussed university fund`, and follow-up text `Call about investment review` due on `2026-12-15`. Add another
+      client without those details.
 
-   2. Test cases: `find k/WhatsApp`, `find k/retire`, `find k/university`, `find k/2026-10-06`, and
-      `find k/investment`, `find k/2026-12-15`, and `find k/2026-12`.<br>
+   2. Test cases: `find k/WhatsApp`, `find k/retire`, `find k/CALL`, `find k/success`, `find k/university`,
+      `find k/2026-10-06`, `find k/investment`, `find k/2026-12-15`, and `find k/2026-12`.<br>
       Expected: Alex is displayed for every search. Matching is case-insensitive and accepts contiguous partial text.
 
    3. Test case: `find Alex r/client t/priority k/retirement`.<br>

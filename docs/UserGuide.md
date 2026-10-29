@@ -300,7 +300,8 @@ Invalid input leaves existing notes unchanged.
 
 Backdated notes are placed in chronological order. Notes with the same date retain their existing order;
 new notes with that date appear after them. Displayed note numbers update to match this order.
-Use `find k/KEYWORD` to search interaction note dates and text together with other remembered details.
+Use `find k/KEYWORD` to search interaction note dates, types, outcomes and text together with other remembered
+details.
 
 ### Editing a dated interaction note: `noteedit`
 
@@ -362,64 +363,33 @@ Deletion cannot be undone. Invalid input does not change existing records.
 
 ### Locating persons by name, relationship, tags or remembered details: `find`
 
-Finds persons using any combination of name keywords, relationship, tags and remembered-detail keywords.
+Filters persons by name, relationship, tags, remembered details, or any combination of these.
 
 Format: `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...]] [k/DETAIL_KEYWORD [MORE_KEYWORDS...]]`
 
-* Every filter is optional, but at least one name keyword, relationship, tag or detail keyword must be provided.
-* Each whitespace-separated name keyword is validated independently. A keyword may contain letters with internal
-  hyphens (`-`) or apostrophes (`'`), or it may be the standalone relationship marker `s/o`, `d/o`, or `w/o`.
-  Digits, other symbols, and arbitrary slash forms are not allowed.
-* Name keywords, relationship values and tags are case-insensitive; for example, `hans` matches `Hans`, and `client`
-  matches `Client`.
-* Keyword order does not matter; for example, `Hans Bo` matches `Bo Hans`.
-* Keyword searches consider only names.
-* Each name keyword matches any contiguous part of a name. For example, `Alex` matches `Alexander`, while `Aex`
-  does not. A keyword can also match part of a hyphenated name, so either `Anne` or `Marie` matches `Anne-Marie Tan`.
-* Persons matching at least one keyword are returned (an `OR` search); for example, `Hans Bo` returns `Hans Gruber` and `Bo Yang`.
-* `RELATIONSHIP` must be either `client` or `prospect` and is case-insensitive.
-* Each `TAG` keyword must be alphanumeric and matches any contiguous part of a tag. For example, `t/friend`
-  matches `friend`, `friends`, and `bestfriend`. A person with at least one matching tag keyword matches the tag
-  filter.
-* Each whitespace-separated `DETAIL_KEYWORD` after `k/` performs a case-insensitive contiguous search across the
-  preferred contact channel, preferred contact timing, financial need, priority, area of interest, and every
-  interaction note's date and text, plus the follow-up action text and due date. Follow-up completion status is not
-  searched. Names, phone numbers, email addresses, relationships and tags are also not searched by `k/` because they
-  have their own filters or identifying fields.
-* Detail keywords may contain punctuation and digits, such as `6:30`, `A/B`, or `2026-10-06`. A person matching at
-  least one supplied detail keyword matches the detail filter (an `OR` search).
-* When filter types are combined, a result must match every supplied filter type. For example, a search with names,
-  a relationship, tags and details must match at least one name keyword **and** the relationship **and** at least
-  one tag **and** at least one detail keyword.
-* Put name keywords before any prefixed filter. Tags follow a single `t/`, and detail keywords follow a single
-  `k/`; values within each filter are separated by spaces. The `r/`, `t/`, and `k/` filters may appear in any order.
-* Filtered persons retain the same order and indexes as in the `list` command.
-* After a successful `find`, the first matching person is selected automatically. Press the <kbd>Down</kbd> or
-  <kbd>Up</kbd> arrow key to select the next or previous result respectively. The list scrolls automatically to keep
-  the selected result visible, and navigation stops at the first and last results. If there are no matches, no
-  person is selected.
+| Filter         | Syntax and matching rule                                                                                                                                                                                                                          |
+|:---------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| KEYWORD        | Write one or more name keywords before any prefixed filter. Each keyword matches contiguous text in names only. Each keyword contains letters with optional internal hyphens or apostrophes; `s/o`, `d/o`, and `w/o` are also accepted.           |
+| RELATIONSHIP   | Use `r/client` or `r/prospect`. The value must match the relationship exactly.                                                                                                                                                                    |
+| TAG            | Put one or more alphanumeric keywords after one `t/`. Each keyword matches contiguous text in a tag; for example, `friend` matches `friend`, `friends`, and `bestfriend`.                                                                         |
+| DETAIL_KEYWORD | Put one or more non-whitespace keywords after one `k/`. Punctuation and digits are accepted. This searches contact preferences, financial information, interaction-note dates, types, outcomes and text, and follow-up action text and due dates. |
+
+* Provide at least one filter. Each prefix may appear only once; `r/`, `t/`, and `k/` may appear in any order.
+* Matching is case-insensitive. Multiple values within the name, tag, or detail filter use **OR**. Different supplied
+  filter types use **AND**.
+* `k/` does not search names, phone numbers, email addresses, relationships, tags, or follow-up completion status.
+* Results keep their `list` order and indexes. The first result is selected automatically; use <kbd>Up</kbd> and
+  <kbd>Down</kbd> to move through results. Selection and scrolling stop at the list boundaries. No result means no
+  selection.
 
 Examples:
-* `find John` returns `john` and `John Doe`
-* `find Alex` returns `Alex` and `Alexander`.
-* `find Anne` and `find Marie` both return `Anne-Marie Tan`.
-* `find alex david` returns `Alex Yeoh`, `David Li`<br>
+
+* `find alex david` returns names containing `alex` or `david`, such as `Alex Yeoh` and `David Li`.<br>
   ![result for 'find alex david'](images/findAlexDavidResult.png)
 * `find r/client` returns all clients.
-* `find r/Prospect` returns all prospects.
-* `find alex david r/prospect` returns prospects whose names contain `alex` or `david` as contiguous text.
-* `find s/o` returns persons whose names contain `s/o` as a standalone component.
-* `find Jack s/o` returns persons whose names contain either `Jack` or `s/o`.
-* `find t/friend` returns persons with tags such as `friend`, `friends`, or `bestfriend`.
-* `find t/referral priority` returns persons tagged `referral` or `priority`.
-* `find k/retirement` returns persons whose preferences, financial information, or interaction notes contain
-  `retirement`.
-* `find k/WhatsApp 2026-10-06` returns persons whose remembered details contain `WhatsApp` or whose interaction notes
-  contain the date `2026-10-06`.
-* `find k/investment` returns persons whose follow-up action text contains `investment`, as well as matches in the
-  other remembered-detail fields.
-* `find k/2026-12-15` returns persons with an interaction note dated `2026-12-15` or a follow-up due on that date.
-  Partial date searches such as `find k/2026-12` work because date matching is contiguous.
+* `find Jack s/o` returns names containing `Jack` or the standalone marker `s/o`.
+* `find t/friend referral` returns persons with a tag containing `friend` or `referral`.
+* `find k/WhatsApp 2026-10-06` returns persons whose remembered details contain either value.
 * `find alex r/client t/priority referral k/retirement WhatsApp` returns clients named `alex` who have a `priority`
   or `referral` tag and whose remembered details contain `retirement` or `WhatsApp`.
 
