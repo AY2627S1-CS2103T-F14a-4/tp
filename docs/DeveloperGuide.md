@@ -803,6 +803,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | * * | As a financial consultant who has completed a follow-up | mark the action as completed | distinguish finished work from work that still needs attention. |
 | * * | As a financial consultant whose plan has changed | reschedule a follow-up | keep my next-action list realistic without losing the task. |
 | * * | As a financial consultant managing recurring relationship events | set reminders for dates such as birthdays or renewal periods | maintain relationships and prepare for time-sensitive conversations. |
+| * * | As a financial consultant | record important dates shared by a client | remember occasions that matter to the relationship. |
 
 #### Retrieval and Prioritisation
 
@@ -827,7 +828,6 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | --- | --- | --- | --- |
 | * * | As a financial consultant preparing to contact someone | view one person's complete profile | recall the relevant relationship context before the conversation. |
 | * * | As a financial consultant who relies on personal rapport | record a person's preferences and interests | make future conversations more relevant and personal. |
-| * * | As a financial consultant | record important dates shared by a client | remember occasions that matter to the relationship. |
 | * * | As a busy financial consultant about to meet or call someone | view a concise summary of their preferences, recent interactions, and next action | refresh my memory without reading the entire record. |
 | * * | As a financial consultant planning the order of work | sort contacts by next follow-up or last interaction date | prioritise relationships using timely information. |
 
@@ -1469,6 +1469,157 @@ Rejected commands should leave both records, their notes and the current filter 
 
    5. Test case: `notedelete 2 1`, then `exit`. Reopen from the same folder and run `list`.<br>
       Expected: Jane still has no interaction notes; John's note remains.
+
+### Setting a follow-up: `next`
+
+1. Setting and replacing a next action
+
+   1. Prerequisites: In a separate test folder, run `clear`, then
+      `add r/Client n/John Doe e/john@example.com p/91234567`. Run the cases in order.
+      Replace `TODAY`, `TOMORROW`, and `YESTERDAY` below with today's date, tomorrow's date, and a date
+      before today in `yyyy-MM-dd` format.
+
+   2. Test case: `next 1 a/Call about renewal d/TODAY`<br>
+      Expected: `Next action for John Doe has been updated successfully.` The card shows
+      `Pending | Due TODAY: Call about renewal`, with the supplied date.
+
+   3. Test case: `done 1`, then `next 1 a/Send policy details d/TOMORROW`<br>
+      Expected: The completed action is replaced by `Send policy details`, due tomorrow and marked `Pending`.
+      Repeating `next` also replaces an existing pending action.
+
+   4. Test case: `next 1 a/Call d/YESTERDAY`<br>
+      Expected: `Follow-up date cannot be before today.` The existing action is unchanged.
+
+   5. Test case: `next 1 d/TODAY`<br>
+      Expected: `Next action is required: use a/ACTION.`
+
+   6. Test case: `next 1 a/Call d/2020-02-30`<br>
+      Expected: `Due date must be a valid date in yyyy-MM-dd format.`
+
+### Rescheduling a follow-up: `reschedule`
+
+1. Changing a follow-up's date and action
+
+   1. Prerequisites: In a separate test folder, run `clear`, then
+      `add r/Client n/John Doe e/john@example.com p/91234567` and
+      `add r/Prospect n/Jane Tan e/jane@example.com p/98765432`.
+      Replace `TODAY`, `TOMORROW`, and `YESTERDAY` with the corresponding dates in `yyyy-MM-dd` format.
+      Run `next 1 a/Call about renewal d/TODAY`, then run the cases in order.
+
+   2. Test case: `reschedule 1 d/TOMORROW`<br>
+      Expected: `Follow-up for John Doe has been rescheduled successfully.` The date becomes tomorrow;
+      `Call about renewal` is retained.
+
+   3. Test case: `done 1`, then `reschedule 1 d/TODAY a/Send policy details`<br>
+      Expected: The completed action becomes pending again. The card shows `Pending | Due TODAY: Send policy details`,
+      with today's date.
+
+   4. Test case: `reschedule 2 d/TOMORROW`<br>
+      Expected: `Jane Tan has no follow-up to reschedule. Use next to create one.`
+
+   5. Test case: `reschedule 1 d/YESTERDAY`<br>
+      Expected: `Follow-up date cannot be before today.` John's action is unchanged.
+
+   6. Test case: `reschedule 1 a/Call`<br>
+      Expected: `Due date is required: use d/yyyy-MM-dd.`
+
+### Completing a follow-up: `done`
+
+1. Marking a next action as completed
+
+   1. Prerequisites: In a separate test folder, run `clear`, then
+      `add r/Client n/John Doe e/john@example.com p/91234567` and
+      `add r/Prospect n/Jane Tan e/jane@example.com p/98765432`.
+      Run `next 1 a/Call about renewal d/TODAY`, replacing `TODAY` with today's date in `yyyy-MM-dd` format.
+      Run the cases in order.
+
+   2. Test case: `done 1`<br>
+      Expected: `Next action for John Doe has been marked as completed.` The card shows `Completed`,
+      with the same due date and action text.
+
+   3. Test case: `done 1` again<br>
+      Expected: `Next action for John Doe is already completed.` The action stays completed.
+
+   4. Test case: `done 2`<br>
+      Expected: `Jane Tan has no next action to complete.`
+
+   5. Test case: `done 0`<br>
+      Expected: `Index must be a positive integer.`
+
+### Setting a yearly reminder: `remind`
+
+1. Adding and updating labelled yearly dates
+
+   1. Prerequisites: In a separate test folder, run `clear`, then
+      `add r/Client n/John Doe e/john@example.com p/91234567`. Run the cases in order.
+
+   2. Test case: `remind 1 a/Birthday d/12-15`<br>
+      Expected: `Yearly reminder for John Doe has been updated successfully.` The card shows
+      `Yearly | NEXT_OCCURRENCE: Birthday`, with the next December 15 on or after today in `yyyy-MM-dd` format.
+
+   3. Test case: `remind 1 a/birthday d/02-29`<br>
+      Expected: The existing reminder is updated, leaving one reminder labelled `Birthday`.
+      Its next occurrence uses February 29 in leap years and February 28 in non-leap years.
+      Use this year's occurrence if it is on or after today, or next year's occurrence if it has passed.
+
+   4. Test case: `remind 1 a/Renewal d/02-30` or `remind 1 a/Renewal d/13-01`<br>
+      Expected: `Yearly date must be a valid date in MM-dd format.` No reminder is added.
+
+   5. Test case: `remind 1 a/Renewal d/2027-12-15`<br>
+      Expected: `Yearly date must be a valid date in MM-dd format.` Supply only the month and day.
+
+### Removing a yearly reminder: `unremind`
+
+1. Removing a reminder by label
+
+   1. Prerequisites: In a separate test folder, run `clear`, then
+      `add r/Client n/John Doe e/john@example.com p/91234567`,
+      `remind 1 a/Birthday d/12-15`, and `remind 1 a/Renewal d/06-01`. Run the cases in order.
+
+   2. Test case: `unremind 1 a/bIrThDaY`<br>
+      Expected: `Yearly reminder "Birthday" for John Doe has been removed successfully.`
+      Only `Birthday` is removed; label matching ignores case.
+
+   3. Test case: `unremind 1 a/Birthday` again<br>
+      Expected: `John Doe has no yearly reminder matching label "Birthday".` The `Renewal` reminder remains.
+
+   4. Test case: `unremind 1`<br>
+      Expected: `unremind INDEX a/LABEL` is shown; no reminder is removed.
+
+   5. Test case: `unremind 1 a/`<br>
+      Expected: `Reminder label must contain 1 to 50 characters, without control characters or slashes.`
+
+### Listing due follow-ups and upcoming reminders: `due`
+
+1. Checking eligibility, ordering and restoring the full list
+
+   1. Prerequisites: In a separate test folder, run `clear`, then
+      `add r/Client n/John Doe e/john@example.com p/91234567`,
+      `add r/Prospect n/Jane Tan e/jane@example.com p/98765432`, and
+      `add r/Client n/Alex Tan e/alex@example.com p/81234567`.
+      Replace `TODAY` and `TOMORROW` with the corresponding dates in `yyyy-MM-dd` format.
+      Replace `IN_30_DAYS` and `IN_31_DAYS` with the month and day exactly 30 and 31 days after today
+      in `MM-dd` format. Run `next 1 a/Call about renewal d/TODAY`,
+      `remind 2 a/Renewal d/IN_30_DAYS`, and `remind 3 a/Renewal d/IN_30_DAYS`.
+      Run the cases in order.
+
+   2. Test case: `due`<br>
+      Expected: `3 person(s) with due follow-ups or yearly reminders in the next 30 days.`
+      John appears first for his incomplete action due today, followed by Alex then Jane for their reminders
+      exactly 30 days away. Persons are ordered by their earliest qualifying date, then by name.
+      Incomplete actions dated before today also qualify.
+
+   3. Test case: `list`<br>
+      Expected: `Listed all clients and prospects.` The full list returns in its original order: John, Jane, Alex.
+
+   4. Test case: `done 1`, `unremind 2 a/Renewal`, `next 2 a/Call tomorrow d/TOMORROW`,
+      `remind 3 a/Renewal d/IN_31_DAYS`, then `due`<br>
+      Expected: `No follow-ups are due and no yearly reminders are upcoming.` The list is empty:
+      John's completed action, Jane's future action and Alex's reminder 31 days away are excluded.
+      Run `list` to restore all three persons.
+
+   5. Test case: `due 1`<br>
+      Expected: `The due command takes no arguments.` The full list remains unchanged.
 
 ### Finding persons by relationship
 ### Managing tags
