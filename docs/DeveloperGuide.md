@@ -757,7 +757,7 @@ error handling and the fallback move used when atomic replacement is unsupported
 * stores contact details, relationship status, tags, preferences, interests, important dates, and other concise relationship context
 * records high-level business needs such as financial goals, priorities, budget ranges, and areas of interest
 * records dated interactions, outcomes, next actions, and reminders
-* finds, filters, sorts, reviews, and backs up relationship records
+* finds, filters, reviews, and backs up relationship records
 * supports frequent users who prefer fast typed input while using the interface for clear feedback
 
 **Value proposition**: Keeps track of their clients' details, allowing them to quickly recall important personal context about their clients, so that they can maintain more personalised and informed client relationships.
