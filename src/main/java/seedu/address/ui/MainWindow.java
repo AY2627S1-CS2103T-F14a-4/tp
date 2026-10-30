@@ -42,6 +42,7 @@ public class MainWindow extends UiPart<Stage> {
     private PersonListPanel personListPanel;
     private ResultDisplay resultDisplay;
     private HelpWindow helpWindow;
+    // Arrow-key navigation is enabled only while a successful find result remains active.
     private boolean findResultNavigationActive;
 
     @FXML
@@ -153,6 +154,7 @@ public class MainWindow extends UiPart<Stage> {
         commandBoxPlaceholder.getChildren().add(commandBox.getRoot());
     }
 
+    /** Moves the selected find result when an unmodified up or down arrow key is pressed. */
     private void handlePersonListNavigation(KeyEvent event) {
         if (event.isShiftDown() || event.isControlDown() || event.isAltDown() || event.isMetaDown()) {
             return;

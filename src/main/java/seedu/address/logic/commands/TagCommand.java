@@ -14,7 +14,10 @@ import seedu.address.model.person.Person;
 import seedu.address.model.tag.Tag;
 import seedu.address.storage.Storage;
 
-/** Adds one or more tags to a person in the currently displayed list. */
+/**
+ * Adds one or more tags to the person identified by an index in the currently displayed list.
+ * The command preserves the person's existing data and rejects the operation if any requested tag already exists.
+ */
 public class TagCommand extends Command {
     public static final String COMMAND_WORD = "tag";
     public static final String MESSAGE_USAGE = "Parameters: INDEX TAG [MORE_TAGS...]";
@@ -32,6 +35,7 @@ public class TagCommand extends Command {
         this.tags = Set.copyOf(tags);
     }
 
+    /** Adds the requested tags to the person at the displayed index. */
     @Override
     public CommandResult execute(Model model, Storage storage) throws CommandException {
         requireAllNonNull(model);
@@ -49,6 +53,7 @@ public class TagCommand extends Command {
         return new CommandResult(String.format(MESSAGE_SUCCESS, personToTag.getName(), formatTags(tags)));
     }
 
+    /** Returns tag names in a stable order for user-facing messages. */
     private static String formatTags(Set<Tag> tags) {
         return tags.stream().map(tag -> tag.tagName).sorted().toList().toString();
     }

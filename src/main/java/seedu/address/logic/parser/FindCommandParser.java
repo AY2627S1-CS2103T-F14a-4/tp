@@ -51,6 +51,7 @@ public class FindCommandParser implements Parser<FindCommand> {
                 detailKeywords));
     }
 
+    /** Parses and validates the optional unprefixed name keywords. */
     private static List<String> parseNameKeywords(String nameKeywordsValue) throws ParseException {
         String normalizedNameKeywords = nameKeywordsValue.trim();
         if (normalizedNameKeywords.isEmpty()) {
@@ -65,6 +66,7 @@ public class FindCommandParser implements Parser<FindCommand> {
         return nameKeywords;
     }
 
+    /** Parses tag keywords and returns their names in a stable order. */
     private static List<String> parseTagKeywords(Optional<String> tagValue) throws ParseException {
         if (tagValue.isEmpty()) {
             return List.of();
@@ -73,6 +75,7 @@ public class FindCommandParser implements Parser<FindCommand> {
         return tags.stream().map(tag -> tag.tagName).sorted().toList();
     }
 
+    /** Parses the optional remembered-detail keywords. */
     private static List<String> parseDetailKeywords(Optional<String> detailValue) throws ParseException {
         if (detailValue.isEmpty()) {
             return List.of();

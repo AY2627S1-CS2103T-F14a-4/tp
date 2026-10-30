@@ -19,6 +19,7 @@ import seedu.address.model.person.Person;
 import seedu.address.model.tag.Tag;
 import seedu.address.testutil.PersonBuilder;
 
+/** Contains model-level tests for adding tags with {@link TagCommand}. */
 public class TagCommandTest {
     private final Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
 

@@ -17,6 +17,7 @@ import seedu.address.model.tag.Tag;
 /** Parses an index followed by one or more whitespace-separated tags. */
 public class TagCommandParser implements Parser<TagCommand> {
 
+    /** Parses a displayed index and one or more tags to add. */
     @Override
     public TagCommand parse(String args) throws ParseException {
         requireNonNull(args);
@@ -46,6 +47,7 @@ public class TagCommandParser implements Parser<TagCommand> {
         return new TagCommand(index, tags);
     }
 
+    /** Returns tag names in a case-insensitive stable order for error messages. */
     private static String formatTags(Set<Tag> tags) {
         return tags.stream().map(tag -> tag.tagName).sorted(String.CASE_INSENSITIVE_ORDER).toList().toString();
     }

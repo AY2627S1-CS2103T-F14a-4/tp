@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import seedu.address.testutil.PersonBuilder;
 
+/** Tests how find combines name, relationship, tag and remembered-detail filters. */
 public class PersonMatchesFiltersPredicateTest {
     private final Person clientAlice = new PersonBuilder().withName("Alice Pauline")
             .withRelationship(Relationship.CLIENT).withTags("Friends", "priority")
@@ -111,11 +112,13 @@ public class PersonMatchesFiltersPredicateTest {
                 List.of("friends"), List.of("missing")).test(clientAlice));
     }
 
+    /** Asserts that a remembered-detail keyword matches the representative person. */
     private void assertDetailKeywordMatches(String keyword) {
         assertTrue(new PersonMatchesFiltersPredicate(List.of(), Optional.empty(), List.of(), List.of(keyword))
                 .test(clientAlice));
     }
 
+    /** Asserts that a keyword is absent from every remembered-detail field searched by find. */
     private void assertDetailKeywordDoesNotMatch(String keyword) {
         assertFalse(new PersonMatchesFiltersPredicate(List.of(), Optional.empty(), List.of(), List.of(keyword))
                 .test(clientAlice));

@@ -30,6 +30,7 @@ import seedu.address.storage.StorageManager;
 import seedu.address.testutil.ClientBookBuilder;
 import seedu.address.testutil.PersonBuilder;
 
+/** Contains model and logic integration tests for {@link TagDeleteCommand}. */
 public class TagDeleteCommandTest {
     @TempDir
     public Path temporaryFolder;
@@ -105,6 +106,7 @@ public class TagDeleteCommandTest {
         LogicManager logic = new LogicManager(model, new StorageManager(clientBookStorage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json"))));
 
+        // The first execution requests confirmation without mutating or saving the client book.
         CommandResult confirmation = logic.execute("tagdelete 1 friends");
 
         assertEquals(String.format(TagDeleteCommand.MESSAGE_CONFIRMATION,
@@ -112,6 +114,7 @@ public class TagDeleteCommandTest {
         assertEquals(original, model.getFilteredPersonList().get(0));
         assertFalse(clientBookStorage.readClientBook().isPresent());
 
+        // A valid confirmation performs the pending deletion and persists it.
         CommandResult result = logic.execute("YeS");
 
         assertEquals(new PersonBuilder(original).withTags().build(), model.getFilteredPersonList().get(0));
@@ -191,6 +194,7 @@ public class TagDeleteCommandTest {
         assertNotEquals(command, "Text");
     }
 
+    /** Creates logic backed by isolated temporary storage for a confirmation scenario. */
     private LogicManager createLogic(Model targetModel, String fileName) {
         return new LogicManager(targetModel, new StorageManager(
                 new JsonClientBookStorage(temporaryFolder.resolve(fileName + ".json")),

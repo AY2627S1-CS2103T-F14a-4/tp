@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import seedu.address.logic.commands.TagDeleteCommand;
 import seedu.address.model.tag.Tag;
 
+/** Contains parsing tests for deleting all tags or a selected set of tags. */
 public class TagDeleteCommandParserTest {
     private final TagDeleteCommandParser parser = new TagDeleteCommandParser();
 

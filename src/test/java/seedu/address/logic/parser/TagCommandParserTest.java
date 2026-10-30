@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import seedu.address.logic.commands.TagCommand;
 import seedu.address.model.tag.Tag;
 
+/** Contains parsing tests for displayed indexes and tags accepted by the tag command. */
 public class TagCommandParserTest {
     private final TagCommandParser parser = new TagCommandParser();
 

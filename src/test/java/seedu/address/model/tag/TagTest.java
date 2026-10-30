@@ -6,6 +6,7 @@ import static seedu.address.testutil.Assert.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
+/** Tests tag validation and case-insensitive value semantics. */
 public class TagTest {
 
     @Test

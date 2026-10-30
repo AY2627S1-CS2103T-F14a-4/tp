@@ -20,6 +20,7 @@ import seedu.address.model.person.PersonMatchesFiltersPredicate;
 import seedu.address.model.person.Relationship;
 import seedu.address.model.tag.Tag;
 
+/** Contains parsing tests for supported find filters and their combinations. */
 public class FindCommandParserTest {
 
     private FindCommandParser parser = new FindCommandParser();
@@ -155,6 +156,7 @@ public class FindCommandParserTest {
                 expectedFindCommand);
     }
 
+    /** Creates a find command containing only the supplied name keywords. */
     private FindCommand findCommandWithNameKeywords(String... nameKeywords) {
         return new FindCommand(new PersonMatchesFiltersPredicate(List.of(nameKeywords), Optional.empty(), List.of(),
                 List.of()));
