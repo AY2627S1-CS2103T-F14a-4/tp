@@ -1,0 +1,90 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as LogicManager LOGIC_COLOR
+participant ":ClientBookParser" as ClientBookParser LOGIC_COLOR
+participant "b:BackupCommand" as BackupCommand LOGIC_COLOR
+participant "r:CommandResult" as CommandResult LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "m:Model" as Model MODEL_COLOR
+end box
+
+box Storage STORAGE_COLOR_T1
+participant "s:Storage" as Storage STORAGE_COLOR
+participant "File system" as FileSystem STORAGE_COLOR
+end box
+
+[-> LogicManager : execute("backup")
+activate LogicManager
+
+LogicManager -> ClientBookParser : parseCommand(commandText)
+activate ClientBookParser
+
+create BackupCommand
+ClientBookParser -> BackupCommand : new BackupCommand()
+activate BackupCommand
+
+BackupCommand --> ClientBookParser : b: BackupCommand
+deactivate BackupCommand
+
+ClientBookParser --> LogicManager : b
+deactivate ClientBookParser
+
+LogicManager -> BackupCommand : execute(m, s)
+activate BackupCommand
+
+BackupCommand -> Storage : getClientBookFilePath()
+activate Storage
+Storage --> BackupCommand : data/clientbook.json
+deactivate Storage
+
+BackupCommand -> FileSystem : createDirectories(data folder)
+activate FileSystem
+FileSystem --> BackupCommand
+deactivate FileSystem
+
+BackupCommand -> FileSystem : createTempFile("backup-", ".tmp")
+activate FileSystem
+FileSystem --> BackupCommand : temporary backup path
+deactivate FileSystem
+
+BackupCommand -> Model : getClientBook()
+activate Model
+Model --> BackupCommand : current records
+deactivate Model
+
+BackupCommand -> Storage : saveClientBook(records, temporary path)
+activate Storage
+Storage -> FileSystem : write temporary backup file
+activate FileSystem
+FileSystem --> Storage
+deactivate FileSystem
+Storage --> BackupCommand
+deactivate Storage
+
+BackupCommand -> FileSystem : move(temporary file, clientbook-backup.json)
+activate FileSystem
+note right
+  Replaces the old backup atomically
+  when supported.
+end note
+FileSystem --> BackupCommand
+deactivate FileSystem
+
+create CommandResult
+BackupCommand -> CommandResult : new CommandResult(message)
+activate CommandResult
+
+CommandResult --> BackupCommand
+deactivate CommandResult
+
+BackupCommand --> LogicManager : r: CommandResult
+deactivate BackupCommand
+
+[<-- LogicManager : r
+deactivate LogicManager
+@enduml

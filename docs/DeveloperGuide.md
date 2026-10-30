@@ -133,10 +133,6 @@ How the `Logic` component works:
 
 `LogicManager` executes each command against a temporary model initialized with the current records, preferences and active filter. When a command changes records, it saves the temporary client book before committing it to the main model. Read-only commands, such as `list`, `find`, and `due`, update the displayed view from memory without writing to storage. If saving fails, the main model is never committed, so the application does not display a change that would be lost after restart. Regression tests cover read-only commands avoiding persistence, a failed save retaining the records and active filter, and a subsequent successful `tag` command preserving that filter.
 
-The sequence diagram below shows the corresponding flow for an `edit` command.
-
-<puml src="diagrams/EditSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the edit command" />
-
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
 
 <puml src="diagrams/ParserClasses.puml" width="600"/>
@@ -728,6 +724,11 @@ rollover. `DueSortingIntegrationTest` verifies date/name ties, original indices,
 membership/order updates through logic and storage. Card tests cover status display and wrapping.
 
 ### Backing up and restoring records
+
+The sequence diagram below illustrates the normal, successful execution path of the `backup` command. It omits
+error handling and the fallback move used when atomic replacement is unsupported.
+
+<puml src="diagrams/BackupSequenceDiagram.puml" alt="Interactions for the backup command" />
 
 `ClientBookParser` accepts `backup` and `restore` only without arguments and creates a `BackupCommand` or `RestoreCommand` respectively. Both commands derive the backup path from the main data-file path, placing `clientbook-backup.json` beside `clientbook.json` in the `data` folder.
 
