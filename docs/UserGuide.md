@@ -622,4 +622,5 @@ Action     | Format, Examples
 **Due**    | `due`
 **List**   | `list`
 **Help**   | `help`
+**Exit**   | `exit`
 
