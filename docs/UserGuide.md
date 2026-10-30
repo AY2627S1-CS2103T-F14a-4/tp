@@ -306,8 +306,7 @@ Invalid input leaves existing notes unchanged.
 
 Backdated notes are placed in chronological order. Notes with the same date retain their existing order;
 new notes with that date appear after them. Displayed note numbers update to match this order.
-Use `find k/KEYWORD` to search interaction note dates, types, outcomes and text together with other remembered
-details.
+Use `find k/KEYWORD` to search interaction note dates and text together with other remembered details.
 
 ### Editing a dated interaction note: `noteedit`
 
@@ -378,13 +377,14 @@ Format: `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...
 | KEYWORD        | Write one or more name keywords before any prefixed filter. Each keyword matches contiguous text in names only. Each keyword contains letters with optional internal hyphens, apostrophes, periods, or commas; `s/o`, `d/o`, and `w/o` are also accepted.           |
 | RELATIONSHIP   | Use `r/client` or `r/prospect`. The value must match the relationship exactly.                                                                                                                                                                    |
 | TAG            | Put one or more alphanumeric keywords after one `t/`. Each keyword matches contiguous text in a tag; for example, `friend` matches `friend`, `friends`, and `bestfriend`.                                                                         |
-| DETAIL_KEYWORD | Put one or more non-whitespace keywords after one `k/`. Punctuation and digits are accepted. This searches contact preferences, financial information, interaction-note dates, types, outcomes and text, and follow-up action text and due dates. |
+| DETAIL_KEYWORD | Put one or more non-whitespace keywords after one `k/`. Punctuation and digits are accepted. This searches contact preferences, financial information, interaction-note dates and text, and follow-up action text and due dates. |
 
 * Provide at least one filter. Each prefix may appear only once; `r/`, `t/`, and `k/` may appear in any order.
 * Matching is case-insensitive. Multiple values within the name, tag, or detail filter use **OR**. Different supplied
   filter types use **AND**.
 * Keyword order does not matter; for example, `Hans Bo` matches `Bo Hans`.
-* `k/` does not search names, phone numbers, email addresses, relationships, tags, or follow-up completion status.
+* `k/` does not search names, phone numbers, email addresses, relationships, tags, interaction-note types or outcomes,
+  or follow-up completion status.
 * Results keep their `list` order and indexes. The first result is selected automatically; use <kbd>Up</kbd> and
   <kbd>Down</kbd> to move through results. Selection and scrolling stop at the list boundaries. No result means no
   selection.
