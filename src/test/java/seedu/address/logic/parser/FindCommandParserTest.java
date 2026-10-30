@@ -56,6 +56,9 @@ public class FindCommandParserTest {
                 findCommandWithNameKeywords("A.", "P.", "J.", "Abdul", "Kalam"));
         assertParseSuccess(parser, "Martin Luther King, Jr.",
                 findCommandWithNameKeywords("Martin", "Luther", "King,", "Jr."));
+        assertParseSuccess(parser, "J.R. Tolkien", findCommandWithNameKeywords("J.R.", "Tolkien"));
+        assertParseSuccess(parser, "St.John Smith", findCommandWithNameKeywords("St.John", "Smith"));
+        assertParseSuccess(parser, "Smith,John", findCommandWithNameKeywords("Smith,John"));
         assertParseSuccess(parser, "Jack s/o David", findCommandWithNameKeywords("Jack", "s/o", "David"));
         assertParseSuccess(parser, "s/o", findCommandWithNameKeywords("s/o"));
         assertParseSuccess(parser, "Jack s/o", findCommandWithNameKeywords("Jack", "s/o"));

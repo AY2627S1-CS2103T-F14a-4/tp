@@ -23,7 +23,7 @@ import seedu.address.model.tag.Tag;
 public class FindCommandParser implements Parser<FindCommand> {
 
     private static final Pattern VALID_NAME_KEYWORD_PATTERN = Pattern.compile(
-            "(?:[\\p{L}\\p{M}]+(?:[-'’][\\p{L}\\p{M}]+)*[.,]?|s/o|d/o|w/o)",
+            "(?:[\\p{L}\\p{M}]+(?:[-'’.,][\\p{L}\\p{M}]+)*[.,]?|s/o|d/o|w/o)",
             Pattern.CASE_INSENSITIVE);
 
     /**

@@ -19,8 +19,8 @@ public class Name {
 
     private static final int MAX_NAME_LENGTH = 100;
     private static final Pattern VALID_NAME_PATTERN = Pattern.compile(
-            "[\\p{L}\\p{M}]+(?:[-'’][\\p{L}\\p{M}]+)*[.,]?(?:(?: +(?:s/o|d/o|w/o))? +"
-                    + "[\\p{L}\\p{M}]+(?:[-'’][\\p{L}\\p{M}]+)*[.,]?)*",
+            "[\\p{L}\\p{M}]+(?:[-'’.,][\\p{L}\\p{M}]+)*[.,]?(?:(?: +(?:s/o|d/o|w/o))? +"
+                    + "[\\p{L}\\p{M}]+(?:[-'’.,][\\p{L}\\p{M}]+)*[.,]?)*",
             Pattern.CASE_INSENSITIVE);
 
     public final String fullName;
