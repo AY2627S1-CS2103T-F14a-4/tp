@@ -28,7 +28,7 @@
   Guide, and refining the corresponding sequence diagrams. The resulting changes were reviewed and validated before
   submission.
 
-* Nicholas Goh (**nicholas-gohh**) used Codex to assist with implementation reviews, test generation, documentation
+* Nicholas Goh (`nicholas-gohh`) used Codex to assist with implementation reviews, test generation, documentation
   improvements, and debugging for the `add`, `edit`, and storage features. This included Developer Guide and User
   Guide revisions, parser validation, and regression testing. Nicholas reviewed and validated the changes before
   submission.
