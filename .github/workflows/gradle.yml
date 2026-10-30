@@ -37,7 +37,7 @@ jobs:
         run: xvfb-run --auto-servernum ./gradlew check coverage
 
       - name: Upload coverage reports to Codecov
-        if: runner.os == 'Linux'
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          slug: AY2627S1-CS2103T-F14a-4/tp
