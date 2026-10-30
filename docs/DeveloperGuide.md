@@ -28,7 +28,7 @@
   Guide, and refining the corresponding sequence diagrams. The resulting changes were reviewed and validated before
   submission.
 
-* Nicholas Goh (**nicholas-gohh**) used Codex to assist with implementation reviews, test generation, documentation
+* Nicholas Goh (`nicholas-gohh`) used Codex to assist with implementation reviews, test generation, documentation
   improvements, and debugging for the `add`, `edit`, and storage features. This included Developer Guide and User
   Guide revisions, parser validation, and regression testing. Nicholas reviewed and validated the changes before
   submission.
@@ -132,10 +132,6 @@ How the `Logic` component works:
 4. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
 `LogicManager` executes each command against a temporary model initialized with the current records, preferences and active filter. When a command changes records, it saves the temporary client book before committing it to the main model. Read-only commands, such as `list`, `find`, and `due`, update the displayed view from memory without writing to storage. If saving fails, the main model is never committed, so the application does not display a change that would be lost after restart. Regression tests cover read-only commands avoiding persistence, a failed save retaining the records and active filter, and a subsequent successful `tag` command preserving that filter.
-
-The sequence diagram below shows the corresponding flow for an `edit` command.
-
-<puml src="diagrams/EditSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the edit command" />
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
 
@@ -729,6 +725,11 @@ membership/order updates through logic and storage. Card tests cover status disp
 
 ### Backing up and restoring records
 
+The sequence diagram below illustrates the normal, successful execution path of the `backup` command. It omits
+error handling and the fallback move used when atomic replacement is unsupported.
+
+<puml src="diagrams/BackupSequenceDiagram.puml" alt="Interactions for the backup command" />
+
 `ClientBookParser` accepts `backup` and `restore` only without arguments and creates a `BackupCommand` or `RestoreCommand` respectively. Both commands derive the backup path from the main data-file path, placing `clientbook-backup.json` beside `clientbook.json` in the `data` folder.
 
 `BackupCommand` does not change the in-memory client book. It serializes the current records through `Storage#saveClientBook(ReadOnlyClientBook, Path)` to a temporary file in the backup folder, then replaces the backup file with an atomic move when supported. It falls back to a normal replacement move on file systems that do not support atomic moves. This prevents a failed write from replacing an existing backup with a partial file.
@@ -756,7 +757,7 @@ membership/order updates through logic and storage. Card tests cover status disp
 * stores contact details, relationship status, tags, preferences, interests, important dates, and other concise relationship context
 * records high-level business needs such as financial goals, priorities, budget ranges, and areas of interest
 * records dated interactions, outcomes, next actions, and reminders
-* finds, filters, sorts, reviews, archives, and backs up relationship records
+* finds, filters, reviews, and backs up relationship records
 * supports frequent users who prefer fast typed input while using the interface for clear feedback
 
 **Value proposition**: Keeps track of their clients' details, allowing them to quickly recall important personal context about their clients, so that they can maintain more personalised and informed client relationships.
@@ -812,7 +813,6 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | * * * | As a financial consultant looking for a specific person | find clients or prospects using one or more name keywords | quickly locate the relevant client record. |
 | * * | As a financial consultant who remembers context rather than a name | search across preferences and notes using keywords | find the relevant relationship from the detail I remember. |
 | * * | As a financial consultant focusing on a segment of contacts | filter people by client or prospect relationship status | work with only the relevant group. |
-| * | As a financial consultant maintaining long-term relationships | identify people I have not contacted recently | notice relationships that may otherwise be neglected. |
 
 #### Long Term Use and Data Continuity
 
@@ -830,6 +830,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | * * | As a financial consultant who relies on personal rapport | record a person's preferences and interests | make future conversations more relevant and personal. |
 | * * | As a busy financial consultant about to meet or call someone | view a concise summary of their preferences, recent interactions, and next action | refresh my memory without reading the entire record. |
 | * * | As a financial consultant planning the order of work | sort contacts by next follow-up or last interaction date | prioritise relationships using timely information. |
+| * | As a financial consultant maintaining long-term relationships | identify people I have not contacted recently | notice relationships that may otherwise be neglected. |
 
 ### Use cases
 
@@ -872,30 +873,43 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case resumes at step 5.
 
-**Use case: Update a client relationship**
+**Use case: Edit a person's basic record**
 
 **MSS**
 
-1.  User requests to find a client or prospect by name.
-2.  ClientBook displays matching records.
-3.  User updates the person’s relationship stage, preferences, or contact details.
-4.  ClientBook saves the updated relationship context and displays a confirmation message.
+1.  User requests to list persons or find a person.
+2.  ClientBook displays the matching persons.
+3.  User requests to edit the displayed person's relationship, name, phone number, or email address.
+4.  ClientBook validates the supplied index and updated fields.
+5.  ClientBook updates and saves the person's record, then displays a confirmation message.
 
     Use case ends.
 
 **Extensions**
 
-* 2a. No matching record is found.
+* 2a. No person matches the search.
 
-    * 2a1. ClientBook shows a message that no matching records exist.
-
-      Use case ends.
-
-* 3a. The updated details are invalid.
-
-    * 3a1. ClientBook shows an error message.
+    * 2a1. ClientBook displays an empty list.
 
       Use case ends.
+
+* 3a. The supplied index is invalid or refers to a person not in the displayed list.
+
+    * 3a1. ClientBook displays an error message.
+
+      Use case resumes at step 2.
+
+* 3b. The user supplies no fields to edit.
+
+    * 3b1. ClientBook displays an error message.
+
+      Use case resumes at step 3.
+
+* 4a. A supplied field is invalid, or the updated record duplicates another person's name, email address, or phone number.
+
+    * 4a1. ClientBook displays an error message and does not change the record.
+
+      Use case resumes at step 3.
 
 **Use case: Record a follow-up after a client interaction**
 
@@ -1776,6 +1790,51 @@ add r/Prospect n/Jane Tan e/jane@example.com p/98765432
    8. Test case: Enter a `find` command with matches, then execute `list` and press either arrow key while the command
       box has focus.<br>
       Expected: Executing the non-find command disables find-result navigation.
+
+### Backing up and restoring records
+
+Use a separate test folder. This test verifies that `restore` replaces the current records with the most recent
+backup and clears an active search.
+
+1. Create a record to back up. Enter each line as a separate command:
+
+   ```text
+   clear
+   add r/Client n/John Doe e/john@example.com p/91234567 t/referral
+   info 1 fn/Retirement planning pr/High ai/Life insurance
+   contact 1 ch/Email tm/Weekdays after 6 pm
+   note 1 d/2020-03-01 n/Discussed retirement goals.
+   backup
+   ```
+
+   Expected: The last command reports `Backup saved to` followed by the backup path. The file
+   `data/clientbook-backup.json` is created in the application's home folder.
+
+2. Change the live records after the backup, then restore:
+
+   ```text
+   add r/Prospect n/Jane Tan e/jane@example.com p/98765432
+   find John
+   restore
+   ```
+
+   Expected: `restore` reports `Records restored from` followed by the backup path. The active search is cleared,
+   so the full restored list is shown. John Doe is the only record; their `referral` tag, financial information,
+   contact preferences and interaction note match the backed-up values. Jane Tan is absent.
+
+3. Close and reopen the application, then run `list`.
+
+   Expected: The restored John Doe record and its backed-up details remain. This confirms that restore also updates
+   the main data file.
+
+4. In a new, empty test folder, start the application and run `restore` before running `backup`.
+
+   Expected: An error beginning `Backup file does not exist:` is shown. The current records remain unchanged.
+
+5. Try `backup extra` and `restore extra`.
+
+   Expected: They report respectively `The backup command takes no arguments.` and
+   `The restore command takes no arguments.` No backup or restore occurs.
 
 ### Saving data
 

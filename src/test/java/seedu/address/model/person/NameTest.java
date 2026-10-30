@@ -40,6 +40,12 @@ public class NameTest {
         assertTrue(Name.isValidName("Capital Tan")); // with capital letters
         assertTrue(Name.isValidName("Nur-Aisyah")); // hyphenated name
         assertTrue(Name.isValidName("O'Connor")); // apostrophe in name
+        assertTrue(Name.isValidName("N’Dour")); // curly apostrophe in name
+        assertTrue(Name.isValidName("A. P. J. Abdul Kalam")); // initials with periods
+        assertTrue(Name.isValidName("Martin Luther King, Jr.")); // suffix with commas and periods
+        assertTrue(Name.isValidName("J.R. Tolkien")); // initials without spaces
+        assertTrue(Name.isValidName("St.John Smith")); // period within a name component
+        assertTrue(Name.isValidName("Smith,John")); // comma within a name component
         assertTrue(Name.isValidName("Ravi s/o Kumar")); // son of marker
         assertTrue(Name.isValidName("Priya D/O Nair")); // case-insensitive daughter of marker
         assertTrue(Name.isValidName("Asha w/o Raj")); // wife of marker

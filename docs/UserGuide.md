@@ -64,8 +64,8 @@ and stores records locally.
 * Parameters can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
-* Extraneous parameters for commands that take no parameters, such as `help`, `list`, `exit`, and `clear`, are ignored.<br>
-  For example, `help 123` is interpreted as `help`.
+* Extraneous parameters for `help`, `list`, `exit`, and `clear` are ignored.<br>
+  For example, `help 123` is interpreted as `help`. Other commands reject unsupported arguments.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </box>
@@ -87,7 +87,8 @@ Format: `add r/RELATIONSHIP n/NAME e/EMAIL p/PHONE_NUMBER [t/TAG]...`
 
 * `RELATIONSHIP` must be either `Client` or `Prospect`.
 * `NAME` must contain 1–100 characters after leading and trailing whitespace is removed. It may include letters,
-  spaces, hyphens (`-`), apostrophes (`'`), and the relationship markers `s/o`, `d/o`, or `w/o`.
+  spaces, hyphens (`-`), apostrophes (`'` or `’`), periods (`.`), commas (`,`), and the relationship markers
+  `s/o`, `d/o`, or `w/o`.
 * A name must not duplicate another contact's name. Name comparison ignores letter case and repeated spaces.
 * `EMAIL` must contain 5–254 characters, one `@`, no whitespace, text in both the local and domain parts, and at
   least one dot in the domain. Its local part may use common characters such as `.`, `_`, `+`, and `-`; each domain
@@ -374,7 +375,7 @@ Format: `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...
 
 | Filter         | Syntax and matching rule                                                                                                                                                                                                                          |
 |:---------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| KEYWORD        | Write one or more name keywords before any prefixed filter. Each keyword matches contiguous text in names only. Each keyword contains letters with optional internal hyphens or apostrophes; `s/o`, `d/o`, and `w/o` are also accepted.           |
+| KEYWORD        | Write one or more name keywords before any prefixed filter. Each keyword matches contiguous text in names only. Each keyword contains letters with optional internal hyphens, apostrophes, periods, or commas; `s/o`, `d/o`, and `w/o` are also accepted.           |
 | RELATIONSHIP   | Use `r/client` or `r/prospect`. The value must match the relationship exactly.                                                                                                                                                                    |
 | TAG            | Put one or more alphanumeric keywords after one `t/`. Each keyword matches contiguous text in a tag; for example, `friend` matches `friend`, `friends`, and `bestfriend`.                                                                         |
 | DETAIL_KEYWORD | Put one or more non-whitespace keywords after one `k/`. Punctuation and digits are accepted. This searches contact preferences, financial information, interaction-note dates, types, outcomes and text, and follow-up action text and due dates. |
@@ -539,6 +540,7 @@ Creates a complete copy of all records, including financial information, interac
 Format: `backup`
 
 The backup is saved as `clientbook-backup.json` in ClientBook's `data` folder.
+Do not add arguments to this command.
 
 Example: `backup`
 
@@ -550,6 +552,7 @@ current records are changed. Restoring resets any active search so all restored 
 Format: `restore`
 
 The backup is read from `clientbook-backup.json` in ClientBook's `data` folder.
+Do not add arguments to this command.
 
 Example: `restore`
 
@@ -622,4 +625,5 @@ Action     | Format, Examples
 **Due**    | `due`
 **List**   | `list`
 **Help**   | `help`
+**Exit**   | `exit`
 

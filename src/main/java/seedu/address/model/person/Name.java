@@ -13,13 +13,14 @@ public class Name {
 
     public static final String MESSAGE_BLANK = "Name cannot be blank.";
     public static final String MESSAGE_INVALID_CHARACTERS = "The name contains invalid characters. "
-            + "A name may contain only letters, spaces, hyphens (-), apostrophes ('), "
-            + "and the relationship markers s/o, d/o, or w/o.";
+            + "A name may contain only letters, spaces, hyphens (-), apostrophes (' or ’), periods (.), "
+            + "commas (,), and the relationship markers s/o, d/o, or w/o.";
     public static final String MESSAGE_LENGTH = "The name must not exceed 100 characters.";
 
     private static final int MAX_NAME_LENGTH = 100;
     private static final Pattern VALID_NAME_PATTERN = Pattern.compile(
-            "[\\p{L}]+(?:(?: +(?:s/o|d/o|w/o) +[\\p{L}]+)|(?: +|[-'])[\\p{L}]+)*",
+            "[\\p{L}\\p{M}]+(?:[-'’.,][\\p{L}\\p{M}]+)*[.,]?(?:(?: +(?:s/o|d/o|w/o))? +"
+                    + "[\\p{L}\\p{M}]+(?:[-'’.,][\\p{L}\\p{M}]+)*[.,]?)*",
             Pattern.CASE_INSENSITIVE);
 
     public final String fullName;
