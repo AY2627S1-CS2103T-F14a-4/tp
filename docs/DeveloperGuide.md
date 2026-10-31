@@ -224,8 +224,9 @@ to that index. Modified arrow keys are left to the focused control. Selection re
 when the first or last result is reached. Keeping this navigation at the window level allows it to work while the
 command box retains keyboard focus.
 
-The following sequence shows a combined search. The `FilteredList` applies the predicate to each source person;
-omitted filter types evaluate as matched, while the supplied filter types must all match.
+The following sequence focuses on how a combined search is parsed and applied. Transaction setup is omitted because
+`find` does not modify stored records. The `FilteredList` applies the predicate to each source person; omitted filter
+types evaluate as matched, while the supplied filter types must all match.
 
 <puml src="diagrams/FindSequenceDiagram.puml" alt="Find by name, relationship, tags and details sequence" />
 
@@ -242,17 +243,17 @@ command unions the supplied and existing tags and replaces the immutable `Person
 preserving every non-tag field and the active list filter. The existing JSON adapter persists a successfully updated
 set.
 
-`AddCommandParser` reuses the same tag validation for repeatable `t/TAG` fields. `PersonCard` sorts the stored tags
-before rendering them in its `FlowPane`. Both commands run on a temporary model, which is saved before its state is
-committed to the live model.
+`AddCommandParser` reuses the same tag validation for repeatable `t/TAG` fields. Both commands run on a temporary
+model, which is saved before its state is committed to the live model.
 
 `PersonCard` renders the complete tag set in its existing `FlowPane`, sorting tags alphabetically by name while
 ignoring case. The list view observes the model, so tags supplied by `add` or appended by `tag` appear with the
 person's contact and relationship details without a manual refresh. The `list` command restores all persons while
 retaining those tags.
 
-The following sequence shows tags being appended to a person in the currently displayed list. Parsing and index
-validation complete before the immutable `Person` is replaced and the updated client book is saved.
+The following sequence focuses on the successful path for appending tags to a person in the currently displayed
+list. Parsing and validation complete before the immutable `Person` is replaced. The live model is updated only
+after the temporary model has been saved successfully.
 
 <puml src="diagrams/TagSequenceDiagram.puml" alt="Tagging a person sequence" />
 
@@ -279,7 +280,8 @@ case-insensitive and ignores surrounding whitespace. Any other response raises a
 command pending. A confirmed command copies the person's tag set, clears it or removes the selected tags, replaces
 the immutable `Person` through `Model#setPerson`, and saves the updated client book.
 
-The following sequence shows the confirmation gate before selected tags are deleted.
+The following sequence focuses on the confirmation gate and the successful `yes` path. A note summarises the other
+responses so that the diagram can omit repetitive branches.
 
 <puml src="diagrams/TagDeleteSequenceDiagram.puml" alt="Deleting tags with confirmation sequence" />
 
