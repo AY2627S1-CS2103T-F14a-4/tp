@@ -178,6 +178,7 @@ Format: `edit INDEX [r/RELATIONSHIP] [n/NAME] [p/PHONE] [e/EMAIL]`
 * The edited email address and phone number must not duplicate those of another contact. Phone numbers use the same
   formatting-insensitive, multiple-number comparison as `add`; for example, `9999 9999` and `99999999` conflict.
   Email-domain casing is also ignored, so `alice@example.com` conflicts with `alice@EXAMPLE.COM`.
+  The error message identifies whether the email address, phone number, or both fields conflict.
 
 </box>
 
@@ -575,6 +576,11 @@ Format: `exit`
 ### Saving the data
 
 ClientBook automatically saves changes to your records. You do not need to save manually.
+
+ClientBook writes a completed replacement file before replacing `clientbook.json`. When the file system supports an
+atomic replacement, an unsuccessful write does not leave the existing data file partially written. On file systems
+without atomic replacement support, ClientBook uses a compatible replacement method, which cannot provide the same
+interruption guarantee.
 
 If saving fails, check that the data folder and clientbook.json file are accessible and writable, then try again.
 

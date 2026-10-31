@@ -176,6 +176,11 @@ The `Storage` component,
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonClientBookStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
+All JSON writes are staged in a temporary file in the target file's directory. Once writing succeeds, ClientBook
+replaces the live file with an atomic move when the file system supports it. This prevents a failed write from
+partially truncating the existing data file. On file systems without atomic-move support, ClientBook falls back to a
+normal replacement move; this preserves compatibility but cannot provide the same interruption guarantee.
+
 ### Common classes
 
 Classes used by multiple components are in the `seedu.address.commons` package.
@@ -1131,6 +1136,16 @@ Use a separate test folder with fictional records. Add John Doe and Jane Tan as 
 
     2. Test case: `edit 1`<br>
        Expected: `At least one field to edit must be provided.` is shown and John Doe's record does not change.
+
+    3. Test case: `edit 2 e/john.new@example.com`<br>
+       Expected: `A contact with this email address already exists.` is shown and Jane Tan's record does not change.
+
+    4. Test case: `edit 2 p/91234568`<br>
+       Expected: `A contact with this phone number already exists.` is shown and Jane Tan's record does not change.
+
+    5. Test case: `edit 2 e/john.new@example.com p/91234568`<br>
+       Expected: `This email address and phone number are already in use.` is shown and Jane Tan's record does not
+       change.
 
 <a id="financial-information-and-contact-preferences"></a>
 
