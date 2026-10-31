@@ -122,7 +122,8 @@ public class InfoCommandTest {
         parser.parse("2 pr/-").execute(model, null);
         assertEquals(List.of(second), model.getFilteredPersonList());
         assertEquals(first, model.getClientBook().getPersonList().getFirst());
-        assertCommandFailure(parser.parse("1 pr/-"), model, "No client exists at index 1.");
+        assertCommandFailure(parser.parse("1 pr/-"), model,
+                "No visible client or prospect exists at index 1. Use list to view all contacts.");
     }
 
     @Test
@@ -210,9 +211,10 @@ public class InfoCommandTest {
     public void execute_nonexistentIndex_failure() throws Exception {
         int invalid = model.getFilteredPersonList().size() + 1;
         assertCommandFailure(parser.parse(invalid + " pr/High"), model,
-                "No client exists at index " + invalid + ".");
+                "No visible client or prospect exists at index " + invalid + ". Use list to view all contacts.");
         showPersonAtIndex(model, INDEX_FIRST_PERSON);
-        assertCommandFailure(parser.parse("2 pr/High"), model, "No client exists at index 2.");
+        assertCommandFailure(parser.parse("2 pr/High"), model,
+                "No visible client or prospect exists at index 2. Use list to view all contacts.");
     }
 
     @Test

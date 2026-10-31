@@ -20,7 +20,8 @@ public class InfoCommand extends Command {
     public static final String COMMAND_WORD = "info";
     public static final String MESSAGE_USAGE = "info INDEX [fn/VALUE|-] [pr/VALUE|-] [ai/VALUE|-]";
     public static final String MESSAGE_SUCCESS = "Client information for %s has been updated successfully.";
-    public static final String MESSAGE_INVALID_INDEX = "No client exists at index %d.";
+    public static final String MESSAGE_INVALID_INDEX =
+            "No visible client or prospect exists at index %d. Use list to view all contacts.";
 
     private final Index index;
     private final InfoDescriptor descriptor;
