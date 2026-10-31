@@ -71,7 +71,8 @@
         "launch-and-shutdown": "Launch and shutdown",
         "adding-a-client-prospect": "Adding a client/prospect",
         "editing-a-client-prospect": "Editing a client/prospect",
-        "financial-information-and-contact-preferences": "Financial information and contact preferences",
+        "financial-information-info-2": "Financial information: info",
+        "contact-preferences-contact-2": "Contact preferences: contact",
         "deleting-a-client-prospect": "Deleting a client/prospect",
         "interaction-notes-2": "Interaction notes",
         "setting-a-follow-up-next": "Setting a follow-up: next",
@@ -83,8 +84,7 @@
         "finding-persons-by-relationship": "Finding persons by relationship",
         "managing-tags": "Managing tags",
         "finding-persons": "Finding persons",
-        "backing-up-and-restoring-records-2": "Backing up and restoring records",
-        "saving-data": "Saving data"
+        "backing-up-and-restoring-records-2": "Backing up and restoring records"
       },
       "headingKeywords": {}
     },
