@@ -75,6 +75,7 @@ public class InfoCommandTest {
 
     @Test
     public void execute_clearEachCombination_preservesOmittedAndUnrelatedFields() throws Exception {
+        // EP: explicitly cleared versus omitted financial fields across all nonempty clearing combinations.
         Person original = populatedPerson();
         for (int mask = 1; mask < 8; mask++) {
             model.setPerson(model.getFilteredPersonList().getFirst(), original);
@@ -193,6 +194,7 @@ public class InfoCommandTest {
 
     @Test
     public void execute_filteredList_updatesDisplayedPersonOnly() throws Exception {
+        // EP: updated visible person versus unchanged hidden person under an active filter.
         Person first = model.getFilteredPersonList().get(0);
         Person target = model.getFilteredPersonList().get(1);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
