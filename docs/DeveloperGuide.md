@@ -754,7 +754,7 @@ error handling and the fallback move used when atomic replacement is unsupported
 **Target user profile**:
 
 * maintains one user's local records of clients and prospects
-* stores contact details, relationship status, tags, preferences, interests, important dates, and other concise relationship context
+* stores contact details, relationship status, tags, preferred contact channels and timings, interests, important dates, and other concise relationship context
 * records high-level business needs such as financial goals, priorities, budget ranges, and areas of interest
 * records dated interactions, outcomes, next actions, and reminders
 * finds, filters, reviews, and backs up relationship records
@@ -826,8 +826,6 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 | Priority | As a … | I want to … | So that I can … |
 | --- | --- | --- | --- |
-| * * | As a financial consultant preparing to contact someone | view one person's complete profile | recall the relevant relationship context before the conversation. |
-| * * | As a financial consultant who relies on personal rapport | record a person's preferences and interests | make future conversations more relevant and personal. |
 | * * | As a busy financial consultant about to meet or call someone | view a concise summary of their preferences, recent interactions, and next action | refresh my memory without reading the entire record. |
 | * * | As a financial consultant planning the order of work | sort contacts by next follow-up or last interaction date | prioritise relationships using timely information. |
 | * | As a financial consultant maintaining long-term relationships | identify people I have not contacted recently | notice relationships that may otherwise be neglected. |
@@ -1177,9 +1175,11 @@ Use a separate test folder with fictional records. Add John Doe and Jane Tan as 
     2. Test case: `edit 1`<br>
        Expected: `At least one field to edit must be provided.` is shown and John Doe's record does not change.
 
-### Financial information and contact preferences
+<a id="financial-information-and-contact-preferences"></a>
 
-Use a separate test folder with fictional records. Repeat this setup before testing **each** feature below;
+### Financial information: `info`
+
+Use a separate test folder with fictional records. Run this setup before testing this feature;
 `clear` removes all records in that test copy. Enter each line as a separate command.
 
 ```text
@@ -1192,7 +1192,7 @@ info 2 fn/Retirement pr/Medium ai/Insurance
 contact 2 ch/Email tm/Weekends
 ```
 
-#### Testing financial information: `info`
+<a id="testing-financial-information-info"></a>
 
 1. Set values with financial notation and reversed field order:
    `info 2 ai/Planning Life/Health insurance pr/High fn/Save $3000/month + CPF/SRS`.<br>
@@ -1207,7 +1207,22 @@ contact 2 ch/Email tm/Weekends
    both fail. Run `list`: Alex still has Education, Low, Savings and their original contact preferences.
    Run `exit`, reopen the same test copy and check Jamie: the new priority and cleared fields are retained.
 
-#### Testing contact preferences: `contact`
+### Contact preferences: `contact`
+
+Use a separate test folder with fictional records. Run this setup before testing this feature;
+`clear` removes all records in that test copy. Enter each line as a separate command.
+
+```text
+clear
+add r/Client n/Alex Teo e/alex@example.com p/91234567
+add r/Prospect n/Jamie Lim e/jamie@example.com p/98765432
+info 1 fn/Education pr/Low ai/Savings
+contact 1 ch/Email tm/Weekends
+info 2 fn/Retirement pr/Medium ai/Insurance
+contact 2 ch/Email tm/Weekends
+```
+
+<a id="testing-contact-preferences-contact"></a>
 
 1. Run `contact 2 tm/Weekdays AM/PM ch/Phone/WhatsApp`.<br>
    Expected: Jamie's timing and channel match the supplied text. Financial information remains Retirement, Medium,
@@ -1901,12 +1916,3 @@ backup and clears an active search.
 
    Expected: They report respectively `The backup command takes no arguments.` and
    `The restore command takes no arguments.` No backup or restore occurs.
-
-### Saving data
-
-1. Dealing with missing/corrupted data files
-
-   1. _{Explain how to simulate missing or corrupted data files and state the expected behavior.}_
-
-2. _{ more test cases … }_
-

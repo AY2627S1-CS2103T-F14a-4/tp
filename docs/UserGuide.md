@@ -198,7 +198,8 @@ Format: `info INDEX [fn/VALUE|-] [pr/VALUE|-] [ai/VALUE|-]`
 * Supply at least one field, each at most once, in any order. Separate fields with spaces and use lowercase prefixes.
 * A supplied value replaces that field; omitted fields and other person details stay unchanged.
   Use an exact `-` to clear a field. Spaces around `-` are allowed; `Long-term` remains ordinary text.
-* Values must contain 1–200 characters after surrounding ordinary spaces are removed. Internal spaces are kept.
+* Values must contain 1–200 UTF-16 code units after surrounding ordinary spaces are removed. Internal spaces are kept.
+  Some Unicode characters, such as emoji, count as two units; emoji are not permitted in financial information.
   Unicode letters, including accented text, digits, and `. , ' ( ) & - $ % + /` are accepted.
   Tabs, line breaks, blank values and other punctuation (such as `!` or `:`) are rejected.
   Slash-containing text can appear anywhere in a value, including `Planning CPF/SRS` and `Save $3000/month`.
@@ -231,7 +232,9 @@ Format: `contact INDEX [ch/CHANNEL|-] [tm/TIMING|-]`
 * A supplied value replaces that preference; omitted preferences and other person details stay unchanged.
   An exact `-`, optionally surrounded by ordinary spaces, clears a preference. Clearing an absent preference is safe.
   Type `-` directly to clear; a larger value such as `Phone-call` remains text.
-* Each value must contain 1–200 characters of valid Unicode text after surrounding whitespace is removed.
+* Each value must contain 1–200 UTF-16 code units of valid Unicode text after surrounding whitespace is removed.
+  Characters outside the Basic Multilingual Plane, such as typical emoji, count as two units each:
+  100 such emoji can be accepted, but 101 exceed the limit.
   Internal spaces and case are kept. Free text, Unicode and punctuation are accepted,
   including `Phone/WhatsApp` and `Weekdays 6:30–8 pm`.
   Empty or whitespace-only values are invalid.

@@ -180,6 +180,7 @@ public class ContactCommandTest {
 
     @Test
     public void descriptor_statesAndCopies_distinguishChanges() throws Exception {
+        // EP: omitted, updated and explicitly cleared preferences are distinct descriptor states.
         ContactDescriptor omitted = new ContactDescriptor();
         ContactDescriptor clear = clearBoth();
         assertFalse(omitted.isChannelSpecified());
@@ -278,6 +279,7 @@ public class ContactCommandTest {
 
     @Test
     public void execute_filteredList_usesOriginalIndexAndKeepsFilter() throws Exception {
+        // EP: visible versus hidden persons under an active filter.
         Person second = model.getFilteredPersonList().get(1);
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
         parser.parseCommand("contact 2 ch/Email").execute(model, null);

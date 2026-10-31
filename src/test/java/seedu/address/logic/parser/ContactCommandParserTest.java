@@ -155,6 +155,7 @@ public class ContactCommandParserTest {
 
     @Test
     public void parse_valueBoundaries_success() {
+        // BVA: valid lengths of 1, 199 and 200 UTF-16 code units after surrounding whitespace is removed.
         for (int length : new int[] {1, 199, 200}) {
             String value = "a".repeat(length);
             assertParseSuccess(parser, " 1 ch/ " + value + " tm/ " + value + " ",
@@ -178,6 +179,7 @@ public class ContactCommandParserTest {
 
     @Test
     public void parse_blankOrLongValues_failure() {
+        // EP: blank values; BVA: 201 UTF-16 code units exceed the maximum, even with surrounding whitespace.
         for (String value : List.of("", "  ", "\t", "\r\n", "\u2003", "a".repeat(201),
                 "\u00a0" + "a".repeat(201) + "\u202f")) {
             assertParseFailure(parser, " 1 ch/" + value, PreferredContactChannel.MESSAGE_CONSTRAINTS);
@@ -229,6 +231,7 @@ public class ContactCommandParserTest {
 
     @Test
     public void parse_unsupportedSlashParametersInPreamble_parameterError() {
+        // EP: unsupported slash-prefixed parameters, with or without recognized preference fields.
         for (String parameter : List.of("/pr hi", "/unknown value", "/pr/hi", "/pr", "/")) {
             for (String fields : List.of("", " ch/Phone", " tm/Evenings", " ch/- tm/-")) {
                 String input = "2 " + parameter + fields;

@@ -133,6 +133,7 @@ public class InfoCommandParserTest {
 
     @Test
     public void parse_financialSymbolBoundariesAndMixedInvalidFields_preservesValidation() {
+        // BVA: 200 UTF-16 code units are accepted; 201 are rejected for each financial symbol.
         for (String symbol : new String[] {"$", "%", "+", "/"}) {
             String value = "A" + symbol.repeat(199);
             InfoDescriptor descriptor = new InfoDescriptor();
@@ -188,6 +189,7 @@ public class InfoCommandParserTest {
 
     @Test
     public void parse_clearAndSetFieldsAnyOrder_success() {
+        // EP: updated and explicitly cleared fields in every parameter order.
         InfoDescriptor descriptor = new InfoDescriptor();
         descriptor.setFinancialNeed(null);
         descriptor.setPriority(new Priority("High"));
@@ -254,6 +256,7 @@ public class InfoCommandParserTest {
 
     @Test
     public void parse_missingOrInvalidIndex_failure() {
+        // EP: missing and invalid indices, distinct from a valid index with no parameters.
         for (String args : new String[] {"", "  ", "fn/Retirement"}) {
             assertParseFailure(parser, args, "Client index is required");
         }
