@@ -71,7 +71,8 @@ The bulk of the app's work is done by the following four components:
 
 **How the architecture components interact with each other**
 
-The *Sequence Diagram* below shows the deletion phase after the user enters `delete 1` and confirms with `Y`.
+The *Sequence Diagram* below shows the high-level deletion flow after the user has entered `delete 1` and confirms
+with `Y`. Parsing and the earlier confirmation prompt are omitted.
 
 <puml src="diagrams/ArchitectureSequenceDiagram.puml" width="574" />
 
@@ -189,10 +190,10 @@ This section describes some noteworthy details on how certain features are imple
 ### Find
 
 The `find` command supports four independently optional filters: name keywords, one relationship, tag keywords, and
-remembered-detail keywords. `FindCommandParser` tokenizes the optional `r/`, `t/`, and `k/` filters, rejects duplicate 
-prefixes, and requires at least one filter. Name keywords form the preamble and must contain letters with optional 
-internal hyphens or apostrophes, except for the accepted markers `s/o`, `d/o`, and `w/o`. Relationship and tag 
-validation is delegated to `ParserUtil`; detail keywords accept any non-whitespace text.
+remembered-detail keywords. `FindCommandParser` tokenizes the optional `r/`, `t/`, and `k/` filters, rejects duplicate
+prefixes, and requires at least one filter. Name keywords form the preamble and must contain letters with optional
+internal hyphens, apostrophes, periods, or commas, except for the accepted markers `s/o`, `d/o`, and `w/o`.
+Relationship and tag validation is delegated to `ParserUtil`; detail keywords accept any non-whitespace text.
 
 The parser creates a `PersonMatchesFiltersPredicate`. Name keywords use case-insensitive contiguous substring
 matching and are joined with `OR`. Thus, `Alex` matches `Alexander`, while either `Anne` or `Marie` matches
@@ -205,7 +206,7 @@ predicate joins the name, relationship, tag, and detail filter results with `AND
 `find Alex David r/client t/priority referral k/retirement WhatsApp` returns clients whose name contains `Alex` or
 `David`, whose tags contain `priority` or `referral`, and whose remembered details contain `retirement` or `WhatsApp`.
 
-The parsing rules are  summarised in the table below:
+The parsing rules are summarised in the table below:
 | Filter | Matching within the filter |
 |:--|:--|
 | Name | Case-insensitive contiguous match against names; any keyword matches. |
@@ -426,7 +427,7 @@ the standard duplicate-prefix error. Metadata written after `n/` remains literal
 or outcome.
 
 This feature provides adding, displaying, editing and deleting dated notes, with chronological sorting and
-structured type/outcome metadata. Searching interaction notes (US16) remains outside this feature.
+structured type/outcome metadata.
 
 #### Interaction type and outcome
 
@@ -699,7 +700,7 @@ the live state unchanged. Commands do not write follow-up files themselves.
 ```json
 "nextAction": {
   "action": "Send retirement proposal",
-  "dueDate": "2026-11-02",
+  "dueDate": "2099-11-02",
   "completed": false
 }
 ```
@@ -838,6 +839,37 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 (For all use cases below, the **System** is `ClientBook` and the **Actor** is the `user`, unless specified otherwise)
 
+**Use case: Add a person**
+
+**MSS**
+
+1.  User requests to add a person with a relationship, name, phone number and email address, and optionally tags.
+2.  ClientBook validates the supplied details.
+3.  ClientBook adds and saves the person.
+4.  ClientBook displays a confirmation message.
+
+    Use case ends.
+
+**Extensions**
+
+* 2a. A required field is missing or a supplied field is invalid.
+
+    * 2a1. ClientBook displays an error explaining the required format.
+
+      Use case resumes at step 1.
+
+* 2b. The name, email address, or phone number duplicates an existing person.
+
+    * 2b1. ClientBook displays an error and does not add the person.
+
+      Use case resumes at step 1.
+
+* 3a. ClientBook cannot save the new person.
+
+    * 3a1. ClientBook displays an error and leaves the records unchanged.
+
+      Use case resumes at step 1.
+
 **Use case: Delete a person**
 
 **MSS**
@@ -919,9 +951,10 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 1.  User requests to find a client or prospect.
 2.  ClientBook displays the matching record.
-3.  User records the outcome of the interaction.
-4.  User records the next action and its due date.
-5.  ClientBook saves the interaction details and follow-up.
+3.  User requests to add a dated interaction note containing the interaction outcome.
+4.  ClientBook validates and saves the interaction note, then displays a confirmation message.
+5.  User requests to record the next action and its due date.
+6.  ClientBook validates and saves the next action, then displays a confirmation message.
 
     Use case ends.
 
@@ -933,11 +966,17 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case ends.
 
-* 4a. The supplied due date is invalid.
+* 4a. The interaction date, note text, type, or outcome is invalid.
 
-    * 4a1. ClientBook shows an error message.
+    * 4a1. ClientBook shows an error and leaves the interaction history unchanged.
 
-      Use case resumes at step 4.
+      Use case resumes at step 3.
+
+* 6a. The next action or due date is invalid.
+
+    * 6a1. ClientBook shows an error and does not add the next action.
+
+      Use case resumes at step 5.
 
 **Use case: Add an important date**
 
@@ -977,7 +1016,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 1.  User requests to find clients or prospects using one or more name, relationship, tag, or remembered-detail
     filters.
-2.  ClientBook searches the stored records using the supplied criterion.
+2.  ClientBook searches the stored records, requiring each result to match every supplied filter type.
 3.  ClientBook displays all matching clients and prospects.
 
     Use case ends.
@@ -996,39 +1035,76 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case resumes at step 1.
 
-* 1c. The user combines two or more filter types.
-
-    * 1c1. ClientBook requires each result to match every supplied filter type.
-
-      Use case resumes at step 2.
-
 * 3a. No record matches the supplied criterion.
 
     * 3a1. ClientBook informs the user that no matching record was found.
 
       Use case ends.
 
+**Use case: Back up records**
+
+**MSS**
+
+1.  User requests to back up the records.
+2.  ClientBook saves a complete copy of the current records to the backup file.
+3.  ClientBook displays the backup location in a confirmation message.
+
+    Use case ends.
+
+**Extensions**
+
+* 2a. ClientBook cannot create or replace the backup file.
+
+    * 2a1. ClientBook displays an error and preserves any existing backup.
+
+      Use case ends.
+
+**Use case: Restore records**
+
+**MSS**
+
+1.  User requests to restore the records.
+2.  ClientBook reads and validates the backup file.
+3.  ClientBook saves the restored records as the current records.
+4.  ClientBook displays all restored persons and a confirmation message.
+
+    Use case ends.
+
+**Extensions**
+
+* 2a. The backup file is missing, unreadable, or invalid.
+
+    * 2a1. ClientBook displays an error and leaves the current records unchanged.
+
+      Use case ends.
+
+* 3a. ClientBook cannot save the restored records.
+
+    * 3a1. ClientBook displays an error and leaves the live in-memory records unchanged.
+
+      Use case ends.
+
 ### Non-Functional Requirements
 
-1. ClientBook should work on any _mainstream OS_ as long as Java `25` or above is installed.
+1. ClientBook should run on Windows 10 or 11, macOS 13 or later, and Ubuntu 22.04 LTS or later when Java `25` or above is installed.
 2. ClientBook should be able to store at least 1000 persons.
 3. For a data set of up to 1000 persons, ClientBook should process a command and update the graphical user interface within 1 second after the user submits the command.
 4. ClientBook should start within 10 seconds on a computer that meets the stated software requirements.
-5. A user with above-average typing speed for regular English text should be able to complete most core tasks faster using commands than using the mouse.
-6. All core client-record management features should remain available without an Internet connection.
+5. After completing the Quick Start, a target user should be able to add, find, and edit a person using only the keyboard, without external help, within 2 minutes per task.
+6. All core client-record operations should remain available without an Internet connection.
 7. Every successful command that modifies client data should be saved automatically to local storage and remain available after ClientBook is restarted.
 8. An invalid command should not modify any existing client data.
 9. ClientBook should handle a missing, inaccessible, or corrupted data file without crashing or freezing, and should inform the user when recovery is required.
 10. ClientBook should not silently overwrite an unreadable or corrupted data file.
-11. If ClientBook cannot save a change to local storage, it should inform the user that the change may not persist.
+11. If ClientBook cannot save a data-modifying command to local storage, it should report the failure and leave the live in-memory client data unchanged.
 12. ClientBook should store client data locally and should not transmit it to external services.
 13. ClientBook should not require an online account or authentication credentials to access locally stored records.
-14. All core client-record management operations should be accessible using keyboard input.
-15. Error messages should identify the invalid input and provide sufficient information for the user to correct it.
+14. All core client-record operations should be accessible using keyboard input.
+15. An error message for invalid input should identify the invalid or missing field or command and state its accepted format or constraint.
 16. ClientBook should be distributed as a single executable JAR file that does not require a separate installation process.
 17. ClientBook should store its data in a human-readable JSON format to support inspection and manual backup.
 18. The codebase should comply with the project coding standard and pass the configured automated checks before changes are merged.
-19. Unexpected errors should be logged with sufficient diagnostic information for developers while avoiding unnecessary exposure of client information.
+19. An unexpected error should log its exception type, stack trace, and affected operation without logging the complete client book or data-file contents.
 20. ClientBook should support a single user only; its data file should not be accessed concurrently or shared during normal operation.
 21. ClientBook should read and write files only within its home folder (the folder containing the JAR file) and its subfolders,
     and should not change OS-level configuration settings.
@@ -1038,9 +1114,19 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 ### Glossary
 
-* **Mainstream OS**: Windows, Linux, Unix, or macOS
-* **Prospect**: A person who is being tracked as a potential future client but is not currently an active client.
+* **Active filter**: The current condition that determines which persons are visible after commands such as `find`,
+  `due`, or `list`.
 * **Client**: A person with whom the financial consultant has an active professional relationship.
+* **Core client-record operations**: Adding, listing, editing, deleting and finding persons; managing their tags,
+  financial information, contact preferences, interaction notes, follow-ups and reminders; and backing up or
+  restoring the records.
+* **Home folder**: The folder containing the ClientBook JAR file. ClientBook stores its data files in the `data`
+  subfolder of this folder.
+* **Next action / follow-up**: The one dated task currently recorded for a person. It can be pending or completed.
+* **Prospect**: A person who is being tracked as a potential future client but is not currently an active client.
+* **Remembered details**: Contact preferences, financial information, interaction-note dates and text, and follow-up
+  action text and due dates that can be searched using the `find` command's `k/` filter.
+* **Yearly reminder**: A labelled month-and-day event, such as a birthday or policy renewal, that repeats every year.
 
 --------------------------------------------------------------------------------------------------------------------
 
