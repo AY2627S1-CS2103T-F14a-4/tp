@@ -211,7 +211,7 @@ The parsing rules are  summarised in the table below:
 | Name | Case-insensitive contiguous match against names; any keyword matches. |
 | Relationship | Exact `Relationship` equality. |
 | Tag | Case-insensitive contiguous match against tag names; any keyword matches. |
-| Remembered detail | Case-insensitive contiguous match against contact preferences, financial fields, interaction-note date/type/outcome/text, or follow-up action/due date; any keyword matches. |
+| Remembered detail | Case-insensitive contiguous match against contact preferences, financial fields, interaction-note date/text, or follow-up action/due date; any keyword matches. |
 
 The successful `CommandResult` returned by `FindCommand` includes a selection request. `MainWindow` responds by
 calling `PersonListPanel#selectFirstPerson`, which selects the first filtered person and scrolls it into view, or
@@ -1670,7 +1670,14 @@ add r/Prospect n/Jane Tan e/jane@example.com p/98765432
 
 1. Deleting selected tags after confirmation
 
-   1. Prerequisites: Run `list`. Jane Tan is at index 2 with `priority`, `insurance`, and `followup`.
+   1. Prerequisites: Enter each setup command on a separate line:
+
+      ```text
+      clear
+      add r/Client n/John Doe e/john@example.com p/91234567 t/referral
+      add r/Prospect n/Jane Tan e/jane@example.com p/98765432 t/priority t/insurance t/followup
+      list
+      ```
 
    2. Test case: `tagdelete 2 insurance`, followed by `YeS`<br>
       Expected: The first command displays Jane Tan and `[insurance]` without changing her record. The confirmation
@@ -1695,7 +1702,14 @@ add r/Prospect n/Jane Tan e/jane@example.com p/98765432
 
 1. Name filtering
 
-   1. Prerequisites: Add persons named `Alex Tan`, `Alexander Lim`, and `Anne-Marie Lee`.
+   1. Prerequisites: Enter each setup command on a separate line:
+
+      ```text
+      clear
+      add r/Client n/Alex Tan e/alex@example.com p/81234567
+      add r/Prospect n/Alexander Lim e/alexander@example.com p/82345678
+      add r/Client n/Anne-Marie Lee e/anne@example.com p/83456789
+      ```
 
    2. Test case: `find Alex`<br>
       Expected: Alex Tan and Alexander Lim are displayed because name matching is case-insensitive and contiguous.
@@ -1708,7 +1722,16 @@ add r/Prospect n/Jane Tan e/jane@example.com p/98765432
 
 2. Filtering clients and prospects
 
-   1. Prerequisites: Add multiple clients and prospects, then display all persons using the `list` command.
+   1. Prerequisites: Enter each setup command on a separate line:
+
+      ```text
+      clear
+      add r/Client n/Alex Tan e/alex@example.com p/81234567
+      add r/Prospect n/Alexander Lim e/alexander@example.com p/82345678
+      add r/Client n/Anne-Marie Lee e/anne@example.com p/83456789
+      add r/Prospect n/John Doe e/john@example.com p/84567890
+      list
+      ```
 
    2. Test case: `find r/client`<br>
       Expected: Only clients are displayed, in the same relative order as in the full list.
@@ -1721,26 +1744,48 @@ add r/Prospect n/Jane Tan e/jane@example.com p/98765432
 
 3. Invalid relationship filters
 
-    <ol type="i">
-      <li>
-        <p>Test case: <code>find r/customer</code><br>
-        Expected: No filtering occurs. The status message explains that the relationship must be <code>Client</code> or <code>Prospect</code>.</p>
-      </li>
-      <li>
-        <p>Other incorrect commands to try: <code>find r/</code>, <code>find r/client r/prospect</code>.<br>
-        Expected: No filtering occurs. The status message shows the relevant error details.</p>
-      </li>
-    </ol>
+   1. Prerequisites: Enter each setup command on a separate line:
+
+      ```text
+      clear
+      add r/Client n/Alex Tan e/alex@example.com p/81234567
+      add r/Prospect n/Alexander Lim e/alexander@example.com p/82345678
+      list
+      ```
+
+   2. Test case: `find r/customer`<br>
+      Expected: No filtering occurs. The status message explains that the relationship must be `Client` or
+      `Prospect`.
+
+   3. Other incorrect commands to try: `find r/`, `find r/client r/prospect`.<br>
+      Expected: No filtering occurs. The status message shows the relevant error details.
 
 4. Combined name and relationship filtering
 
-   1. Test case: `find Alex r/client`.<br>
-      Expected: Only clients whose names contain the contiguous text `Alex` are displayed. This includes names such
-      as `Alexander`, and matching is case-insensitive.
+   1. Prerequisites: Enter each setup command on a separate line:
+
+      ```text
+      clear
+      add r/Client n/Alex Tan e/alex@example.com p/81234567
+      add r/Prospect n/Alexander Lim e/alexander@example.com p/82345678
+      add r/Client n/Anne-Marie Lee e/anne@example.com p/83456789
+      ```
+
+   2. Test case: `find Alex r/client`.<br>
+      Expected: Alex Tan is displayed. Alexander Lim also matches the name keyword but is excluded because he is a
+      prospect, demonstrating `AND` across filter types.
 
 5. Tag filtering
 
-   1. Prerequisites: Add persons tagged `friend`, `friends`, `bestfriend`, and `family`.
+   1. Prerequisites: Enter each setup command on a separate line:
+
+      ```text
+      clear
+      add r/Client n/Alex Tan e/alex@example.com p/81234567 t/friend
+      add r/Prospect n/Alexander Lim e/alexander@example.com p/82345678 t/friends
+      add r/Client n/Anne-Marie Lee e/anne@example.com p/83456789 t/bestfriend
+      add r/Prospect n/John Doe e/john@example.com p/84567890 t/family
+      ```
 
    2. Test case: `find t/friend`.<br>
       Expected: The persons tagged `friend`, `friends`, and `bestfriend` are displayed. The person tagged `family`
@@ -1748,13 +1793,20 @@ add r/Prospect n/Jane Tan e/jane@example.com p/98765432
 
 6. Remembered-detail filtering
 
-   1. Prerequisites: Add a client named Alex with preferred channel `WhatsApp`, financial need `Retirement planning`,
-      a `CALL` interaction note dated `2026-10-06` with outcome `SUCCESSFUL` and text
-      `Discussed university fund`, and follow-up text `Call about investment review` due on `2026-12-15`. Add another
-      client without those details.
+   1. Prerequisites: Enter each setup command on a separate line:
 
-   2. Test cases: `find k/WhatsApp`, `find k/retire`, `find k/CALL`, `find k/success`, `find k/university`,
-      `find k/2026-10-06`, `find k/investment`, `find k/2026-12-15`, and `find k/2026-12`.<br>
+      ```text
+      clear
+      add r/Client n/Alex Tan e/alex@example.com p/81234567 t/priority
+      contact 1 ch/WhatsApp
+      info 1 fn/Retirement planning
+      note 1 d/2026-10-06 n/Discussed university fund
+      next 1 a/Call about investment review d/2026-12-15
+      add r/Client n/John Doe e/john@example.com p/84567890
+      ```
+
+   2. Test cases: `find k/WhatsApp`, `find k/retire`, `find k/university`, `find k/2026-10-06`,
+      `find k/investment`, `find k/2026-12-15`, and `find k/2026-12`.<br>
       Expected: Alex is displayed for every search. Matching is case-insensitive and accepts contiguous partial text.
 
    3. Test case: `find Alex r/client t/priority k/retirement`.<br>
@@ -1763,9 +1815,23 @@ add r/Prospect n/Jane Tan e/jane@example.com p/98765432
 
 7. Find-result keyboard navigation
 
-   1. Prerequisites: Add enough persons matching the same search to require scrolling in the result list.
+   1. Prerequisites: Enter each setup command on a separate line:
 
-   2. Test case: Enter a `find` command that returns multiple persons.<br>
+      ```text
+      clear
+      add r/Client n/Scroll One e/scroll.one@example.com p/81111111
+      add r/Client n/Scroll Two e/scroll.two@example.com p/82222222
+      add r/Client n/Scroll Three e/scroll.three@example.com p/83333333
+      add r/Client n/Scroll Four e/scroll.four@example.com p/84444444
+      add r/Client n/Scroll Five e/scroll.five@example.com p/85555555
+      add r/Client n/Scroll Six e/scroll.six@example.com p/86666666
+      add r/Client n/Scroll Seven e/scroll.seven@example.com p/87777777
+      add r/Client n/Scroll Eight e/scroll.eight@example.com p/88888888
+      add r/Client n/Scroll Nine e/scroll.nine@example.com p/89999999
+      add r/Client n/Scroll Ten e/scroll.ten@example.com p/80000000
+      ```
+
+   2. Test case: Enter `find Scroll`.<br>
       Expected: The first result is selected automatically.
 
    3. Test case: Press the <kbd>Down</kbd> arrow key repeatedly.<br>
