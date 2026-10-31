@@ -16,7 +16,6 @@ Class UniquePersonList
 Class Person
 Class InteractionNote
 Class NextAction
-Class Address
 Class Email
 Class Name
 Class Phone
@@ -42,7 +41,6 @@ UniquePersonList --> "~* all" Person
 Person *--> Name
 Person *--> Phone
 Person *--> Email
-Person *--> Address
 Person *--> "*" Tag
 Person *--> "* insertion order" InteractionNote
 Person *--> "0..1" NextAction
@@ -51,8 +49,6 @@ Person -[hidden]up--> I
 UniquePersonList -[hidden]right-> I
 
 Name -[hidden]right-> Phone
-Phone -[hidden]right-> Address
-Address -[hidden]right-> Email
 
 ModelManager --> "~* filtered" Person
 @enduml

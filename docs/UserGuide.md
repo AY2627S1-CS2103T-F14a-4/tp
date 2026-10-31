@@ -199,7 +199,8 @@ Format: `info INDEX [fn/VALUE|-] [pr/VALUE|-] [ai/VALUE|-]`
 * A supplied value replaces that field; omitted fields and other person details stay unchanged.
   Use an exact `-` to clear a field. Spaces around `-` are allowed; `Long-term` remains ordinary text.
 * Values must contain 1–200 UTF-16 code units after surrounding ordinary spaces are removed. Internal spaces are kept.
-  Some Unicode characters, such as emoji, count as two units; emoji are not permitted in financial information.
+  Supplementary Unicode characters count as two UTF-16 code units each.
+  Most pictographic emoji are rejected by the character whitelist below.
   Unicode letters, including accented text, digits, and `. , ' ( ) & - $ % + /` are accepted.
   Tabs, line breaks, blank values and other punctuation (such as `!` or `:`) are rejected.
   Slash-containing text can appear anywhere in a value, including `Planning CPF/SRS` and `Save $3000/month`.
