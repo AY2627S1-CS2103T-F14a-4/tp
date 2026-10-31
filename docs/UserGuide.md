@@ -26,7 +26,7 @@ and stores records locally.
 
 4. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar clientbook.jar`.<br>
    A GUI similar to the one below should appear in a few seconds. Your client book starts empty.<br>
-   ![Ui](images/Ui.png)
+   ![Ui](images/Ui-startup.png)
 
 5. Type a command in the command box and press Enter to execute it. The result box below the command box shows
    the command you entered followed by its result.
