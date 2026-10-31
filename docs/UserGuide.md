@@ -61,7 +61,7 @@ and stores records locally.
 * Items followed by `...` can appear zero or more times.<br>
   For example, `[t/TAG]... ` may be omitted, or written as `t/friend` or `t/friend t/family`.
 
-* Parameters can be in any order.<br>
+* Unless a command-specific section states otherwise, prefixed parameters can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
 * Extraneous parameters for `help`, `list`, `exit`, and `clear` are ignored.<br>
@@ -198,11 +198,10 @@ Format: `info INDEX [fn/VALUE|-] [pr/VALUE|-] [ai/VALUE|-]`
 * Supply at least one field, each at most once, in any order. Separate fields with spaces and use lowercase prefixes.
 * A supplied value replaces that field; omitted fields and other person details stay unchanged.
   Use an exact `-` to clear a field. Spaces around `-` are allowed; `Long-term` remains ordinary text.
-* Values must contain 1–200 UTF-16 code units after surrounding ordinary spaces are removed. Internal spaces are kept.
-  Supplementary Unicode characters count as two UTF-16 code units each.
-  Most pictographic emoji are rejected by the character whitelist below.
-  Unicode letters, including accented text, digits, and `. , ' ( ) & - $ % + /` are accepted.
-  Tabs, line breaks, blank values and other punctuation (such as `!` or `:`) are rejected.
+* Values must contain 1–200 characters after surrounding spaces are removed. Some uncommon Unicode characters
+  count as two characters towards this limit. Internal spaces are kept. Unicode letters, including accented text,
+  digits, and `. , ' ( ) & - $ % + /` are accepted. Most emoji, tabs, line breaks, blank values and other
+  punctuation (such as `!` or `:`) are rejected.
   Slash-containing text can appear anywhere in a value, including `Planning CPF/SRS` and `Save $3000/month`.
 * Updates are saved automatically. If any supplied field is invalid, none of the fields change.
 
@@ -213,11 +212,9 @@ Examples:
 * `info 2 pr/High ai/-` updates priority and clears the area of interest.
 * `info 2 fn/- pr/- ai/-` clears all financial information.
 
-**Prefix restrictions:** A space-separated `fn/`, `pr/`, or `ai/` always starts a field, even inside text.
-For example, `fn/Review pr/High options` stores financial need `Review` and priority `High options`.
-There is no quoting or escaping; rephrase literal prefix-like text as `fn/Review priority High options`.
-Malformed forms such as `/fn VALUE`, `FN/` and `fnn/` are rejected. Other slash-containing text inside a value,
-including some misspellings such as `xyz/Value`, may be saved as text, so check the displayed result.
+**Reserved prefixes:** Use lowercase `fn/`, `pr/`, and `ai/`. A reserved prefix after a space starts a new field,
+even if it was intended as text. There is no quoting or escaping, so rephrase literal prefix-like text.
+Other slash-containing text, such as `Planning CPF/SRS`, remains part of the value.
 
 ### Updating contact preferences: `contact`
 
@@ -233,19 +230,16 @@ Format: `contact INDEX [ch/CHANNEL|-] [tm/TIMING|-]`
 * A supplied value replaces that preference; omitted preferences and other person details stay unchanged.
   An exact `-`, optionally surrounded by ordinary spaces, clears a preference. Clearing an absent preference is safe.
   Type `-` directly to clear; a larger value such as `Phone-call` remains text.
-* Each value must contain 1–200 UTF-16 code units of valid Unicode text after surrounding whitespace is removed.
-  Characters outside the Basic Multilingual Plane, such as typical emoji, count as two units each:
-  100 such emoji can be accepted, but 101 exceed the limit.
-  Internal spaces and case are kept. Free text, Unicode and punctuation are accepted,
-  including `Phone/WhatsApp` and `Weekdays 6:30–8 pm`.
+* Each value must contain 1–200 characters after surrounding whitespace is removed. Some emoji count as two
+  characters towards this limit. Internal spaces and case are kept. Free text, Unicode and punctuation are
+  accepted, including `Phone/WhatsApp` and `Weekdays 6:30–8 pm`.
   Empty or whitespace-only values are invalid.
 * Preferences are saved automatically. If either supplied preference is invalid, neither changes.
   Cleared preferences remain absent after restarting the application.
 
-**Prefix restrictions:** Use lowercase `ch/` and `tm/`. A space-separated `ch/` or `tm/` starts another
-preference even inside a value; there is no quoting or escaping. Malformed forms such as `/ch`, `/tm`,
-`cch/` and `tmm/` are rejected after an ordinary space, while some other slash-containing text may be
-treated as part of a preference value. Check the displayed preferences after updating them.
+**Reserved prefixes:** Use lowercase `ch/` and `tm/`. A reserved prefix after a space starts another preference,
+even if it was intended as text. There is no quoting or escaping, so rephrase literal prefix-like text.
+Other slash-containing text, such as `Phone/WhatsApp`, remains part of the value.
 
 Examples:
 
@@ -433,13 +427,13 @@ Format: `next INDEX a/ACTION d/yyyy-MM-dd`
 * Use the index shown beside the person. They must be visible in the current list.
 * Supply both `a/` and `d/` once each, in either order.
 * The action must contain 1–200 characters, excluding spaces at the start and end.
-* Use a real date in `yyyy-MM-dd` format, such as `2026-11-02`. It must be today or later.
+* Use a real date in `yyyy-MM-dd` format, such as `2099-11-02`. It must be today or later.
 * Each person has one next action. Replacing it sets it to pending and keeps their other details.
 
 Examples:
 
-* `next 1 a/Send retirement proposal d/2026-11-02` sets a follow-up for the person at index 1.
-* `next 1 a/Call about revised proposal d/2026-11-05` replaces that person's previous follow-up.
+* `next 1 a/Send retirement proposal d/2099-11-02` sets a follow-up for the person at index 1.
+* `next 1 a/Call about revised proposal d/2099-11-05` replaces that person's previous follow-up.
 
 Use today or a future date when trying these examples.
 
@@ -457,8 +451,8 @@ Format: `reschedule INDEX d/yyyy-MM-dd [a/ACTION]`
 
 Examples:
 
-* `reschedule 1 d/2026-11-02` changes the date and keeps the description.
-* `reschedule 1 d/2026-11-05 a/Send revised proposal` changes both the date and description.
+* `reschedule 1 d/2099-11-02` changes the date and keeps the description.
+* `reschedule 1 d/2099-11-05 a/Send revised proposal` changes both the date and description.
 
 Use today or a future date when trying these examples.
 
@@ -576,7 +570,8 @@ Format: `exit`
 
 ClientBook automatically saves changes to your records. You do not need to save manually.
 
-If saving fails, check that the data folder and clientbook.json file are accessible and writable, then try again.
+If saving fails, the attempted command does not change the records shown in ClientBook. Check that the `data` folder
+and `clientbook.json` file are accessible and writable, then run the command again.
 
 ### Editing the data file
 
@@ -621,8 +616,8 @@ Action     | Format, Examples
 **Restore** | `restore`<br> e.g., `restore`
 **Tag**    | `tag INDEX TAG [MORE_TAGS...]`<br> e.g., `tag 1 priority referral`
 **Tag delete** | `tagdelete INDEX [TAG...]`<br> e.g., `tagdelete 1 friend referral`
-**Next**   | `next INDEX a/ACTION d/yyyy-MM-dd`<br> e.g., `next 1 a/Call d/2026-11-02` (use today or later)
-**Reschedule** | `reschedule INDEX d/yyyy-MM-dd [a/ACTION]`<br> e.g., `reschedule 1 d/2026-11-02`
+**Next**   | `next INDEX a/ACTION d/yyyy-MM-dd`<br> e.g., `next 1 a/Call d/2099-11-02` (use today or later)
+**Reschedule** | `reschedule INDEX d/yyyy-MM-dd [a/ACTION]`<br> e.g., `reschedule 1 d/2099-11-02`
 **Done**   | `done INDEX`<br> e.g., `done 1`
 **Yearly reminder** | `remind INDEX a/LABEL d/MM-dd`<br>e.g. `remind 1 a/Birthday d/11-10`
 **Remove yearly reminder** | `unremind INDEX a/LABEL`<br>e.g. `unremind 1 a/birthday`

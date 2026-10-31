@@ -16,12 +16,19 @@ Class UniquePersonList
 Class Person
 Class InteractionNote
 Class NextAction
+Class RecurringReminder
+Class FinancialNeed
+Class Priority
+Class AreaOfInterest
+Class PreferredContactChannel
+Class PreferredContactTiming
 Class Email
 Class Name
 Class Phone
 Class Tag
-
-Class I #FFFFFF
+Enum Relationship
+Enum InteractionType
+Enum InteractionOutcome
 }
 
 Class HiddenOutside #FFFFFF
@@ -37,18 +44,33 @@ ModelManager -right-> "1" UserPrefs
 UserPrefs .up.|> ReadOnlyUserPrefs
 
 ClientBook *--> "1" UniquePersonList
-UniquePersonList --> "~* all" Person
-Person *--> Name
-Person *--> Phone
-Person *--> Email
-Person *--> "*" Tag
-Person *--> "* insertion order" InteractionNote
-Person *--> "0..1" NextAction
+UniquePersonList --> "*" Person : all persons
+Person *-left-> "1" Name
+Person *-left-> "1" Phone
+Person *-left-> "1" Email
+Person -left-> "1" Relationship
+Person *-left-> "*" Tag
+Person *-down-> "*" InteractionNote : ordered by date
+Person *-down-> "0..1" NextAction
+Person *-down-> "*" RecurringReminder
+Person *-right-> "0..1" FinancialNeed
+Person *-right-> "0..1" Priority
+Person *-right-> "0..1" AreaOfInterest
+Person *-right-> "0..1" PreferredContactChannel
+Person *-right-> "0..1" PreferredContactTiming
 
-Person -[hidden]up--> I
-UniquePersonList -[hidden]right-> I
+InteractionNote -down-> "1" InteractionType
+InteractionNote -down-> "1" InteractionOutcome
 
-Name -[hidden]right-> Phone
+Relationship -[hidden]down- Email
+Email -[hidden]down- Phone
+Phone -[hidden]down- Name
+Name -[hidden]down- Tag
 
-ModelManager --> "~* filtered" Person
+PreferredContactChannel -[hidden]down- AreaOfInterest
+AreaOfInterest -[hidden]down- Priority
+Priority -[hidden]down- FinancialNeed
+FinancialNeed -[hidden]down- PreferredContactTiming
+
+ModelManager --> "*" Person : filtered persons
 @enduml
