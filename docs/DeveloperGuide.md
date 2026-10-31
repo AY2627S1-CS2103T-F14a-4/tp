@@ -1137,6 +1137,16 @@ Use a separate test folder with fictional records. Add John Doe and Jane Tan as 
     2. Test case: `edit 1`<br>
        Expected: `At least one field to edit must be provided.` is shown and John Doe's record does not change.
 
+    3. Test case: `edit 2 e/john.new@example.com`<br>
+       Expected: `A contact with this email address already exists.` is shown and Jane Tan's record does not change.
+
+    4. Test case: `edit 2 p/91234568`<br>
+       Expected: `A contact with this phone number already exists.` is shown and Jane Tan's record does not change.
+
+    5. Test case: `edit 2 e/john.new@example.com p/91234568`<br>
+       Expected: `This email address and phone number are already in use.` is shown and Jane Tan's record does not
+       change.
+
 <a id="financial-information-and-contact-preferences"></a>
 
 ### Financial information: `info`

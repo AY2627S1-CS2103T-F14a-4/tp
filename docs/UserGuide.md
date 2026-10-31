@@ -178,6 +178,7 @@ Format: `edit INDEX [r/RELATIONSHIP] [n/NAME] [p/PHONE] [e/EMAIL]`
 * The edited email address and phone number must not duplicate those of another contact. Phone numbers use the same
   formatting-insensitive, multiple-number comparison as `add`; for example, `9999 9999` and `99999999` conflict.
   Email-domain casing is also ignored, so `alice@example.com` conflicts with `alice@EXAMPLE.COM`.
+  The error message identifies whether the email address, phone number, or both fields conflict.
 
 </box>
 
