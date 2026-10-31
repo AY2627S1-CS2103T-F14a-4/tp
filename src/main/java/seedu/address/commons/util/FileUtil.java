@@ -2,6 +2,7 @@ package seedu.address.commons.util;
 
 import java.io.IOException;
 import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -12,6 +13,11 @@ import java.nio.file.StandardCopyOption;
 public class FileUtil {
 
     private static final String CHARSET = "UTF-8";
+
+    @FunctionalInterface
+    interface FileMover {
+        void move(Path source, Path target, CopyOption... options) throws IOException;
+    }
 
     /**
      * Creates a file if it does not exist along with its missing parent directories.
@@ -70,11 +76,15 @@ public class FileUtil {
     }
 
     private static void replaceFile(Path temporaryFile, Path targetFile) throws IOException {
+        replaceFile(temporaryFile, targetFile, Files::move);
+    }
+
+    static void replaceFile(Path temporaryFile, Path targetFile, FileMover fileMover) throws IOException {
         try {
-            Files.move(temporaryFile, targetFile, StandardCopyOption.ATOMIC_MOVE,
+            fileMover.move(temporaryFile, targetFile, StandardCopyOption.ATOMIC_MOVE,
                     StandardCopyOption.REPLACE_EXISTING);
         } catch (AtomicMoveNotSupportedException exception) {
-            Files.move(temporaryFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
+            fileMover.move(temporaryFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 
