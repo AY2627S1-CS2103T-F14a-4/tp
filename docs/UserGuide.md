@@ -576,6 +576,11 @@ Format: `exit`
 
 ClientBook automatically saves changes to your records. You do not need to save manually.
 
+ClientBook writes a completed replacement file before replacing `clientbook.json`. When the file system supports an
+atomic replacement, an unsuccessful write does not leave the existing data file partially written. On file systems
+without atomic replacement support, ClientBook uses a compatible replacement method, which cannot provide the same
+interruption guarantee.
+
 If saving fails, check that the data folder and clientbook.json file are accessible and writable, then try again.
 
 ### Editing the data file

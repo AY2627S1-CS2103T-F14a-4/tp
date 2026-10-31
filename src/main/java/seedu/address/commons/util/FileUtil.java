@@ -1,8 +1,10 @@
 package seedu.address.commons.util;
 
 import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 /**
  * Writes and reads files
@@ -45,10 +47,35 @@ public class FileUtil {
 
     /**
      * Writes given string to a file.
-     * Will create the file if it does not exist yet.
+     * Creates missing parent directories and writes to a temporary file in the target directory before replacing
+     * the target. This prevents a failed write from partially overwriting an existing file. If the file system does
+     * not support atomic moves, the replacement falls back to a normal move.
      */
     public static void writeToFile(Path file, String content) throws IOException {
-        Files.write(file, content.getBytes(CHARSET));
+        Path absoluteFile = file.toAbsolutePath();
+        Path parentDirectory = absoluteFile.getParent();
+        createParentDirsOfFile(absoluteFile);
+
+        String temporaryFilePrefix = absoluteFile.getFileName().toString();
+        if (temporaryFilePrefix.length() < 3) {
+            temporaryFilePrefix = "tmp";
+        }
+        Path temporaryFile = Files.createTempFile(parentDirectory, temporaryFilePrefix, ".tmp");
+        try {
+            Files.write(temporaryFile, content.getBytes(CHARSET));
+            replaceFile(temporaryFile, absoluteFile);
+        } finally {
+            Files.deleteIfExists(temporaryFile);
+        }
+    }
+
+    private static void replaceFile(Path temporaryFile, Path targetFile) throws IOException {
+        try {
+            Files.move(temporaryFile, targetFile, StandardCopyOption.ATOMIC_MOVE,
+                    StandardCopyOption.REPLACE_EXISTING);
+        } catch (AtomicMoveNotSupportedException exception) {
+            Files.move(temporaryFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
+        }
     }
 
 }

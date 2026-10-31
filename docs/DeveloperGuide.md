@@ -176,6 +176,11 @@ The `Storage` component,
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonClientBookStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
+All JSON writes are staged in a temporary file in the target file's directory. Once writing succeeds, ClientBook
+replaces the live file with an atomic move when the file system supports it. This prevents a failed write from
+partially truncating the existing data file. On file systems without atomic-move support, ClientBook falls back to a
+normal replacement move; this preserves compatibility but cannot provide the same interruption guarantee.
+
 ### Common classes
 
 Classes used by multiple components are in the `seedu.address.commons` package.
