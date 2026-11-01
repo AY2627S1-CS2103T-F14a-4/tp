@@ -10,7 +10,8 @@ participant "command:NoteDeleteCommand" as Command LOGIC_COLOR
 end box
 
 box Model MODEL_COLOR_T1
-participant "model:Model" as Model MODEL_COLOR
+participant "live:Model" as Live MODEL_COLOR
+participant "temporary:ModelManager" as Temp MODEL_COLOR
 participant "original:Person" as Original MODEL_COLOR
 participant "updated:Person" as Updated MODEL_COLOR
 end box
@@ -35,13 +36,26 @@ NoteDeleteParser --> Parser : command
 deactivate NoteDeleteParser
 Parser --> Logic : command
 deactivate Parser
-Logic -> Command : execute(model)
+Logic -> Live : getClientBook(), getUserPrefs()
+Live --> Logic : clientBook, userPrefs
+create Temp
+Logic -> Temp : new ModelManager(clientBook, userPrefs)
+Logic -> Live : getFilteredPersonPredicate(), getFilteredPersonComparator()
+Live --> Logic : predicate, comparator
+Logic -> Temp : updateFilteredPersonList(predicate, comparator)
+Logic -> Command : execute(temporary, storage)
 activate Command
-Command -> Model : getFilteredPersonList()
-Model --> Command : displayedPersons
+Command -> Temp : getClientBook().getPersonList()
+Temp --> Command : allPersons
 note right of Command
-Check contactIndex.getZeroBased() against displayedPersons.size().
-Select original = displayedPersons.get(0).
+Check contactIndex.getZeroBased() against allPersons.size().
+Select original = allPersons.get(0), using original full-list index 1.
+end note
+Command -> Temp : getFilteredPersonList()
+Temp --> Command : visiblePersons
+note right of Command
+Reject if visiblePersons does not contain original.
+Filtering and sorting do not change contact indices.
 end note
 Command -> Original : getInteractionNotes()
 Original --> Command : interactionNotes
@@ -60,11 +74,7 @@ All unrelated fields and remaining note order are preserved.
 end note
 create Updated
 Command -> Updated : new Person(preserved details, notes,\npreserved next action and preferences)
-Command -> Model : setPerson(original, updated)
-note right of Model
-Observable list updates the PersonCard; the filter remains active.
-The card labels remaining notes by their new one-based positions.
-end note
+Command -> Temp : setPerson(original, updated)
 note right of Command
 Create CommandResult with deleted note index, contact name,
 deletedNote.getDate() and excerpt(deletedNote.getText()).
@@ -72,10 +82,25 @@ The excerpt collapses whitespace and limits text to 80 code points.
 end note
 Command --> Logic : CommandResult
 deactivate Command
-Logic -> Model : getClientBook()
-Model --> Logic : clientBook
-Logic -> Storage : saveClientBook(clientBook)
-Storage --> Logic
+Logic -> Temp : getClientBook()
+Temp --> Logic : updatedClientBook
+Logic -> Storage : saveClientBook(updatedClientBook)
+Storage --> Logic : save completed
+note over Logic, Live
+Save failure throws CommandException without committing.
+The live model and visible UI remain unchanged until a successful save.
+end note
+Logic -> Logic : commitModel(temporary)
+Logic -> Temp : getClientBook()
+Temp --> Logic : updatedClientBook
+Logic -> Live : setClientBook(updatedClientBook)
+Logic -> Temp : getFilteredPersonPredicate(), getFilteredPersonComparator()
+Temp --> Logic : predicate, comparator
+Logic -> Live : updateFilteredPersonList(predicate, comparator)
+note right of Live
+The live observable list updates the PersonCard during commit.
+The filter and sort remain active; remaining notes are renumbered.
+end note
 [<-- Logic : CommandResult
 deactivate Logic
 @enduml
