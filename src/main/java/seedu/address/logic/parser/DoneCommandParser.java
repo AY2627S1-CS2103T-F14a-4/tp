@@ -8,13 +8,10 @@ import seedu.address.logic.parser.exceptions.ParseException;
 /** Parses a single displayed index for the done command. */
 public class DoneCommandParser implements Parser<DoneCommand> {
     public static final String MESSAGE_INDEX_REQUIRED = "Person index is required.";
-
     @Override
     public DoneCommand parse(String args) throws ParseException {
         requireNonNull(args);
-        if (args.isBlank()) {
-            throw new ParseException(MESSAGE_INDEX_REQUIRED);
-        }
-        return new DoneCommand(ParserUtil.parseIndex(args));
+        return new DoneCommand(ParserUtil.parseSingleIndex(args, DoneCommand.COMMAND_WORD,
+                MESSAGE_INDEX_REQUIRED));
     }
 }

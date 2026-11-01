@@ -28,7 +28,7 @@ public class RemindCommandParserTest {
 
     @Test
     public void parse_missingOrInvalidFields_failure() {
-        for (String index : List.of("", "0", "-1", "abc", "1 2", "2147483648")) {
+        for (String index : List.of("0", "-1", "abc", "2147483648")) {
             assertParseFailure(parser, " " + index + " a/Birthday d/01-01", ParserUtil.MESSAGE_INVALID_INDEX);
         }
         assertParseFailure(parser, " 1 a/Birthday", RemindCommand.MESSAGE_USAGE);
@@ -47,5 +47,25 @@ public class RemindCommandParserTest {
                 Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_ACTION));
         assertParseFailure(parser, " 1 a/Birthday d/01-01 d/02-02",
                 Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_DUE_DATE));
+    }
+
+    @Test
+    public void parse_extraArguments_reportsUnexpectedArgument() {
+        assertParseFailure(parser, "1 extra",
+                "remind accepts exactly one index. Unexpected argument: extra");
+        for (String separator : List.of(" ", "  ", "\t", "\n")) {
+            assertParseFailure(parser, " 1" + separator + "extra  more a/Birthday d/01-01",
+                    "remind accepts exactly one index. Unexpected argument: extra  more");
+        }
+        assertParseFailure(parser, "1 2 a/Birthday d/01-01",
+                "remind accepts exactly one index. Unexpected argument: 2");
+    }
+
+    @Test
+    public void parse_missingIndex_reportsUsage() {
+        for (String input : List.of("", " \t\n", " a/Birthday d/01-01")) {
+            assertParseFailure(parser, input,
+                    RemindCommand.MESSAGE_USAGE);
+        }
     }
 }

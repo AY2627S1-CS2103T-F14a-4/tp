@@ -11,6 +11,7 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
+import seedu.address.commons.core.index.Index;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.AreaOfInterest;
 import seedu.address.model.person.Email;
@@ -52,6 +53,56 @@ public class ParserUtilTest {
 
         // Leading and trailing whitespaces
         assertEquals(INDEX_FIRST_PERSON, ParserUtil.parseIndex("  1  "));
+    }
+
+    @Test
+    public void parseSingleIndex_validIndex_returnsIndex() throws Exception {
+        assertEquals(INDEX_FIRST_PERSON, ParserUtil.parseSingleIndex("1", "done", "Person index is required."));
+        assertEquals(INDEX_FIRST_PERSON,
+                ParserUtil.parseSingleIndex(WHITESPACE + "1" + WHITESPACE, "done", "Person index is required."));
+        assertEquals(Index.fromOneBased(Integer.MAX_VALUE),
+                ParserUtil.parseSingleIndex("2147483647", "done", "Person index is required."));
+    }
+
+    @Test
+    public void parseSingleIndex_missingIndex_reportsProvidedMessage() {
+        for (String command : List.of("done", "next", "reschedule", "remind", "unremind")) {
+            for (String input : List.of("", WHITESPACE)) {
+                String missingMessage = "Usage for " + command + ":\n" + command + " INDEX";
+                assertThrows(ParseException.class, missingMessage, ()
+                        -> ParserUtil.parseSingleIndex(input, command, missingMessage));
+            }
+        }
+    }
+
+    @Test
+    public void parseSingleIndex_extraArguments_reportsRemainingArguments() {
+        for (String command : List.of("done", "next", "reschedule", "remind", "unremind")) {
+            String expectedMessage = command + " accepts exactly one index. Unexpected argument: ";
+            assertThrows(ParseException.class, expectedMessage + "extra", ()
+                    -> ParserUtil.parseSingleIndex("1 extra", command, "Missing index"));
+            assertThrows(ParseException.class, expectedMessage + "extra  more", ()
+                    -> ParserUtil.parseSingleIndex(" \t1\t extra  more \n", command, "Missing index"));
+            assertThrows(ParseException.class, expectedMessage + "extra", ()
+                    -> ParserUtil.parseSingleIndex("0 extra", command, "Missing index"));
+        }
+    }
+
+    @Test
+    public void parseSingleIndex_invalidIndex_reportsExistingIndexError() {
+        for (String input : List.of("0", "-1", "abc", "1.5", "+1", "2147483648", "99999999999999999999")) {
+            assertThrows(ParseException.class, MESSAGE_INVALID_INDEX, ()
+                    -> ParserUtil.parseSingleIndex(input, "done", "Person index is required."));
+        }
+    }
+
+    @Test
+    public void parseSingleIndex_null_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> ParserUtil.parseSingleIndex("1", "done", null));
+        assertThrows(NullPointerException.class, ()
+                -> ParserUtil.parseSingleIndex(null, "done", "Person index is required."));
+        assertThrows(NullPointerException.class, ()
+                -> ParserUtil.parseSingleIndex("1", null, "Person index is required."));
     }
 
     @Test

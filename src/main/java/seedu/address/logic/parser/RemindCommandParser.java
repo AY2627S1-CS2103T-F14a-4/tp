@@ -15,7 +15,8 @@ public class RemindCommandParser implements Parser<RemindCommand> {
     public RemindCommand parse(String args) throws ParseException {
         requireNonNull(args);
         ArgumentMultimap fields = ArgumentTokenizer.tokenize(" " + args, PREFIX_ACTION, PREFIX_DUE_DATE);
-        Index index = ParserUtil.parseIndex(fields.getPreamble());
+        Index index = ParserUtil.parseSingleIndex(fields.getPreamble(), RemindCommand.COMMAND_WORD,
+                RemindCommand.MESSAGE_USAGE);
         fields.verifyNoDuplicatePrefixesFor(PREFIX_ACTION, PREFIX_DUE_DATE);
         if (fields.getValue(PREFIX_ACTION).isEmpty() || fields.getValue(PREFIX_DUE_DATE).isEmpty()) {
             throw new ParseException(RemindCommand.MESSAGE_USAGE);

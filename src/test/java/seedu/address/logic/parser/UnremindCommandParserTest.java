@@ -26,7 +26,7 @@ public class UnremindCommandParserTest {
 
     @Test
     public void parse_missingInvalidOrDuplicateFields_failure() {
-        for (String index : List.of("", "0", "-1", "abc", "1 2", "2147483648")) {
+        for (String index : List.of("0", "-1", "abc", "2147483648")) {
             assertParseFailure(parser, " " + index + " a/Birthday", ParserUtil.MESSAGE_INVALID_INDEX);
         }
         assertParseFailure(parser, " 1", UnremindCommand.MESSAGE_USAGE);
@@ -35,5 +35,25 @@ public class UnremindCommandParserTest {
         }
         assertParseFailure(parser, " 1 a/Birthday a/Renewal",
                 Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_ACTION));
+    }
+
+    @Test
+    public void parse_extraArguments_reportsUnexpectedArgument() {
+        assertParseFailure(parser, "1 extra",
+                "unremind accepts exactly one index. Unexpected argument: extra");
+        for (String separator : List.of(" ", "  ", "\t", "\n")) {
+            assertParseFailure(parser, " 1" + separator + "extra  more a/Birthday",
+                    "unremind accepts exactly one index. Unexpected argument: extra  more");
+        }
+        assertParseFailure(parser, "1 2 a/Birthday",
+                "unremind accepts exactly one index. Unexpected argument: 2");
+    }
+
+    @Test
+    public void parse_missingIndex_reportsUsage() {
+        for (String input : List.of("", " \t\n", " a/Birthday")) {
+            assertParseFailure(parser, input,
+                    UnremindCommand.MESSAGE_USAGE);
+        }
     }
 }

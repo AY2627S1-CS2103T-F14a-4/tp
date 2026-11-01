@@ -30,9 +30,21 @@ public class DoneCommandParserTest {
 
     @Test
     public void parse_invalidIndex_reportsParserUtilError() {
-        for (String input : List.of("0", "-1", "abc", "1.5", "+1", "1 2", "1 abc", "1\t2",
+        for (String input : List.of("0", "-1", "abc", "1.5", "+1",
                 "2147483648", "99999999999999999999")) {
             assertParseFailure(parser, input, ParserUtil.MESSAGE_INVALID_INDEX);
         }
+    }
+
+    @Test
+    public void parse_extraArguments_reportsUnexpectedArgument() {
+        assertParseFailure(parser, "1 extra",
+                "done accepts exactly one index. Unexpected argument: extra");
+        for (String separator : List.of(" ", "  ", "\t", "\n")) {
+            assertParseFailure(parser, " 1" + separator + "extra  more",
+                    "done accepts exactly one index. Unexpected argument: extra  more");
+        }
+        assertParseFailure(parser, "1 2",
+                "done accepts exactly one index. Unexpected argument: 2");
     }
 }
