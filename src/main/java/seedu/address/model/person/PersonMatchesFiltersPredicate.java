@@ -2,6 +2,7 @@ package seedu.address.model.person;
 
 import static java.util.Objects.requireNonNull;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -12,6 +13,7 @@ import seedu.address.commons.util.ToStringBuilder;
 
 /** Tests whether a person matches all supplied find filters. */
 public class PersonMatchesFiltersPredicate implements Predicate<Person> {
+    private static final DateTimeFormatter REMINDER_DATE_FORMATTER = DateTimeFormatter.ofPattern("MM-dd");
     private final List<String> nameKeywords;
     private final Optional<Relationship> relationship;
     private final List<String> tagKeywords;
@@ -59,7 +61,11 @@ public class PersonMatchesFiltersPredicate implements Predicate<Person> {
                 .orElse(false)
                 || person.getInteractionNotes().stream()
                 .anyMatch(note -> StringUtil.containsSubstringIgnoreCase(note.getDate().toString(), keyword)
-                        || StringUtil.containsSubstringIgnoreCase(note.getText(), keyword));
+                        || StringUtil.containsSubstringIgnoreCase(note.getText(), keyword))
+                || person.getRecurringReminders().stream()
+                .anyMatch(reminder -> StringUtil.containsSubstringIgnoreCase(reminder.getLabel(), keyword)
+                        || StringUtil.containsSubstringIgnoreCase(
+                                reminder.getDate().format(REMINDER_DATE_FORMATTER), keyword));
     }
 
     @Override

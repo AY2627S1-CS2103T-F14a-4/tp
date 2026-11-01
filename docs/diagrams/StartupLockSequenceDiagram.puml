@@ -1,0 +1,23 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+actor User USER_COLOR
+participant ":Main" as Main #grey
+participant "lockFile:FileChannel" as Lock STORAGE_COLOR
+participant ":MainApp" as App #grey
+
+User -> Main : launch ClientBook
+Main -> Lock : tryLock()
+
+alt lock acquired
+    Lock --> Main : exclusive lock
+    Main -> App : launch(...)
+    note right of Main : Hold lock until the app exits.
+    App --> Main : app stopped
+    Main -> Lock : close()
+else another instance holds the lock
+    Lock --> Main : unavailable
+    Main --> User : report conflict and exit
+end
+@enduml

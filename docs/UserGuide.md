@@ -26,6 +26,8 @@ and stores records locally.
 
 4. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar clientbook.jar`.<br>
    A GUI similar to the one below should appear in a few seconds. Your client book starts empty.<br>
+   Run only one ClientBook instance from this folder at a time. If another instance is already running, the new
+   instance reports that it cannot obtain exclusive access and exits without opening the GUI.<br>
    ![Ui](images/Ui-startup.png)
 
 5. Type a command in the command box and press Enter to execute it. The result box below the command box shows
@@ -64,7 +66,7 @@ and stores records locally.
 * Unless a command-specific section states otherwise, prefixed parameters can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
-* Extraneous parameters for `help`, `list`, `exit`, and `clear` are ignored.<br>
+* Extraneous parameters for `help`, `list`, and `exit` are ignored.<br>
   For example, `help 123` is interpreted as `help`. Other commands reject unsupported arguments.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
@@ -376,7 +378,7 @@ Format: `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...
 | KEYWORD        | Write one or more name keywords before any prefixed filter. Each keyword matches contiguous text in names only. Each keyword contains letters with optional internal hyphens, apostrophes, periods, or commas; `s/o`, `d/o`, and `w/o` are also accepted.           |
 | RELATIONSHIP   | Use `r/client` or `r/prospect`. The value must match the relationship exactly.                                                                                                                                                                    |
 | TAG            | Put one or more alphanumeric keywords after one `t/`. Each keyword matches contiguous text in a tag; for example, `friend` matches `friend`, `friends`, and `bestfriend`.                                                                         |
-| DETAIL_KEYWORD | Put one or more non-whitespace keywords after one `k/`. Punctuation and digits are accepted. This searches contact preferences, financial information, interaction-note dates and text, and follow-up action text and due dates. |
+| DETAIL_KEYWORD | Put one or more non-whitespace keywords after one `k/`. Punctuation and digits are accepted. This searches contact preferences, financial information, interaction-note dates and text, follow-up action text and due dates, and yearly reminder labels and dates (`MM-dd`). |
 
 * Provide at least one filter. Each prefix may appear only once; `r/`, `t/`, and `k/` may appear in any order.
 * Matching is case-insensitive. Multiple values within the name, tag, or detail filter use **OR**. Different supplied
@@ -396,6 +398,8 @@ Examples:
 * `find Jack s/o` returns names containing `Jack` or the standalone marker `s/o`.
 * `find t/friend referral` returns persons with a tag containing `friend` or `referral`.
 * `find k/WhatsApp 2026-10-06` returns persons whose remembered details contain either value.
+* `find k/renewal 02-29` returns persons whose remembered details contain either keyword, including yearly reminder
+  labels and dates.
 * `find alex r/client t/priority referral k/retirement WhatsApp` returns clients named `alex` who have a `priority`
   or `referral` tag and whose remembered details contain `retirement` or `WhatsApp`.
 
@@ -528,9 +532,18 @@ Examples:
 
 ### Clearing all entries: `clear`
 
-Clears all entries from the client book.
+Clears all entries from the client book after confirmation. This operation cannot be undone.
 
 Format: `clear`
+
+* `clear` accepts no parameters.
+* Enter `Y` or `Yes` to confirm, or `N` or `No` to cancel. Responses are case-insensitive.
+* Any other response shows `Please enter Y/Yes or N/No.` and keeps the confirmation pending.
+
+Example:
+
+1. Enter `clear` to display the confirmation prompt. No records are removed yet.
+2. Enter `yes` to clear all records, or `no` to keep them.
 
 ### Backing up records: `backup`
 
@@ -578,6 +591,11 @@ interruption guarantee.
 
 If saving fails, the attempted command does not change the records shown in ClientBook. Check that the `data` folder
 and `clientbook.json` file are accessible and writable, then run the command again.
+
+ClientBook creates `clientbook.lock` beside the JAR and holds an exclusive lock on it while running. This prevents
+two instances using the same home folder from overwriting each other's changes. The file can remain after ClientBook
+exits; only the operating-system lock is significant. Close the running instance before starting another one from
+the same folder.
 
 ### Editing the data file
 

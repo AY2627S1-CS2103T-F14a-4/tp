@@ -58,7 +58,8 @@ public class ClientBookParserTest {
     @Test
     public void parseCommand_clear() throws Exception {
         assertTrue(parser.parseCommand(ClearCommand.COMMAND_WORD) instanceof ClearCommand);
-        assertTrue(parser.parseCommand(ClearCommand.COMMAND_WORD + " 3") instanceof ClearCommand);
+        assertThrows(ParseException.class, "The clear command takes no arguments.", () ->
+                parser.parseCommand(ClearCommand.COMMAND_WORD + " 3"));
     }
 
     @Test

@@ -1,0 +1,39 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+participant ":MainWindow" as Ui UI_COLOR
+participant ":LogicManager" as Logic LOGIC_COLOR
+participant ":ClientBookParser" as Parser LOGIC_COLOR
+participant "command:ClearCommand" as Command LOGIC_COLOR
+participant "temporary:ModelManager" as Temp MODEL_COLOR
+participant ":Storage" as Storage STORAGE_COLOR
+participant "live:Model" as Live MODEL_COLOR
+
+[-> Ui : executeCommand("clear")
+Ui -> Logic : execute("clear")
+Logic -> Parser : parseCommand("clear")
+Parser --> Logic : command
+Logic -> Command : getConfirmationMessage(live)
+Command --> Logic : confirmation message
+Logic -> Logic : store pendingCommand
+Logic --> Ui : CommandResult
+
+note right of Logic
+  n/no cancels the pending command.
+  Other responses keep it pending.
+end note
+
+[-> Ui : executeCommand("yes")
+Ui -> Logic : execute("yes")
+Logic -> Logic : clear pendingCommand
+create Temp
+Logic -> Temp : new ModelManager(data, preferences)
+Logic -> Command : execute(temporary, storage)
+Command -> Temp : setClientBook(empty client book)
+Command --> Logic : CommandResult
+Logic -> Storage : saveClientBook(empty client book)
+Storage --> Logic : save completed
+Logic -> Live : setClientBook(empty client book)
+Logic --> Ui : CommandResult
+@enduml
