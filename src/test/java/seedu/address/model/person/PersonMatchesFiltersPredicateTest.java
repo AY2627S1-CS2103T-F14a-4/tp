@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
+import java.time.MonthDay;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,6 +23,7 @@ public class PersonMatchesFiltersPredicateTest {
                     "Discussed university fund and option A/B", InteractionType.MEETING,
                     InteractionOutcome.SUCCESSFUL))
             .withNextAction(new NextAction("Call about investment review", LocalDate.of(2026, 12, 15), false))
+            .withRecurringReminders(new RecurringReminder("Policy renewal", MonthDay.of(2, 29)))
             .build();
 
     @Test
@@ -85,6 +87,8 @@ public class PersonMatchesFiltersPredicateTest {
         assertDetailKeywordMatches("CALL");
         assertDetailKeywordMatches("2026-12-15");
         assertDetailKeywordMatches("12-15");
+        assertDetailKeywordMatches("RENEW");
+        assertDetailKeywordMatches("02-29");
     }
 
     @Test

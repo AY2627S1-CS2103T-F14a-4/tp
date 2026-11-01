@@ -198,9 +198,10 @@ The parser creates a `PersonMatchesFiltersPredicate`. Name keywords use case-ins
 matching and are joined with `OR`. Thus, `Alex` matches `Alexander`, while either `Anne` or `Marie` matches
 `Anne-Marie Tan`. Tag keywords use the same case-insensitive contiguous substring matching and are also joined with
 `OR`; for example, `friend` matches both `friend` and `friends`. Detail keywords search the two contact preferences,
-the three financial-information fields, each interaction note's date and text, and the follow-up action text and due
-date. Dates use their ISO `yyyy-MM-dd` representation, so both full dates and contiguous fragments match. Follow-up
-completion status, interaction type, and interaction outcome are excluded. Detail keywords are joined with `OR`. The
+the three financial-information fields, each interaction note's date and text, the follow-up action text and due
+date, and each yearly reminder's label and `MM-dd` date. Dated interactions and follow-ups use their ISO `yyyy-MM-dd`
+representation, so both full dates and contiguous fragments match. Follow-up completion status, interaction type,
+and interaction outcome are excluded. Detail keywords are joined with `OR`. The
 predicate joins the name, relationship, tag, and detail filter results with `AND`. For example,
 `find Alex David r/client t/priority referral k/retirement WhatsApp` returns clients whose name contains `Alex` or
 `David`, whose tags contain `priority` or `referral`, and whose remembered details contain `retirement` or `WhatsApp`.
@@ -1774,11 +1775,12 @@ add r/Prospect n/Jane Tan e/jane@example.com p/98765432
       info 1 fn/Retirement planning
       note 1 d/2026-10-06 n/Discussed university fund
       next 1 a/Call about investment review d/2026-12-15
+      remind 1 a/Policy renewal d/02-29
       add r/Client n/John Doe e/john@example.com p/84567890
       ```
 
    2. Test cases: `find k/WhatsApp`, `find k/retire`, `find k/university`, `find k/2026-10-06`,
-      `find k/investment`, `find k/2026-12-15`, and `find k/2026-12`.<br>
+      `find k/investment`, `find k/2026-12-15`, `find k/2026-12`, `find k/renewal`, and `find k/02-29`.<br>
       Expected: Alex is displayed for every search. Matching is case-insensitive and accepts contiguous partial text.
 
    3. Test case: `find Alex r/client t/priority k/retirement`.<br>

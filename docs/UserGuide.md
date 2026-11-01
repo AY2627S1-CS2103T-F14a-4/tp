@@ -381,7 +381,7 @@ Format: `find [KEYWORD [MORE_KEYWORDS...]] [r/RELATIONSHIP] [t/TAG [MORE_TAGS...
 | KEYWORD        | Write one or more name keywords before any prefixed filter. Each keyword matches contiguous text in names only. Each keyword contains letters with optional internal hyphens, apostrophes, periods, or commas; `s/o`, `d/o`, and `w/o` are also accepted.           |
 | RELATIONSHIP   | Use `r/client` or `r/prospect`. The value must match the relationship exactly.                                                                                                                                                                    |
 | TAG            | Put one or more alphanumeric keywords after one `t/`. Each keyword matches contiguous text in a tag; for example, `friend` matches `friend`, `friends`, and `bestfriend`.                                                                         |
-| DETAIL_KEYWORD | Put one or more non-whitespace keywords after one `k/`. Punctuation and digits are accepted. This searches contact preferences, financial information, interaction-note dates and text, and follow-up action text and due dates. |
+| DETAIL_KEYWORD | Put one or more non-whitespace keywords after one `k/`. Punctuation and digits are accepted. This searches contact preferences, financial information, interaction-note dates and text, follow-up action text and due dates, and yearly reminder labels and dates (`MM-dd`). |
 
 * Provide at least one filter. Each prefix may appear only once; `r/`, `t/`, and `k/` may appear in any order.
 * Matching is case-insensitive. Multiple values within the name, tag, or detail filter use **OR**. Different supplied
@@ -401,6 +401,8 @@ Examples:
 * `find Jack s/o` returns names containing `Jack` or the standalone marker `s/o`.
 * `find t/friend referral` returns persons with a tag containing `friend` or `referral`.
 * `find k/WhatsApp 2026-10-06` returns persons whose remembered details contain either value.
+* `find k/renewal 02-29` returns persons with a yearly reminder whose label contains `renewal` or whose date is
+  `02-29`.
 * `find alex r/client t/priority referral k/retirement WhatsApp` returns clients named `alex` who have a `priority`
   or `referral` tag and whose remembered details contain `retirement` or `WhatsApp`.
 

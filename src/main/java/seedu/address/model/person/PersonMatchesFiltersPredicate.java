@@ -59,7 +59,10 @@ public class PersonMatchesFiltersPredicate implements Predicate<Person> {
                 .orElse(false)
                 || person.getInteractionNotes().stream()
                 .anyMatch(note -> StringUtil.containsSubstringIgnoreCase(note.getDate().toString(), keyword)
-                        || StringUtil.containsSubstringIgnoreCase(note.getText(), keyword));
+                        || StringUtil.containsSubstringIgnoreCase(note.getText(), keyword))
+                || person.getRecurringReminders().stream()
+                .anyMatch(reminder -> StringUtil.containsSubstringIgnoreCase(reminder.getLabel(), keyword)
+                        || StringUtil.containsSubstringIgnoreCase(reminder.getDate().toString(), keyword));
     }
 
     @Override
