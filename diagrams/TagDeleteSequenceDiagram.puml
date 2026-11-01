@@ -2,89 +2,50 @@
 !include style.puml
 skinparam ArrowFontStyle plain
 
-box UI UI_COLOR_T1
-participant ":MainWindow" as Ui UI_COLOR
-end box
-
 box Logic LOGIC_COLOR_T1
 participant ":LogicManager" as Logic LOGIC_COLOR
-participant ":ClientBookParser" as Parser LOGIC_COLOR
-participant ":TagDeleteCommandParser" as TagDeleteParser LOGIC_COLOR
+participant ":Parser" as Parser LOGIC_COLOR
 participant "command:TagDeleteCommand" as Command LOGIC_COLOR
 end box
 
 box Model MODEL_COLOR_T1
 participant "live:Model" as Live MODEL_COLOR
-participant "temporary:ModelManager" as Temp MODEL_COLOR
+participant "temporary:Model" as Temp MODEL_COLOR
 end box
 
 box Storage STORAGE_COLOR_T1
 participant ":Storage" as Storage STORAGE_COLOR
 end box
 
-[-> Ui : executeCommand("tagdelete 1 friend referral")
-activate Ui
-Ui -> Logic : execute(commandText)
+== Request tag deletion ==
+[-> Logic : execute("tagdelete 1 friend referral")
 activate Logic
-Logic -> Parser : parseCommand(commandText)
+Logic -> Parser : parseCommand(...)
 activate Parser
-Parser -> TagDeleteParser : parse(arguments)
-activate TagDeleteParser
-create Command
-TagDeleteParser -> Command : new TagDeleteCommand(index, tags)
-TagDeleteParser --> Parser : command
-deactivate TagDeleteParser
-Parser --> Logic : command
+Parser --> Logic : TagDeleteCommand
 deactivate Parser
-Logic -> Command : getConfirmationMessage(live)
+Logic -> Command : prepare confirmation
 activate Command
-Command -> Live : getClientBook().getPersonList(),\ngetFilteredPersonList()
-Live --> Command : complete and visible persons
-note right of Command : Validate the person and tags;\nresolve the exact stored tags.
-Command --> Logic : confirmation message with contact and tags
+Command -> Live : inspect person and tags
+Live --> Command : person and exact tags
+Command --> Logic : confirmation message
 deactivate Command
-Logic -> Logic : store pendingTagDeleteCommand
-Logic --> Ui : CommandResult
+Logic -> Logic : store pending command
+[<-- Logic : confirmation prompt
+note right of Logic : "no" cancels the pending command.\nOther responses keep it pending.
 deactivate Logic
-Ui -> Ui : display confirmation in result box
-[<-- Ui : CommandResult
-deactivate Ui
 
-[-> Ui : executeCommand("yes")
-activate Ui
-Ui -> Logic : execute("yes")
+== Confirm tag deletion ==
+[-> Logic : execute("yes")
 activate Logic
-
-alt response is n or no, case-insensitively
-    Logic -> Logic : clear pending command
-    Logic --> Ui : CommandResult("Tag deletion cancelled.")
-else response is neither confirmation nor cancellation
-    Logic --> Ui : CommandException("Please enter Y/Yes or N/No.")
-    note right of Logic : Keep the deletion pending.
-else response is y or yes, case-insensitively
-    Logic -> Logic : clear pending command
-    Logic -> Live : getClientBook(), getUserPrefs(),\ngetFilteredPersonPredicate(), getFilteredPersonComparator()
-    Live --> Logic : data, preferences, predicate, comparator
-    create Temp
-    Logic -> Temp : new ModelManager(data, preferences)
-    Logic -> Temp : updateFilteredPersonList(predicate, comparator)
-    Logic -> Command : execute(temporary, storage)
-    activate Command
-    Command -> Temp : getClientBook().getPersonList(),\ngetFilteredPersonList()
-    Temp --> Command : complete and visible persons
-    Command -> Command : validate again; build person copy\nwithout selected tags
-    Command -> Temp : setPerson(person, updated)
-    Command --> Logic : CommandResult
-    deactivate Command
-    Logic -> Temp : getClientBook()
-    Temp --> Logic : updated client book
-    Logic -> Storage : saveClientBook(updated client book)
-    Storage --> Logic : save completed
-    Logic -> Live : setClientBook(updated client book)
-    Logic -> Live : updateFilteredPersonList(predicate, comparator)
-    Logic --> Ui : CommandResult
-end
+Logic -> Command : execute(temporary model)
+activate Command
+Command -> Temp : remove selected tags
+Command --> Logic : command result
+deactivate Command
+Logic -> Storage : save updated client book
+Storage --> Logic : save completed
+Logic -> Live : commit updated state
+[<-- Logic : command result
 deactivate Logic
-[<-- Ui : result message
-deactivate Ui
 @enduml
