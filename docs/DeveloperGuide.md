@@ -1055,7 +1055,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 2a. ClientBook cannot create or replace the backup file.
 
-    * 2a1. ClientBook displays an error and preserves any existing backup.
+    * 2a1. ClientBook displays an error. When the file system supports atomic replacement, the existing backup
+      remains unchanged.
 
       Use case ends.
 
@@ -1104,7 +1105,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 16. ClientBook should be distributed as a single executable JAR file that does not require a separate installation process.
 17. ClientBook should store its data in a human-readable JSON format to support inspection and manual backup.
 18. The codebase should comply with the project coding standard and pass the configured automated checks before changes are merged.
-19. An unexpected error should log its exception type, stack trace, and affected operation without logging the complete client book or data-file contents.
+19. Unexpected errors should be logged with sufficient diagnostic information for developers while avoiding unnecessary exposure of client information.
 20. ClientBook should support a single user only; its data file should not be accessed concurrently or shared during normal operation.
 21. ClientBook should read and write files only within its home folder (the folder containing the JAR file) and its subfolders,
     and should not change OS-level configuration settings.
