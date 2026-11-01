@@ -2,79 +2,38 @@
 !include style.puml
 skinparam ArrowFontStyle plain
 
-box UI UI_COLOR_T1
-participant ":MainWindow" as MainWindow UI_COLOR
-participant ":PersonListPanel" as PersonListPanel UI_COLOR
-end box
-
 box Logic LOGIC_COLOR_T1
 participant ":LogicManager" as Logic LOGIC_COLOR
-participant ":ClientBookParser" as Parser LOGIC_COLOR
-participant ":FindCommandParser" as FindParser LOGIC_COLOR
+participant ":Parser" as Parser LOGIC_COLOR
 participant "command:FindCommand" as Command LOGIC_COLOR
 end box
 
 box Model MODEL_COLOR_T1
-participant "predicate:PersonMatchesFiltersPredicate" as Predicate MODEL_COLOR
-participant "live:Model" as Live MODEL_COLOR
-participant "temporary:ModelManager" as Temp MODEL_COLOR
+participant ":Model" as Model MODEL_COLOR
+participant "predicate:FilterPredicate" as Predicate MODEL_COLOR
 end box
 
-[-> MainWindow : executeCommand("find Alex r/client t/priority k/retirement")
-activate MainWindow
-MainWindow -> Logic : execute(commandText)
+[-> Logic : execute("find Alex r/client t/priority k/retirement")
 activate Logic
-Logic -> Parser : parseCommand(commandText)
+Logic -> Parser : parseCommand(...)
 activate Parser
-Parser -> FindParser : parse(arguments)
-activate FindParser
-note right of FindParser : Tokenize and validate filters;\nrequire at least one.
-create Predicate
-FindParser -> Predicate : new PersonMatchesFiltersPredicate(\nnameKeywords, relationship, tagKeywords, detailKeywords)
-create Command
-FindParser -> Command : new FindCommand(predicate)
-FindParser --> Parser : command
-deactivate FindParser
+note right of Parser : Validate the supplied filters and\nbuild the combined predicate.
 Parser --> Logic : command
 deactivate Parser
 
-Logic -> Live : getClientBook(), getUserPrefs(),\ngetFilteredPersonPredicate(), getFilteredPersonComparator()
-Live --> Logic : data, preferences, currentPredicate, comparator
-create Temp
-Logic -> Temp : new ModelManager(data, preferences)
-Logic -> Temp : updateFilteredPersonList(currentPredicate, comparator)
-Logic -> Command : execute(temporary, storage)
+Logic -> Command : execute(model)
 activate Command
-Command -> Temp : updateFilteredPersonList(predicate)
-activate Temp
-loop for each source person
-    Temp -> Predicate : test(person)
-    note right of Predicate : Within each multi-value filter: OR\nAcross supplied filter types: AND
-    Predicate --> Temp : matches
+Command -> Model : apply filter predicate
+activate Model
+loop for each person
+    Model -> Predicate : test(person)
+    Predicate --> Model : matches
 end
-deactivate Temp
-Command -> Temp : getFilteredPersonList()
-Temp --> Command : matchingPersons
-Command --> Logic : CommandResult(matchCount, selectFirstResult=true)
+note right of Predicate : Match any value within a filter,\nbut match every supplied filter.
+deactivate Model
+Command --> Logic : result requesting first-match selection
 deactivate Command
-
-note right of Logic : Records are unchanged; skip storage.
-Logic -> Temp : getClientBook(), getFilteredPersonPredicate(),\ngetFilteredPersonComparator()
-Temp --> Logic : data, findPredicate, comparator
-Logic -> Live : setClientBook(data)
-Logic -> Live : updateFilteredPersonList(findPredicate, comparator)
-Logic --> MainWindow : commandResult
+note right of Logic : The UI selects the first match, or clears\nthe selection when there are no matches.
+[<-- Logic : command result
 deactivate Logic
-MainWindow -> PersonListPanel : selectFirstPerson()
-activate PersonListPanel
-alt at least one match
-    PersonListPanel -> PersonListPanel : select(0); scrollTo(0)
-else no matches
-    PersonListPanel -> PersonListPanel : clearSelection()
-end
-PersonListPanel --> MainWindow
-deactivate PersonListPanel
-MainWindow -> MainWindow : enable find-result navigation\nif a person is selected
-[<-- MainWindow : commandResult
-deactivate MainWindow
 @enduml
