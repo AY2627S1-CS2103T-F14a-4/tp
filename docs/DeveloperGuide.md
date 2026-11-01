@@ -1940,7 +1940,11 @@ add r/Prospect n/Jane Tan e/jane@example.com p/98765432
       `find k/investment`, `find k/2026-12-15`, `find k/2026-12`, `find k/renewal`, and `find k/02-29`.<br>
       Expected: Alex is displayed for every search. Matching is case-insensitive and accepts contiguous partial text.
 
-   3. Test case: `find Alex r/client t/priority k/retirement`.<br>
+   3. Test case: `find k/--`.<br>
+      Expected: No person is displayed; yearly reminder dates are searched in the documented `MM-dd` format without
+      the internal ISO `--` prefix.
+
+   4. Test case: `find Alex r/client t/priority k/retirement`.<br>
       Expected: Alex is displayed only if the record also has the `priority` tag, demonstrating `AND` across filter
       types.
 

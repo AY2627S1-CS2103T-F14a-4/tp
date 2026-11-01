@@ -398,8 +398,8 @@ Examples:
 * `find Jack s/o` returns names containing `Jack` or the standalone marker `s/o`.
 * `find t/friend referral` returns persons with a tag containing `friend` or `referral`.
 * `find k/WhatsApp 2026-10-06` returns persons whose remembered details contain either value.
-* `find k/renewal 02-29` returns persons with a yearly reminder whose label contains `renewal` or whose date is
-  `02-29`.
+* `find k/renewal 02-29` returns persons whose remembered details contain either keyword, including yearly reminder
+  labels and dates.
 * `find alex r/client t/priority referral k/retirement WhatsApp` returns clients named `alex` who have a `priority`
   or `referral` tag and whose remembered details contain `retirement` or `WhatsApp`.
 

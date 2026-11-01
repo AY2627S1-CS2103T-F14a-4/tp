@@ -100,6 +100,7 @@ public class PersonMatchesFiltersPredicateTest {
         assertDetailKeywordDoesNotMatch("MEETING");
         assertDetailKeywordDoesNotMatch("SUCCESSFUL");
         assertDetailKeywordDoesNotMatch("2027-12-15");
+        assertDetailKeywordDoesNotMatch("--");
     }
 
     @Test
