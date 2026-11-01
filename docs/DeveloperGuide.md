@@ -194,6 +194,13 @@ replaces the live file with an atomic move when the file system supports it. Thi
 partially truncating the existing data file. On file systems without atomic-move support, ClientBook falls back to a
 normal replacement move; this preserves compatibility but cannot provide the same interruption guarantee.
 
+For NFRs 9–10, `MainApp.initModelManager` handles `DataLoadingException` by copying the unreadable data file
+with `Files.copy` to a sibling named `<original-name>.corrupted-yyyyMMdd-HHmmss` before starting empty.
+The original is retained. A startup warning is passed through `UiManager` and `MainWindow` to `ResultDisplay`,
+giving the original path, the backup path and outcome, and notice that the next successful record change will
+overwrite the original. Copy failures are logged and shown in the warning; startup still continues. A missing
+file starts empty without a backup or warning. Existing backups are never replaced by the copy.
+
 ### Common classes
 
 Classes used by multiple components are in the `seedu.address.commons` package.

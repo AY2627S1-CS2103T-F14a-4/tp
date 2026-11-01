@@ -140,11 +140,16 @@ public class MainWindow extends UiPart<Stage> {
      * Fills up all the placeholders of this window.
      */
     void fillInnerParts() {
+        fillInnerParts("");
+    }
+
+    /** Fills the window and displays any startup warning before the first command. */
+    void fillInnerParts(String startupWarning) {
         personListPanel = new PersonListPanel(logic.getFilteredPersonList(), logic.getPersonList());
         personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
         getRoot().addEventFilter(KeyEvent.KEY_PRESSED, this::handlePersonListNavigation);
 
-        resultDisplay = new ResultDisplay();
+        resultDisplay = new ResultDisplay(startupWarning);
         resultDisplayPlaceholder.getChildren().add(resultDisplay.getRoot());
 
         StatusBarFooter statusBarFooter = new StatusBarFooter(dataFilePath);
