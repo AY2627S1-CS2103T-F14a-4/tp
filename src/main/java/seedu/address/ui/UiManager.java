@@ -43,6 +43,10 @@ public class UiManager implements Ui {
         this.startupWarning = startupWarning;
     }
 
+    String getStartupWarning() {
+        return startupWarning;
+    }
+
     @Override
     public void start(Stage primaryStage) {
         logger.info("Starting UI...");
