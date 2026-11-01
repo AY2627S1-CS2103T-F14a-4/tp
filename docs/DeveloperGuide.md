@@ -346,7 +346,7 @@ A generic `NAME/` scan is confined to the preamble, where value text cannot occu
 validated before reporting an unknown parameter. Inside values, arbitrary forms such as `xyz/Value` remain
 text because they are indistinguishable from ordinary slash-containing words. Recognised prefixes always
 start fields: `fn/Review pr/High options` sets two fields. There is no quoting or escaping, so users must
-rephrase literal prefix-like text. The UG documents this restriction and the limited typo detection.
+rephrase literal prefix-like text. The UG documents the reserved-prefix restriction; the targeted typo-detection rules are explained above.
 
 `FinancialNeed`, `Priority` and `AreaOfInterest` are immutable, independently optional values on `Person`.
 They accept Unicode letters, combining marks, decimal digits, ordinary spaces and `. , ' ( ) & - $ % + /`.
