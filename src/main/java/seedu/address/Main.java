@@ -1,9 +1,19 @@
 package seedu.address;
 
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.WRITE;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
 import java.util.logging.Logger;
 
 import javafx.application.Application;
 import seedu.address.commons.core.LogsCenter;
+import seedu.address.commons.util.AppUtil;
+import seedu.address.commons.util.StringUtil;
 
 /**
  * The main entry point to the application.
@@ -22,12 +32,36 @@ import seedu.address.commons.core.LogsCenter;
  * to be the entry point of the application, we avoid this issue.
  */
 public class Main {
+    static final String MESSAGE_ALREADY_RUNNING =
+            "ClientBook is already running from this folder. Close the other instance and try again.";
+    static final String MESSAGE_LOCK_FAILURE =
+            "ClientBook could not secure exclusive access to its data. Check that its folder is writable.";
+    private static final String LOCK_FILE_NAME = "clientbook.lock";
     private static Logger logger = LogsCenter.getLogger(Main.class);
 
     public static void main(String[] args) {
 
         logger.warning("The warnings about a 'restricted method in java.lang.System' "
             + "and 'enabling native access' appearing below (if any) can be ignored.");
-        Application.launch(MainApp.class, args);
+        try (FileChannel channel = FileChannel.open(
+                AppUtil.getApplicationDirectory().resolve(LOCK_FILE_NAME), CREATE, WRITE);
+                FileLock lock = tryAcquireLock(channel)) {
+            if (lock == null) {
+                logger.severe(MESSAGE_ALREADY_RUNNING);
+                return;
+            }
+            Application.launch(MainApp.class, args);
+        } catch (IOException | URISyntaxException exception) {
+            logger.severe(MESSAGE_LOCK_FAILURE + " " + StringUtil.getDetails(exception));
+        }
+    }
+
+    /** Attempts to acquire the process lock, returning null when another local channel already holds it. */
+    static FileLock tryAcquireLock(FileChannel channel) throws IOException {
+        try {
+            return channel.tryLock();
+        } catch (OverlappingFileLockException exception) {
+            return null;
+        }
     }
 }

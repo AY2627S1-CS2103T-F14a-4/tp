@@ -57,8 +57,20 @@ The following provides a quick overview of the main components and their interac
 **Main components of the architecture**
 
 **`Main`** (consisting of classes [`Main`](https://github.com/AY2627S1-CS2103T-F14a-4/tp/tree/master/src/main/java/seedu/address/Main.java) and [`MainApp`](https://github.com/AY2627S1-CS2103T-F14a-4/tp/tree/master/src/main/java/seedu/address/MainApp.java)) is in charge of the app launch and shut down.
+* Before initializing JavaFX or storage, it acquires an exclusive lock on `clientbook.lock` in the application home
+  folder. If another process holds the lock, the new process reports the conflict and exits.
 * At app launch, it initializes the other components in the correct sequence, and connects them up with each other.
 * At shut down, it shuts down the other components and invokes cleanup methods where necessary.
+
+`Main` holds the lock for the duration of the blocking `Application#launch` call. The try-with-resources scope releases
+both the lock and its channel when ClientBook exits or startup fails. The lock file may remain on disk, but it does
+not block a later launch once the operating-system lock has been released. This keeps all lock-related file access
+inside the application home folder.
+
+<puml src="diagrams/StartupLockSequenceDiagram.puml" alt="Acquiring the single-instance lock during startup" />
+
+`MainTest` opens two channels to the same temporary lock file. It verifies that the first acquisition succeeds, an
+overlapping acquisition is refused, and acquisition succeeds again after the first lock is released.
 
 The bulk of the app's work is done by the following four components:
 

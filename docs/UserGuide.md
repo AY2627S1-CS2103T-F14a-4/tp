@@ -26,6 +26,8 @@ and stores records locally.
 
 4. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar clientbook.jar`.<br>
    A GUI similar to the one below should appear in a few seconds. Your client book starts empty.<br>
+   Run only one ClientBook instance from this folder at a time. If another instance is already running, the new
+   instance reports that it cannot obtain exclusive access and exits without opening the GUI.<br>
    ![Ui](images/Ui-startup.png)
 
 5. Type a command in the command box and press Enter to execute it. The result box below the command box shows
@@ -588,6 +590,11 @@ Format: `exit`
 ClientBook automatically saves changes to your records. You do not need to save manually.
 
 If saving fails, check that the data folder and clientbook.json file are accessible and writable, then try again.
+
+ClientBook creates `clientbook.lock` beside the JAR and holds an exclusive lock on it while running. This prevents
+two instances using the same home folder from overwriting each other's changes. The file can remain after ClientBook
+exits; only the operating-system lock is significant. Close the running instance before starting another one from
+the same folder.
 
 ### Editing the data file
 
