@@ -4,10 +4,11 @@ import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.WRITE;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
+import java.nio.file.Path;
+import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
 import javafx.application.Application;
@@ -43,15 +44,32 @@ public class Main {
 
         logger.warning("The warnings about a 'restricted method in java.lang.System' "
             + "and 'enabling native access' appearing below (if any) can be ignored.");
+        launchWithLock(AppUtil::getApplicationDirectory, () -> Application.launch(MainApp.class, args));
+    }
+
+    /** Resolves the home folder before launching the application with its exclusive lock. */
+    static void launchWithLock(Callable<Path> directoryProvider, Runnable launcher) {
+        Path applicationDirectory;
+        try {
+            applicationDirectory = directoryProvider.call();
+        } catch (Exception exception) {
+            logger.severe(MESSAGE_LOCK_FAILURE + " " + StringUtil.getDetails(exception));
+            return;
+        }
+        launchWithLock(applicationDirectory, launcher);
+    }
+
+    /** Launches the application while holding the exclusive lock for its home folder. */
+    static void launchWithLock(Path applicationDirectory, Runnable launcher) {
         try (FileChannel channel = FileChannel.open(
-                AppUtil.getApplicationDirectory().resolve(LOCK_FILE_NAME), CREATE, WRITE);
+                applicationDirectory.resolve(LOCK_FILE_NAME), CREATE, WRITE);
                 FileLock lock = tryAcquireLock(channel)) {
             if (lock == null) {
                 logger.severe(MESSAGE_ALREADY_RUNNING);
                 return;
             }
-            Application.launch(MainApp.class, args);
-        } catch (IOException | URISyntaxException exception) {
+            launcher.run();
+        } catch (IOException exception) {
             logger.severe(MESSAGE_LOCK_FAILURE + " " + StringUtil.getDetails(exception));
         }
     }
