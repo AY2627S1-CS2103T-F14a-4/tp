@@ -423,7 +423,8 @@ validation and atomicity, descriptor states, original filtered indices, and pers
 ### Interaction notes
 
 `note INDEX d/yyyy-MM-dd [t/TYPE] [o/OUTCOME] n/NOTE` appends an interaction note to the person at the displayed
-client index. It works for clients and prospects, preserves the current filter, and does not replace earlier entries.
+client index, which is the contact's original full-list index even when filtered or sorted. It works for clients and
+prospects, preserves the current filter, and does not replace earlier entries.
 
 #### Model and command flow
 
@@ -432,13 +433,18 @@ client index. It works for clients and prospects, preserves the current filter, 
 2. `InteractionNote` stores an immutable `LocalDate`, nonblank text, `InteractionType` and `InteractionOutcome`. Date parsing checks the `yyyy-MM-dd` shape
    and uses strict ISO calendar validation. Past dates are allowed. Surrounding text whitespace is stripped;
    internal content and case are preserved without a character whitelist or maximum length.
-3. `NoteCommand` checks the displayed index and rejects an exact duplicate in that person's history using
+3. `LogicManager` creates a temporary `ModelManager` from the live client book and user preferences, copies the
+   current filter and comparator, and executes the command against that temporary model. `NoteCommand` resolves
+   the original full-list index, checks that the contact is visible in the current filtered list, and rejects an
+   exact duplicate in that person's history using
    `InteractionNote.hasSameContent()` (date and stripped text) before making changes. Otherwise, it copies the history, appends the new entry and calls
    `Model#setPerson` with a replacement `Person`. Other fields remain unchanged. The same date with different text,
    or the same text with different dates, is allowed. `Person` stably sorts its defensive copy by date, oldest first,
    preserving order for equal dates.
-4. The observable list updates the corresponding `PersonListViewCell`. `LogicManager` saves the client book through
-   the existing storage pipeline and returns `Added interaction note for NAME.` on success.
+4. `LogicManager` saves the changed client book before calling `commitModel` to update the live model and restore
+   the filter and comparator. The live observable list updates the corresponding `PersonListViewCell` during
+   that commit. A save failure leaves the live
+   model and visible UI unchanged. On success, it returns `Added interaction note for NAME.`
 
 `Person#getInteractionNotes()` exposes an immutable defensive copy. History participates in `Person` equality and
 hashing, but not duplicate identity detection. Both `EditCommand` and `InfoCommand` carry the existing history into
@@ -529,13 +535,15 @@ An out-of-range contact index produces `The person index provided is invalid.` A
 when the contact has no notes, produces `The interaction note index provided is invalid.` Blank text produces
 `Interaction note cannot be empty.`
 
-`NoteEditCommand` resolves the contact against the filtered list and the note against its chronologically ordered
-history, using one-based indices. It rejects out-of-range indices (including empty histories) before mutation.
+`NoteEditCommand` resolves the contact using its original one-based full-list index and rejects it if hidden by
+the current filter. The one-based note index refers to that contact's chronologically ordered history.
+It rejects out-of-range indices (including empty histories) before mutation.
 It copies the history and replaces just the selected entry with an `InteractionNote` containing the supplied
 date/text (preserving omitted values), original type and original outcome. Date changes trigger chronological reordering.
 It then calls `Model#setPerson` with a replacement person preserving all other fields, including contact preferences
-and the next action. The current filter remains active. `LogicManager` persists the change through the existing
-JSON pipeline; no additional schema changes or note IDs are needed for editing.
+and the next action. Execution uses the temporary model described above: `LogicManager` saves its changed
+client book through the existing JSON pipeline before committing to the live model and updating the visible UI.
+The current filter and comparator remain active; no additional schema changes or note IDs are needed for editing.
 
 `NoteEditCommandTest` and `NoteEditCommandParserTest` cover validation, filtered lists, duplicate notes,
 date and contact-field preservation, command routing, and saving/reloading an edit through `LogicManager`.
@@ -543,7 +551,8 @@ date and contact-field preservation, command routing, and saving/reloading an ed
 #### Deleting a note
 
 The following sequence diagram shows the successful execution of `notedelete 1 2`, which deletes the
-second interaction note from the first contact in the currently filtered list.
+second interaction note from the contact at original full-list index 1, provided that contact is visible in the
+current filtered list.
 
 <puml src="diagrams/NoteDeleteSequenceDiagram.puml" alt="Interaction note deletion sequence" />
 
@@ -554,16 +563,17 @@ Missing or extra arguments and invalid indices produce an error without changing
 index produces `The person index provided is invalid.` An out-of-range note index, including when the contact has
 no notes, produces `The interaction note index provided is invalid.`
 
-`NoteDeleteCommand` resolves the contact against the currently filtered list and the note against that
-contact's chronologically ordered history. Both indices are one-based. Out-of-range indices, including an empty
+`NoteDeleteCommand` resolves the contact using its original full-list index, then checks that the selected contact
+is visible in the current filtered list. Filtering and sorting do not renumber contacts. The note index refers to
+that contact's chronologically ordered history. Both indices are one-based. Out-of-range indices, including an empty
 history, are rejected before changing the model. The command copies the history and removes the selected
 entry by position, preserving duplicates and the order of remaining entries. Subsequent note positions shift
 down by one. It calls `Model#setPerson` with a replacement person preserving all other fields, including
 contact preferences and the next action, and retains the current filter.
 
 `PersonCard` prefixes each note label with its one-based chronological position, matching command indices.
-Replacing the person rebuilds the card through the existing observable list, so remaining notes are renumbered
-and an empty history is hidden without forcing a refresh or changing stored notes.
+After successful persistence, committing the replacement to the live model rebuilds the card through the existing
+observable list, so remaining notes are renumbered and an empty history is hidden.
 
 Deletion feedback uses the `InteractionNote` returned by positional removal, including its actual date and text.
 Only the feedback excerpt has whitespace collapsed. It is limited to 80 Unicode code points using
@@ -571,8 +581,12 @@ Only the feedback excerpt has whitespace collapsed. It is limited to 80 Unicode 
 Command and UI tests cover excerpt boundaries, supplementary Unicode characters, duplicate notes, chronological
 order, automatic renumbering and hiding the last deleted note's history.
 
-`LogicManager` saves the replacement through the existing JSON pipeline. No storage schema or model API
-changes are required. `NoteDeleteCommandTest` and `NoteDeleteCommandParserTest` cover validation, filtered
+`LogicManager` creates a temporary model with the current filter and comparator and calls
+`NoteDeleteCommand.execute(temporaryModel, storage)`. The command changes only that temporary model.
+`LogicManager` saves the updated client book through the existing JSON pipeline, then calls `commitModel`:
+it sets the live client book and reapplies the temporary model's filter and comparator. The live observable UI
+updates during that commit, after persistence. If saving fails, no live model changes are committed.
+No storage schema or model API changes are required. `NoteDeleteCommandTest` and `NoteDeleteCommandParserTest` cover validation, filtered
 lists, duplicate notes, contact-field preservation, command routing, and saving/reloading deletions,
 including an empty history.
 
@@ -1472,6 +1486,8 @@ their errors immediately, with no pending prompt; a subsequent `list` must work 
 Existing `TagDeleteCommandTest` cases cover the unchanged tag confirmation flow.
 Parser whitespace and integer boundaries are covered in
 `DeleteCommandParserTest`.
+
+<a id="interaction-notes-manual-tests"></a>
 
 ### Interaction notes
 

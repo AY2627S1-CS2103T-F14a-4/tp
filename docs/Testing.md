@@ -80,7 +80,7 @@ For manual checks, use disposable records and a separate data file:
 8. Load an older valid JSON file without `interactionNotes`. Confirm its records load with no note entries.
 
 For command setup, expected messages, editing, deletion and restart checks, see the Developer Guide's
-[Interaction notes manual tests](DeveloperGuide.md#interaction-notes).
+[Interaction notes manual tests](DeveloperGuide.md#interaction-notes-manual-tests).
 
 ### Follow-up date validation (#115)
 
