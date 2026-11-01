@@ -43,8 +43,11 @@ public class EditCommand extends Command {
 
     public static final String MESSAGE_EDIT_PERSON_SUCCESS = "Edited person: %1$s";
     public static final String MESSAGE_NOT_EDITED = "At least one field to edit must be provided.";
-    public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in the client book.";
     public static final String MESSAGE_DUPLICATE_NAME = "A contact with this name already exists.";
+    public static final String MESSAGE_DUPLICATE_EMAIL = "A contact with this email address already exists.";
+    public static final String MESSAGE_DUPLICATE_PHONE = "A contact with this phone number already exists.";
+    public static final String MESSAGE_DUPLICATE_EMAIL_AND_PHONE =
+            "This email address and phone number are already in use.";
 
     private final Index index;
     private final EditPersonDescriptor editPersonDescriptor;
@@ -68,8 +71,16 @@ public class EditCommand extends Command {
                 Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
         Person editedPerson = createEditedPerson(personToEdit, editPersonDescriptor);
 
-        if (hasMatchingPhoneOrEmail(model, personToEdit, editedPerson)) {
-            throw new CommandException(MESSAGE_DUPLICATE_PERSON);
+        boolean hasMatchingEmail = hasMatchingEmail(model, personToEdit, editedPerson);
+        boolean hasMatchingPhone = hasMatchingPhone(model, personToEdit, editedPerson);
+        if (hasMatchingEmail && hasMatchingPhone) {
+            throw new CommandException(MESSAGE_DUPLICATE_EMAIL_AND_PHONE);
+        }
+        if (hasMatchingEmail) {
+            throw new CommandException(MESSAGE_DUPLICATE_EMAIL);
+        }
+        if (hasMatchingPhone) {
+            throw new CommandException(MESSAGE_DUPLICATE_PHONE);
         }
         if (hasMatchingName(model, personToEdit, editedPerson)) {
             throw new CommandException(MESSAGE_DUPLICATE_NAME);
@@ -79,9 +90,16 @@ public class EditCommand extends Command {
         return new CommandResult(String.format(MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)));
     }
 
-    private static boolean hasMatchingPhoneOrEmail(Model model, Person personToEdit, Person editedPerson) {
+    private static boolean hasMatchingEmail(Model model, Person personToEdit, Person editedPerson) {
         return model.getClientBook().getPersonList().stream()
-                .anyMatch(person -> !person.equals(personToEdit) && person.isSamePerson(editedPerson));
+                .anyMatch(person -> !person.equals(personToEdit)
+                        && person.getEmail().equals(editedPerson.getEmail()));
+    }
+
+    private static boolean hasMatchingPhone(Model model, Person personToEdit, Person editedPerson) {
+        return model.getClientBook().getPersonList().stream()
+                .anyMatch(person -> !person.equals(personToEdit)
+                        && person.getPhone().hasSamePhoneNumber(editedPerson.getPhone()));
     }
 
     private static boolean hasMatchingName(Model model, Person personToEdit, Person editedPerson) {

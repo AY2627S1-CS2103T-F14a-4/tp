@@ -20,6 +20,7 @@ Class JsonAdaptedPerson
 Class JsonAdaptedTag
 Class JsonAdaptedInteractionNote
 Class JsonAdaptedNextAction
+Class JsonAdaptedRecurringReminder
 }
 
 }
@@ -36,5 +37,6 @@ JsonSerializableClientBook --> "*" JsonAdaptedPerson
 JsonAdaptedPerson --> "*" JsonAdaptedTag
 JsonAdaptedPerson --> "*" JsonAdaptedInteractionNote
 JsonAdaptedPerson --> "0..1" JsonAdaptedNextAction
+JsonAdaptedPerson --> "*" JsonAdaptedRecurringReminder
 
 @enduml
