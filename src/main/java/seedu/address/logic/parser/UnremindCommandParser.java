@@ -13,7 +13,8 @@ public class UnremindCommandParser implements Parser<UnremindCommand> {
     public UnremindCommand parse(String args) throws ParseException {
         requireNonNull(args);
         ArgumentMultimap fields = ArgumentTokenizer.tokenize(" " + args, PREFIX_ACTION);
-        Index index = ParserUtil.parseIndex(fields.getPreamble());
+        Index index = ParserUtil.parseSingleIndex(fields.getPreamble(), UnremindCommand.COMMAND_WORD,
+                UnremindCommand.MESSAGE_USAGE);
         fields.verifyNoDuplicatePrefixesFor(PREFIX_ACTION);
         if (fields.getValue(PREFIX_ACTION).isEmpty()) {
             throw new ParseException(UnremindCommand.MESSAGE_USAGE);

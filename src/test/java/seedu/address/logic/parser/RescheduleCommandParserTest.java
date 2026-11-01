@@ -33,7 +33,8 @@ public class RescheduleCommandParserTest {
     @Test
     public void parse_missingIndexOrDate_failure() {
         assertParseFailure(parser, "", NextCommandParser.MESSAGE_INDEX_REQUIRED);
-        assertParseFailure(parser, "d/2026-10-20", NextCommandParser.MESSAGE_INDEX_REQUIRED);
+        assertParseFailure(parser, "d/2026-10-20",
+                NextCommandParser.MESSAGE_INDEX_REQUIRED);
         assertParseFailure(parser, " 1", NextCommandParser.MESSAGE_DATE_REQUIRED);
         assertParseFailure(parser, " 1 a/Call", NextCommandParser.MESSAGE_DATE_REQUIRED);
         assertParseFailure(parser, " 1 d/", NextCommandParser.MESSAGE_DATE_REQUIRED);
@@ -41,7 +42,7 @@ public class RescheduleCommandParserTest {
 
     @Test
     public void parse_invalidIndexDateOrDescription_failure() {
-        for (String index : List.of("0", "-1", "abc", "1.5", "2147483648", "1 2")) {
+        for (String index : List.of("0", "-1", "abc", "1.5", "2147483648")) {
             assertParseFailure(parser, " " + index + " d/2026-10-20", ParserUtil.MESSAGE_INVALID_INDEX);
         }
         for (String date : List.of("2026-02-29", "2026-02-30", "2026-2-03", "0000-01-01",
@@ -61,5 +62,17 @@ public class RescheduleCommandParserTest {
                 Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_DUE_DATE));
         assertParseFailure(parser, " 1 d/2026-10-20 a/Call a/Email",
                 Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_ACTION));
+    }
+
+    @Test
+    public void parse_extraArguments_reportsUnexpectedArgument() {
+        assertParseFailure(parser, "1 extra",
+                "reschedule accepts exactly one index. Unexpected argument: extra");
+        for (String separator : List.of(" ", "  ", "\t", "\n")) {
+            assertParseFailure(parser, " 1" + separator + "extra  more d/2026-10-20",
+                    "reschedule accepts exactly one index. Unexpected argument: extra  more");
+        }
+        assertParseFailure(parser, "1 2 d/2026-10-20",
+                "reschedule accepts exactly one index. Unexpected argument: 2");
     }
 }

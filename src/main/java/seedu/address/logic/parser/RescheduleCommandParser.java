@@ -17,10 +17,8 @@ public class RescheduleCommandParser implements Parser<RescheduleCommand> {
     public RescheduleCommand parse(String args) throws ParseException {
         requireNonNull(args);
         ArgumentMultimap fields = ArgumentTokenizer.tokenize(" " + args, PREFIX_ACTION, PREFIX_DUE_DATE);
-        if (fields.getPreamble().isBlank()) {
-            throw new ParseException(NextCommandParser.MESSAGE_INDEX_REQUIRED);
-        }
-        Index index = ParserUtil.parseIndex(fields.getPreamble());
+        Index index = ParserUtil.parseSingleIndex(fields.getPreamble(), RescheduleCommand.COMMAND_WORD,
+                NextCommandParser.MESSAGE_INDEX_REQUIRED);
         fields.verifyNoDuplicatePrefixesFor(PREFIX_ACTION, PREFIX_DUE_DATE);
         if (fields.getValue(PREFIX_DUE_DATE).isEmpty()
                 || fields.getValue(PREFIX_DUE_DATE).orElseThrow().isBlank()) {

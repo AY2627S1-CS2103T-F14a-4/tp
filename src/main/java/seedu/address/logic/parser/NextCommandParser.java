@@ -19,10 +19,8 @@ public class NextCommandParser implements Parser<NextCommand> {
     public NextCommand parse(String args) throws ParseException {
         requireNonNull(args);
         ArgumentMultimap fields = ArgumentTokenizer.tokenize(" " + args, PREFIX_ACTION, PREFIX_DUE_DATE);
-        if (fields.getPreamble().isBlank()) {
-            throw new ParseException(MESSAGE_INDEX_REQUIRED);
-        }
-        Index index = ParserUtil.parseIndex(fields.getPreamble());
+        Index index = ParserUtil.parseSingleIndex(fields.getPreamble(), NextCommand.COMMAND_WORD,
+                MESSAGE_INDEX_REQUIRED);
         fields.verifyNoDuplicatePrefixesFor(PREFIX_ACTION, PREFIX_DUE_DATE);
         if (fields.getValue(PREFIX_ACTION).isEmpty()) {
             throw new ParseException(MESSAGE_ACTION_REQUIRED);

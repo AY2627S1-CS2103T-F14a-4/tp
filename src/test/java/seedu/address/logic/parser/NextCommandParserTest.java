@@ -38,8 +38,10 @@ public class NextCommandParserTest {
     @Test
     public void parse_missingFields_failure() {
         assertParseFailure(parser, "", NextCommandParser.MESSAGE_INDEX_REQUIRED);
-        assertParseFailure(parser, " a/Call d/2026-10-19", NextCommandParser.MESSAGE_INDEX_REQUIRED);
-        assertParseFailure(parser, "a/Call d/2026-10-19", NextCommandParser.MESSAGE_INDEX_REQUIRED);
+        assertParseFailure(parser, " a/Call d/2026-10-19",
+                NextCommandParser.MESSAGE_INDEX_REQUIRED);
+        assertParseFailure(parser, "a/Call d/2026-10-19",
+                NextCommandParser.MESSAGE_INDEX_REQUIRED);
         assertParseFailure(parser, " 1 d/2026-10-19", NextCommandParser.MESSAGE_ACTION_REQUIRED);
         assertParseFailure(parser, " 1 a/Call", NextCommandParser.MESSAGE_DATE_REQUIRED);
         assertParseFailure(parser, " 1 a/Call d/", NextCommandParser.MESSAGE_DATE_REQUIRED);
@@ -48,7 +50,7 @@ public class NextCommandParserTest {
 
     @Test
     public void parse_invalidIndex_failure() {
-        for (String index : List.of("0", "-1", "2147483648", "abc", "1.5", "1 2")) {
+        for (String index : List.of("0", "-1", "2147483648", "abc", "1.5")) {
             assertParseFailure(parser, " " + index + " a/Call d/2026-10-19", ParserUtil.MESSAGE_INVALID_INDEX);
         }
     }
@@ -69,5 +71,17 @@ public class NextCommandParserTest {
                 Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_ACTION));
         assertParseFailure(parser, " 1 a/Call d/2026-10-19 d/2026-10-20",
                 Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_DUE_DATE));
+    }
+
+    @Test
+    public void parse_extraArguments_reportsUnexpectedArgument() {
+        assertParseFailure(parser, "1 extra",
+                "next accepts exactly one index. Unexpected argument: extra");
+        for (String separator : List.of(" ", "  ", "\t", "\n")) {
+            assertParseFailure(parser, " 1" + separator + "extra  more a/Call d/2026-10-19",
+                    "next accepts exactly one index. Unexpected argument: extra  more");
+        }
+        assertParseFailure(parser, "1 2 a/Call d/2026-10-19",
+                "next accepts exactly one index. Unexpected argument: 2");
     }
 }

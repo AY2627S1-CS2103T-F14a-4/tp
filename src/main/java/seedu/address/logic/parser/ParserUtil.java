@@ -78,6 +78,26 @@ public class ParserUtil {
     }
 
     /**
+     * Parses exactly one index, using {@code missingIndexMessage} when the preamble is empty.
+     * @throws ParseException if the index is missing, invalid, or followed by unexpected arguments.
+     */
+    public static Index parseSingleIndex(String preamble, String commandWord, String missingIndexMessage)
+            throws ParseException {
+        requireNonNull(preamble);
+        requireNonNull(commandWord);
+        requireNonNull(missingIndexMessage);
+        String trimmedPreamble = preamble.trim();
+        if (trimmedPreamble.isEmpty()) {
+            throw new ParseException(missingIndexMessage);
+        }
+        String[] tokens = trimmedPreamble.split("\\s+", 2);
+        if (tokens.length > 1) {
+            throw new ParseException(commandWord + " accepts exactly one index. Unexpected argument: " + tokens[1]);
+        }
+        return parseIndex(tokens[0]);
+    }
+
+    /**
      * Parses a {@code String name} into a {@code Name}.
      * Leading and trailing whitespaces will be trimmed.
      *
