@@ -96,7 +96,12 @@ public class ClientBookParser {
                 }
                 yield new DueCommand();
             }
-            case ClearCommand.COMMAND_WORD -> new ClearCommand();
+            case ClearCommand.COMMAND_WORD -> {
+                if (!arguments.isBlank()) {
+                    throw new ParseException("The clear command takes no arguments.");
+                }
+                yield new ClearCommand();
+            }
             case FindCommand.COMMAND_WORD -> new FindCommandParser().parse(arguments);
             case ListCommand.COMMAND_WORD -> new ListCommand();
             case UnremindCommand.COMMAND_WORD -> new UnremindCommandParser().parse(arguments);

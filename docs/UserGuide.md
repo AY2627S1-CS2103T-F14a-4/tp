@@ -64,7 +64,7 @@ and stores records locally.
 * Parameters can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
-* Extraneous parameters for `help`, `list`, `exit`, and `clear` are ignored.<br>
+* Extraneous parameters for `help`, `list`, and `exit` are ignored.<br>
   For example, `help 123` is interpreted as `help`. Other commands reject unsupported arguments.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
@@ -535,9 +535,18 @@ Examples:
 
 ### Clearing all entries: `clear`
 
-Clears all entries from the client book.
+Clears all entries from the client book after confirmation. This operation cannot be undone.
 
 Format: `clear`
+
+* `clear` accepts no parameters.
+* Enter `Y` or `Yes` to confirm, or `N` or `No` to cancel. Responses are case-insensitive.
+* Any other response shows `Please enter Y/Yes or N/No.` and keeps the confirmation pending.
+
+Example:
+
+1. Enter `clear` to display the confirmation prompt. No records are removed yet.
+2. Enter `yes` to clear all records, or `no` to keep them.
 
 ### Backing up records: `backup`
 

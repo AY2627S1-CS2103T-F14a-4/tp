@@ -43,7 +43,7 @@ Live --> Command : complete and visible persons
 note right of Command : Validate the person and tags;\nresolve the exact stored tags.
 Command --> Logic : confirmation message with contact and tags
 deactivate Command
-Logic -> Logic : store pendingTagDeleteCommand
+Logic -> Logic : store pendingCommand
 Logic --> Ui : CommandResult
 deactivate Logic
 Ui -> Ui : display confirmation in result box

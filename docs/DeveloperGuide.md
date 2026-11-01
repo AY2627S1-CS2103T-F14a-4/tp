@@ -269,9 +269,9 @@ stores the pending `TagDeleteCommand`, and returns a `CommandResult` containing 
 this?`, the contact name, the exact stored tags that will be removed, and the accepted responses. `MainWindow`
 displays the result through the existing result box below the command box.
 
-`TagDeleteCommand` and `DeleteCommand` implement `ConfirmableCommand`, sharing one pending command in
+`TagDeleteCommand`, `DeleteCommand`, and `ClearCommand` implement `ConfirmableCommand`, sharing one pending command in
 `LogicManager`. Its `handleConfirmation` method uses the same response rules and invalid-response message
-for both commands; each command supplies its validation/prompt and cancellation message. Tag deletion's
+for all three commands; each command supplies its validation/prompt and cancellation message. Tag deletion's
 existing prompt, success messages and `Tag deletion cancelled.` feedback are unchanged.
 
 While a deletion is pending, `LogicManager` interprets the next command-box input as a confirmation response instead
@@ -283,6 +283,35 @@ the immutable `Person` through `Model#setPerson`, and saves the updated client b
 The following sequence shows the confirmation gate before selected tags are deleted.
 
 <puml src="diagrams/TagDeleteSequenceDiagram.puml" alt="Deleting tags with confirmation sequence" />
+
+### Clearing all entries
+
+`ClientBookParser` accepts `clear` only when it has no arguments. `ClearCommand` implements `ConfirmableCommand`, so
+the first execution returns its confirmation prompt without changing the model or storage. `Y` or `Yes` executes the
+pending command; `N` or `No` cancels it. Other responses retain the pending command and report the shared invalid
+confirmation message. Matching is case-insensitive and ignores surrounding whitespace.
+
+After confirmation, `ClearCommand` replaces the client book in the temporary model with an empty `ClientBook`.
+`LogicManager` saves that temporary model before committing it to the live model. Consequently, cancellation and
+save failure both leave the live records unchanged. A successful clear cannot be undone.
+
+The following sequence shows the confirmation gate and the subsequent save-before-commit flow.
+
+<puml src="diagrams/ClearSequenceDiagram.puml" alt="Clearing all entries with confirmation sequence" />
+
+#### Manual regression checks
+
+Use a separate test folder containing at least two fictional records.
+
+1. Enter `clear`, then enter `maybe`.<br>
+   Expected: The records remain visible. The first input shows the confirmation prompt; the second shows
+   `Please enter Y/Yes or N/No.` and leaves confirmation pending.
+2. Enter `no`.<br>
+   Expected: `Clear cancelled.` is shown and every record remains unchanged.
+3. Enter `clear extra`.<br>
+   Expected: `The clear command takes no arguments.` is shown and no confirmation becomes pending.
+4. Enter `clear`, then `yes`, exit, and reopen ClientBook.<br>
+   Expected: `Client book has been cleared!` is shown and the empty client book persists after restart.
 
 ### Contact preferences (`contact`)
 
@@ -1085,7 +1114,7 @@ Use a separate test folder with fictional records.
 
 1. Adding valid records
 
-    1. Prerequisites: Start with an empty client book, or run `clear`.
+    1. Prerequisites: Start with an empty client book, or run `clear`, then `yes`.
 
     2. Test case: `add r/Client n/John Doe e/john@example.com p/91234567 t/referral`<br>
        Expected: A confirmation beginning with `New person added:` appears. A Client record for John Doe is shown
@@ -1138,10 +1167,11 @@ Use a separate test folder with fictional records. Add John Doe and Jane Tan as 
 ### Financial information: `info`
 
 Use a separate test folder with fictional records. Run this setup before testing this feature;
-`clear` removes all records in that test copy. Enter each line as a separate command.
+`clear`, followed by `yes`, removes all records in that test copy. Enter each line as a separate command.
 
 ```text
 clear
+yes
 add r/Client n/Alex Teo e/alex@example.com p/91234567
 add r/Prospect n/Jamie Lim e/jamie@example.com p/98765432
 info 1 fn/Education pr/Low ai/Savings
@@ -1168,10 +1198,11 @@ contact 2 ch/Email tm/Weekends
 ### Contact preferences: `contact`
 
 Use a separate test folder with fictional records. Run this setup before testing this feature;
-`clear` removes all records in that test copy. Enter each line as a separate command.
+`clear`, followed by `yes`, removes all records in that test copy. Enter each line as a separate command.
 
 ```text
 clear
+yes
 add r/Client n/Alex Teo e/alex@example.com p/91234567
 add r/Prospect n/Jamie Lim e/jamie@example.com p/98765432
 info 1 fn/Education pr/Low ai/Savings
@@ -1244,6 +1275,7 @@ Use a separate test folder with fictional records. Run these commands to prepare
 
 ```text
 clear
+yes
 add r/Client n/John Doe e/john@example.com p/91234567
 add r/Prospect n/Jane Tan e/jane@example.com p/98765432
 info 2 fn/Retirement planning pr/High ai/Life insurance
@@ -1331,6 +1363,7 @@ Use a separate test folder with fictional records. Recreate this setup before ea
 
 ```text
 clear
+yes
 add r/Client n/John Doe e/john@example.com p/91234567
 add r/Prospect n/Jane Tan e/jane@example.com p/98765432
 note 2 d/2020-02-29 t/CALL o/PENDING n/Discussed retirement planning.
@@ -1461,7 +1494,7 @@ Rejected commands should leave both records, their notes and the current filter 
 
 1. Setting and replacing a next action
 
-   1. Prerequisites: In a separate test folder, run `clear`, then
+   1. Prerequisites: In a separate test folder, run `clear`, then `yes`, then
       `add r/Client n/John Doe e/john@example.com p/91234567`. Run the cases in order.
       Replace `TODAY`, `TOMORROW`, and `YESTERDAY` below with today's date, tomorrow's date, and a date
       before today in `yyyy-MM-dd` format.
@@ -1487,7 +1520,7 @@ Rejected commands should leave both records, their notes and the current filter 
 
 1. Changing a follow-up's date and action
 
-   1. Prerequisites: In a separate test folder, run `clear`, then
+   1. Prerequisites: In a separate test folder, run `clear`, then `yes`, then
       `add r/Client n/John Doe e/john@example.com p/91234567` and
       `add r/Prospect n/Jane Tan e/jane@example.com p/98765432`.
       Replace `TODAY`, `TOMORROW`, and `YESTERDAY` with the corresponding dates in `yyyy-MM-dd` format.
@@ -1514,7 +1547,7 @@ Rejected commands should leave both records, their notes and the current filter 
 
 1. Marking a next action as completed
 
-   1. Prerequisites: In a separate test folder, run `clear`, then
+   1. Prerequisites: In a separate test folder, run `clear`, then `yes`, then
       `add r/Client n/John Doe e/john@example.com p/91234567` and
       `add r/Prospect n/Jane Tan e/jane@example.com p/98765432`.
       Run `next 1 a/Call about renewal d/TODAY`, replacing `TODAY` with today's date in `yyyy-MM-dd` format.
@@ -1537,7 +1570,7 @@ Rejected commands should leave both records, their notes and the current filter 
 
 1. Adding and updating labelled yearly dates
 
-   1. Prerequisites: In a separate test folder, run `clear`, then
+   1. Prerequisites: In a separate test folder, run `clear`, then `yes`, then
       `add r/Client n/John Doe e/john@example.com p/91234567`. Run the cases in order.
 
    2. Test case: `remind 1 a/Birthday d/12-15`<br>
@@ -1559,7 +1592,7 @@ Rejected commands should leave both records, their notes and the current filter 
 
 1. Removing a reminder by label
 
-   1. Prerequisites: In a separate test folder, run `clear`, then
+   1. Prerequisites: In a separate test folder, run `clear`, then `yes`, then
       `add r/Client n/John Doe e/john@example.com p/91234567`,
       `remind 1 a/Birthday d/12-15`, and `remind 1 a/Renewal d/06-01`. Run the cases in order.
 
@@ -1580,7 +1613,7 @@ Rejected commands should leave both records, their notes and the current filter 
 
 1. Checking eligibility, ordering and restoring the full list
 
-   1. Prerequisites: In a separate test folder, run `clear`, then
+   1. Prerequisites: In a separate test folder, run `clear`, then `yes`, then
       `add r/Client n/John Doe e/john@example.com p/91234567`,
       `add r/Prospect n/Jane Tan e/jane@example.com p/98765432`, and
       `add r/Client n/Alex Tan e/alex@example.com p/81234567`.
@@ -1615,6 +1648,7 @@ Use a separate test folder with fictional records. Enter each setup command on a
 
 ```text
 clear
+yes
 add r/Client n/John Doe e/john@example.com p/91234567 t/referral
 add r/Prospect n/Jane Tan e/jane@example.com p/98765432
 ```
@@ -1647,6 +1681,7 @@ add r/Prospect n/Jane Tan e/jane@example.com p/98765432
 
       ```text
       clear
+      yes
       add r/Client n/John Doe e/john@example.com p/91234567 t/referral
       add r/Prospect n/Jane Tan e/jane@example.com p/98765432 t/priority t/insurance t/followup
       list
@@ -1679,6 +1714,7 @@ add r/Prospect n/Jane Tan e/jane@example.com p/98765432
 
       ```text
       clear
+      yes
       add r/Client n/Alex Tan e/alex@example.com p/81234567
       add r/Prospect n/Alexander Lim e/alexander@example.com p/82345678
       add r/Client n/Anne-Marie Lee e/anne@example.com p/83456789
@@ -1699,6 +1735,7 @@ add r/Prospect n/Jane Tan e/jane@example.com p/98765432
 
       ```text
       clear
+      yes
       add r/Client n/Alex Tan e/alex@example.com p/81234567
       add r/Prospect n/Alexander Lim e/alexander@example.com p/82345678
       add r/Client n/Anne-Marie Lee e/anne@example.com p/83456789
@@ -1721,6 +1758,7 @@ add r/Prospect n/Jane Tan e/jane@example.com p/98765432
 
       ```text
       clear
+      yes
       add r/Client n/Alex Tan e/alex@example.com p/81234567
       add r/Prospect n/Alexander Lim e/alexander@example.com p/82345678
       list
@@ -1739,6 +1777,7 @@ add r/Prospect n/Jane Tan e/jane@example.com p/98765432
 
       ```text
       clear
+      yes
       add r/Client n/Alex Tan e/alex@example.com p/81234567
       add r/Prospect n/Alexander Lim e/alexander@example.com p/82345678
       add r/Client n/Anne-Marie Lee e/anne@example.com p/83456789
@@ -1754,6 +1793,7 @@ add r/Prospect n/Jane Tan e/jane@example.com p/98765432
 
       ```text
       clear
+      yes
       add r/Client n/Alex Tan e/alex@example.com p/81234567 t/friend
       add r/Prospect n/Alexander Lim e/alexander@example.com p/82345678 t/friends
       add r/Client n/Anne-Marie Lee e/anne@example.com p/83456789 t/bestfriend
@@ -1770,6 +1810,7 @@ add r/Prospect n/Jane Tan e/jane@example.com p/98765432
 
       ```text
       clear
+      yes
       add r/Client n/Alex Tan e/alex@example.com p/81234567 t/priority
       contact 1 ch/WhatsApp
       info 1 fn/Retirement planning
@@ -1793,6 +1834,7 @@ add r/Prospect n/Jane Tan e/jane@example.com p/98765432
 
       ```text
       clear
+      yes
       add r/Client n/Scroll One e/scroll.one@example.com p/81111111
       add r/Client n/Scroll Two e/scroll.two@example.com p/82222222
       add r/Client n/Scroll Three e/scroll.three@example.com p/83333333
@@ -1840,6 +1882,7 @@ backup and clears an active search.
 
    ```text
    clear
+   yes
    add r/Client n/John Doe e/john@example.com p/91234567 t/referral
    info 1 fn/Retirement planning pr/High ai/Life insurance
    contact 1 ch/Email tm/Weekdays after 6 pm
