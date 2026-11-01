@@ -18,7 +18,13 @@ public class ResultDisplay extends UiPart<Region> {
     private TextArea resultDisplay;
 
     public ResultDisplay() {
+        this("");
+    }
+
+    /** Creates a result display containing the supplied startup feedback. */
+    public ResultDisplay(String startupFeedback) {
         super(FXML);
+        resultDisplay.setText(startupFeedback);
     }
 
     /**

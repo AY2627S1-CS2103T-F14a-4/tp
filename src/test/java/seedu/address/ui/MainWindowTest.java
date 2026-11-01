@@ -58,7 +58,10 @@ public class MainWindowTest {
                         new JsonUserPrefsStorage(userPrefsPath));
                 Logic logic = new LogicManager(new ModelManager(), storage);
                 MainWindow mainWindow = new MainWindow(stage, logic, clientBookPath);
-                mainWindow.fillInnerParts();
+                String warning = "Warning: data file could not be read. ClientBook has started with empty data.";
+                mainWindow.fillInnerParts(warning);
+                TextArea startupResult = (TextArea) stage.getScene().lookup("#resultDisplay");
+                assertEquals(warning, startupResult.getText());
 
                 Scene scene = stage.getScene();
                 TextField commandTextField = (TextField) scene.lookup("#commandTextField");

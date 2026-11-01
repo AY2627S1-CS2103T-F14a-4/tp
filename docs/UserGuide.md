@@ -604,7 +604,7 @@ ClientBook data is saved automatically as a JSON file `[JAR file location]/data/
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, ClientBook starts with an empty client book at the next run. The invalid file remains on disk until ClientBook next successfully saves record data, for example, after a command that changes records. Still, we recommend backing up the file before editing it.<br>
+If the data file cannot be read, ClientBook first tries to copy it to a sibling file named `clientbook.json.corrupted-yyyyMMdd-HHmmss` (the timestamp is the local date and time, for example, `clientbook.json.corrupted-20261101-162030`). It then starts with an empty client book and shows a warning in the result display, including the data path and whether the backup succeeded. The original file is not deleted or changed during startup, but your next successful change to records will overwrite it. If the backup fails, ClientBook still starts and warns that no backup was saved. Before entering commands, close ClientBook and preserve the original file if recovery is needed. We recommend backing up the file before editing it.<br>
 Furthermore, certain edits can cause the ClientBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
 
@@ -649,4 +649,3 @@ Action     | Format, Examples
 **List**   | `list`
 **Help**   | `help`
 **Exit**   | `exit`
-

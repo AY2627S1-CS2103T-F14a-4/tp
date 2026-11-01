@@ -1,7 +1,10 @@
 package seedu.address;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -41,6 +44,7 @@ public class MainApp extends Application {
     protected Logic logic;
     protected Storage storage;
     protected Model model;
+    private String startupWarning = "";
 
     @Override
     public void init() throws Exception {
@@ -59,14 +63,15 @@ public class MainApp extends Application {
 
         logic = new LogicManager(model, storage);
 
-        ui = new UiManager(logic, storage.getClientBookFilePath());
+        ui = new UiManager(logic, storage.getClientBookFilePath(), startupWarning);
     }
 
     /**
      * Returns a {@code ModelManager} with the data from {@code storage}'s client book and {@code userPrefs}. <br>
      * An empty client book will be used if {@code storage}'s client book is not found or cannot be read.
      */
-    private Model initModelManager(Storage storage, ReadOnlyUserPrefs userPrefs) {
+    Model initModelManager(Storage storage, ReadOnlyUserPrefs userPrefs) {
+        startupWarning = "";
         logger.info("Using data file : " + storage.getClientBookFilePath());
 
         Optional<ReadOnlyClientBook> clientBookOptional;
@@ -81,10 +86,27 @@ public class MainApp extends Application {
         } catch (DataLoadingException e) {
             logger.warning("Data file at " + storage.getClientBookFilePath() + " could not be loaded."
                     + " Will be starting with an empty ClientBook.");
+            Path dataPath = storage.getClientBookFilePath();
+            Path backupPath = dataPath.resolveSibling(dataPath.getFileName() + ".corrupted-"
+                    + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")));
+            startupWarning = "Warning: data file " + dataPath + " could not be read. ";
+            try {
+                Files.copy(dataPath, backupPath);
+                startupWarning += "A backup was saved to " + backupPath + ". ";
+            } catch (IOException | SecurityException copyError) {
+                logger.warning("Failed to back up unreadable data: " + StringUtil.getDetails(copyError));
+                startupWarning += "A backup could not be saved to " + backupPath + ". ";
+            }
+            startupWarning += "ClientBook has started with empty data; "
+                    + "your next change will overwrite the original file.";
             initialData = new ClientBook();
         }
 
         return new ModelManager(initialData, userPrefs);
+    }
+
+    String getStartupWarning() {
+        return startupWarning;
     }
 
     /**
