@@ -19,7 +19,7 @@ box Storage STORAGE_COLOR_T1
 participant ":Storage" as Storage STORAGE_COLOR
 end box
 
-[-> Logic : execute("next 1 a/Call d/2026-10-20")
+[-> Logic : execute("next 1 a/Call d/2099-10-20")
 activate Logic
 Logic -> Parser : parseCommand(commandText)
 activate Parser
@@ -45,9 +45,15 @@ Model --> Logic : predicate, comparator
 Logic -> Temp : updateFilteredPersonList(predicate, comparator)
 Logic -> Command : execute(temp, storage)
 activate Command
+Command -> Temp : getClientBook().getPersonList()
+Temp --> Command : allPersons
 Command -> Temp : getFilteredPersonList()
 Temp --> Command : displayedPersons
-note right of Command : Reject an out-of-range index before changing data.
+note right of Command
+Resolve INDEX against the full person list,
+then check that the person is visible in the
+filtered list. Reject a past due date.
+end note
 Command -> Person : withNextAction(nextAction)
 Person --> Command : updatedPerson
 Command -> Temp : setPerson(original, updatedPerson)
