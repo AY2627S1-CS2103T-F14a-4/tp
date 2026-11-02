@@ -12,7 +12,9 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import seedu.address.logic.LogicManager;
 import seedu.address.logic.commands.exceptions.CommandException;
+import seedu.address.model.ClientBook;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyClientBook;
@@ -94,6 +96,31 @@ public class RestoreCommandTest {
         new RestoreCommand().execute(model, storage);
 
         assertEquals(getTypicalClientBook(), model.getClientBook());
+    }
+
+    @Test
+    public void execute_throughLogic_requiresConfirmationBeforeRestoring() throws Exception {
+        Path clientBookFile = temporaryFolder.resolve("clientbook.json");
+        Path backupFile = clientBookFile.resolveSibling(BackupCommand.BACKUP_FILE_NAME);
+        new JsonClientBookStorage(backupFile).saveClientBook(new ClientBook());
+        Model model = new ModelManager(getTypicalClientBook(), new UserPrefs());
+        JsonClientBookStorage clientBookStorage = new JsonClientBookStorage(clientBookFile);
+        LogicManager logic = new LogicManager(model, new StorageManager(clientBookStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json"))));
+
+        assertEquals(RestoreCommand.MESSAGE_CONFIRMATION, logic.execute("restore").getFeedbackToUser());
+        assertEquals(getTypicalClientBook(), model.getClientBook());
+        assertTrue(clientBookStorage.readClientBook().isEmpty());
+
+        assertEquals(RestoreCommand.MESSAGE_CANCELLED, logic.execute("no").getFeedbackToUser());
+        assertEquals(getTypicalClientBook(), model.getClientBook());
+        assertTrue(clientBookStorage.readClientBook().isEmpty());
+
+        logic.execute("restore");
+        assertEquals(String.format(RestoreCommand.MESSAGE_SUCCESS, backupFile),
+                logic.execute("yes").getFeedbackToUser());
+        assertEquals(new ClientBook(), model.getClientBook());
+        assertEquals(new ClientBook(), clientBookStorage.readClientBook().orElseThrow());
     }
 
     private Storage createStorage() {

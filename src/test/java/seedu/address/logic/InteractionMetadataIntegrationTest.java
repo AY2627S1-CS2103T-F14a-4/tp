@@ -99,6 +99,7 @@ public class InteractionMetadataIntegrationTest {
         logic.execute("notedelete 1 1");
         assertTrue(notes().isEmpty());
         logic.execute("restore");
+        logic.execute("yes");
         assertEquals(expected, notes());
         assertEquals(model.getClientBook(), storage.readClientBook().orElseThrow());
     }

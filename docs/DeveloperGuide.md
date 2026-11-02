@@ -295,9 +295,9 @@ stores the pending `TagDeleteCommand`, and returns a `CommandResult` containing 
 this?`, the contact name, the exact stored tags that will be removed, and the accepted responses. `MainWindow`
 displays the result through the existing result box below the command box.
 
-`TagDeleteCommand`, `DeleteCommand`, and `ClearCommand` implement `ConfirmableCommand`, sharing one pending command in
+`TagDeleteCommand`, `DeleteCommand`, `ClearCommand`, and `RestoreCommand` implement `ConfirmableCommand`, sharing one pending command in
 `LogicManager`. Its `handleConfirmation` method uses the same response rules and invalid-response message
-for all three commands; each command supplies its validation/prompt and cancellation message. Tag deletion's
+for all four commands; each command supplies its validation/prompt and cancellation message. Tag deletion's
 existing prompt, success messages and `Tag deletion cancelled.` feedback are unchanged.
 
 While a deletion is pending, `LogicManager` interprets the next command-box input as a confirmation response instead
@@ -805,7 +805,12 @@ error handling and the fallback move used when atomic replacement is unsupported
 
 `BackupCommand` does not change the in-memory client book. It serializes the current records through `Storage#saveClientBook(ReadOnlyClientBook, Path)` to a temporary file in the backup folder, then replaces the backup file with an atomic move when supported. It falls back to a normal replacement move on file systems that do not support atomic moves. This prevents a failed write from replacing an existing backup with a partial file.
 
-`RestoreCommand` first reads and validates the backup through `Storage#readClientBook(Path)`. Only after a valid `ReadOnlyClientBook` is available does it save those records to the main data file, replace the temporary model's client book, and reset the active filter to show all persons. It marks the result as already saved so `LogicManager` does not write the restored records again. A missing, invalid, or unreadable backup leaves the in-memory records unchanged.
+`RestoreCommand` first requests confirmation through the shared `ConfirmableCommand` flow. A `no` response leaves the
+current records unchanged. After confirmation, it reads and validates the backup through
+`Storage#readClientBook(Path)`. Only after a valid `ReadOnlyClientBook` is available does it save those records to the
+main data file, replace the temporary model's client book, and reset the active filter to show all persons. It marks the
+result as already saved so `LogicManager` does not write the restored records again. A missing, invalid, or unreadable
+backup leaves the in-memory records unchanged.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -1133,23 +1138,31 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 **MSS**
 
 1.  User requests to restore the records.
-2.  ClientBook reads and validates the backup file.
-3.  ClientBook saves the restored records as the current records.
-4.  ClientBook displays all restored persons and a confirmation message.
+2.  ClientBook asks the user to confirm the restoration.
+3.  User confirms with `Y` or `Yes`.
+4.  ClientBook reads and validates the backup file.
+5.  ClientBook saves the restored records as the current records.
+6.  ClientBook displays all restored persons and a success message.
 
     Use case ends.
 
 **Extensions**
 
-* 2a. The backup file is missing, unreadable, or invalid.
+* 3a. The user cancels with `N` or `No`.
 
-    * 2a1. ClientBook displays an error and leaves the current records unchanged.
+    * 3a1. ClientBook leaves the current records unchanged.
 
       Use case ends.
 
-* 3a. ClientBook cannot save the restored records.
+* 4a. The backup file is missing, unreadable, or invalid.
 
-    * 3a1. ClientBook displays an error and leaves the live in-memory records unchanged.
+    * 4a1. ClientBook displays an error and leaves the current records unchanged.
+
+      Use case ends.
+
+* 5a. ClientBook cannot save the restored records.
+
+    * 5a1. ClientBook displays an error and leaves the live in-memory records unchanged.
 
       Use case ends.
 
@@ -2018,8 +2031,8 @@ add r/Prospect n/Jane Tan e/jane@example.com p/98765432
 
 ### Backing up and restoring records
 
-Use a separate test folder. This test verifies that `restore` replaces the current records with the most recent
-backup and clears an active search.
+Use a separate test folder. This test verifies that canceling `restore` leaves the current records unchanged, while a
+confirmed restore replaces them with the most recent backup and clears an active search.
 
 1. Create a record to back up. Enter each line as a separate command:
 
@@ -2036,28 +2049,42 @@ backup and clears an active search.
    Expected: The last command reports `Backup saved to` followed by the backup path. The file
    `data/clientbook-backup.json` is created in the application's home folder.
 
-2. Change the live records after the backup, then restore:
+2. Change the live records after the backup, then start and cancel restoration:
 
    ```text
    add r/Prospect n/Jane Tan e/jane@example.com p/98765432
    find John
    restore
+   no
    ```
 
-   Expected: `restore` reports `Records restored from` followed by the backup path. The active search is cleared,
-   so the full restored list is shown. John Doe is the only record; their `referral` tag, financial information,
+   Expected: `restore` asks for confirmation. After `no`, it reports `Restore cancelled.` The active search remains
+   in effect and John Doe remains visible. Run `list` to verify that both John Doe and Jane Tan are still present.
+
+3. Search for John Doe again, then confirm restoration:
+
+   ```text
+   find John
+   restore
+   yes
+   ```
+
+   Expected: `restore` asks for confirmation. After `yes`, it reports `Records restored from` followed by the backup
+   path. The active search is cleared, so the full restored list is shown. John Doe is the only record; their
+   `referral` tag, financial information,
    contact preferences and interaction note match the backed-up values. Jane Tan is absent.
 
-3. Close and reopen the application, then run `list`.
+4. Close and reopen the application, then run `list`.
 
    Expected: The restored John Doe record and its backed-up details remain. This confirms that restore also updates
    the main data file.
 
-4. In a new, empty test folder, start the application and run `restore` before running `backup`.
+5. In a new, empty test folder, start the application and run `restore`, then `yes`, before running `backup`.
 
-   Expected: An error beginning `Backup file does not exist:` is shown. The current records remain unchanged.
+   Expected: `restore` first asks for confirmation. After `yes`, an error beginning `Backup file does not exist:` is
+   shown. The current records remain unchanged.
 
-5. Try `backup extra` and `restore extra`.
+6. Try `backup extra` and `restore extra`.
 
    Expected: They report respectively `The backup command takes no arguments.` and
    `The restore command takes no arguments.` No backup or restore occurs.
