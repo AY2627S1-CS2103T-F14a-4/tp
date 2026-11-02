@@ -13,10 +13,10 @@ public class DueCommandParser implements Parser<DueCommand> {
     @Override
     public DueCommand parse(String args) throws ParseException {
         requireNonNull(args);
-        String trimmedArgs = args.trim();
-        if (trimmedArgs.isEmpty()) {
+        if (args.isBlank()) {
             return new DueCommand();
         }
+        String trimmedArgs = args.strip();
         if (!trimmedArgs.matches("\\d+")) {
             throw new ParseException(MESSAGE_INVALID_DAYS);
         }

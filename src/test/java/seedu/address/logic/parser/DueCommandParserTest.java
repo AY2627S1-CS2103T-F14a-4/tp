@@ -23,6 +23,18 @@ public class DueCommandParserTest {
     }
 
     @Test
+    public void parse_unicodeWhitespaceOnly_returnsDefaultCommand() {
+        for (String input : List.of("\u2003", " \u2003\t", "")) {
+            assertParseSuccess(parser, input, new DueCommand());
+        }
+    }
+
+    @Test
+    public void parse_daysWithSurroundingUnicodeWhitespace_returnsDueCommand() {
+        assertParseSuccess(parser, " \u20037\u2003", new DueCommand(7));
+    }
+
+    @Test
     public void parse_invalidDays_throwsParseException() {
         for (String input : List.of("-1", "366", "abc", "7 8", "7\t8", "1.5", "+1", "2147483648")) {
             assertParseFailure(parser, input, DueCommandParser.MESSAGE_INVALID_DAYS);
