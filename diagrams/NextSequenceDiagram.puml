@@ -11,6 +11,7 @@ end box
 
 box Model MODEL_COLOR_T1
 participant "model:Model" as Model MODEL_COLOR
+participant "temp:Model" as Temp MODEL_COLOR
 participant "original:Person" as Person MODEL_COLOR
 end box
 
@@ -18,7 +19,7 @@ box Storage STORAGE_COLOR_T1
 participant ":Storage" as Storage STORAGE_COLOR
 end box
 
-[-> Logic : execute("next 1 a/Call d/2026-10-20")
+[-> Logic : execute("next 1 a/Call d/2099-10-20")
 activate Logic
 Logic -> Parser : parseCommand(commandText)
 activate Parser
@@ -35,21 +36,41 @@ NextParser --> Parser : command
 deactivate NextParser
 Parser --> Logic : command
 deactivate Parser
-Logic -> Command : execute(model)
+Logic -> Model : getClientBook()\ngetUserPrefs()
+Model --> Logic : clientBook, userPrefs
+create Temp
+Logic -> Temp : new ModelManager(clientBook, userPrefs)
+Logic -> Model : getFilteredPersonPredicate()\ngetFilteredPersonComparator()
+Model --> Logic : predicate, comparator
+Logic -> Temp : updateFilteredPersonList(predicate, comparator)
+Logic -> Command : execute(temp, storage)
 activate Command
-Command -> Model : getFilteredPersonList()
-Model --> Command : displayedPersons
-note right of Command : Reject an out-of-range index before changing data.
+Command -> Temp : getClientBook().getPersonList()
+Temp --> Command : allPersons
+Command -> Temp : getFilteredPersonList()
+Temp --> Command : displayedPersons
+note right of Command
+Resolve INDEX against the full person list,
+then check that the person is visible in the
+filtered list. Reject a past due date.
+end note
 Command -> Person : withNextAction(nextAction)
 Person --> Command : updatedPerson
-Command -> Model : setPerson(original, updatedPerson)
-note right of Model : Observable list updates the PersonCard.
+Command -> Temp : setPerson(original, updatedPerson)
 Command --> Logic : CommandResult
 deactivate Command
-Logic -> Model : getClientBook()
-Model --> Logic : clientBook
-Logic -> Storage : saveClientBook(clientBook)
+Logic -> Temp : getClientBook()
+Temp --> Logic : updatedClientBook
+opt data changed and !commandResult.isModelSaved()
+Logic -> Storage : saveClientBook(updatedClientBook)
 Storage --> Logic
+end
+note over Logic, Storage : A save failure throws; the live model is not committed.
+Logic -> Model : setClientBook(updatedClientBook)
+Logic -> Temp : getFilteredPersonPredicate()\ngetFilteredPersonComparator()
+Temp --> Logic : updatedPredicate, updatedComparator
+Logic -> Model : updateFilteredPersonList(updatedPredicate, updatedComparator)
+note right of Model : Observable list updates the PersonCard.
 [<-- Logic : CommandResult
 deactivate Logic
 @enduml
