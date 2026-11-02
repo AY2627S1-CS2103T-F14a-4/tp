@@ -33,6 +33,31 @@ public class NextActionDuePredicateTest {
     }
 
     @Test
+    public void test_sevenDayLookahead_includesActionCutoffOnly() {
+        NextActionDuePredicate sevenDays = new NextActionDuePredicate(TODAY, 7);
+        assertTrue(sevenDays.test(personWithAction(TODAY.minusDays(1), false)));
+        assertTrue(sevenDays.test(personWithAction(TODAY.plusDays(7), false)));
+        assertFalse(sevenDays.test(personWithAction(TODAY.plusDays(8), false)));
+        assertFalse(sevenDays.test(personWithAction(TODAY.plusDays(7), true)));
+    }
+
+    @Test
+    public void test_reminderLookahead_usesAtLeastThirtyDays() {
+        Person atThirty = new PersonBuilder().withRecurringReminders(
+                new RecurringReminder("Renewal", MonthDay.from(TODAY.plusDays(30)))).build();
+        Person atThirtyOne = new PersonBuilder().withRecurringReminders(
+                new RecurringReminder("Renewal", MonthDay.from(TODAY.plusDays(31)))).build();
+        Person atThirtyTwo = new PersonBuilder().withRecurringReminders(
+                new RecurringReminder("Renewal", MonthDay.from(TODAY.plusDays(32)))).build();
+        for (int actionDays : new int[] {0, 7, 30, 31, 365}) {
+            NextActionDuePredicate lookahead = new NextActionDuePredicate(TODAY, actionDays);
+            assertTrue(lookahead.test(atThirty));
+            assertEquals(actionDays >= 31, lookahead.test(atThirtyOne));
+            assertEquals(actionDays >= 32, lookahead.test(atThirtyTwo));
+        }
+    }
+
+    @Test
     public void test_completedAction_returnsFalse() {
         assertFalse(predicate.test(personWithAction(TODAY.minusDays(1), true)));
         assertFalse(predicate.test(personWithAction(TODAY, true)));
@@ -74,7 +99,12 @@ public class NextActionDuePredicateTest {
     public void equals() {
         assertEquals(predicate, predicate);
         assertEquals(predicate, new NextActionDuePredicate(TODAY));
+        assertEquals(predicate, new NextActionDuePredicate(TODAY, 0));
         assertEquals(predicate.hashCode(), new NextActionDuePredicate(TODAY).hashCode());
+        assertEquals(new NextActionDuePredicate(TODAY, 7), new NextActionDuePredicate(TODAY, 7));
+        assertEquals(new NextActionDuePredicate(TODAY, 7).hashCode(),
+                new NextActionDuePredicate(TODAY, 7).hashCode());
+        assertNotEquals(predicate, new NextActionDuePredicate(TODAY, 7));
         assertNotEquals(predicate, new NextActionDuePredicate(TODAY.plusDays(1)));
         assertNotEquals(predicate, null);
         assertNotEquals(predicate, TODAY);
@@ -82,8 +112,10 @@ public class NextActionDuePredicateTest {
 
     @Test
     public void toStringMethod() {
-        String expected = NextActionDuePredicate.class.getCanonicalName() + "{today=" + TODAY + "}";
+        String expected = NextActionDuePredicate.class.getCanonicalName() + "{today=" + TODAY + ", actionDays=0}";
         assertEquals(expected, predicate.toString());
+        assertEquals(NextActionDuePredicate.class.getCanonicalName() + "{today=" + TODAY + ", actionDays=7}",
+                new NextActionDuePredicate(TODAY, 7).toString());
     }
 
     private Person personWithAction(LocalDate dueDate, boolean completed) {

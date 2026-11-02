@@ -452,7 +452,7 @@ Format: `reschedule INDEX d/yyyy-MM-dd [a/ACTION]`
 * Supply `d/` once, with a real date in `yyyy-MM-dd` format that is today or later.
 * Leave out `a/` to keep the description, or supply it once with a new description of 1–200 characters.
 * Rescheduling sets the follow-up to pending, even if it was completed. Other details stay unchanged.
-* A future follow-up leaves `due` unless the person also has an upcoming yearly reminder.
+* A follow-up beyond the active `due` window leaves that view unless the person also has an upcoming yearly reminder.
 
 Examples:
 
@@ -517,17 +517,21 @@ Examples:
 
 Shows people with follow-ups to complete or yearly reminders coming up soon.
 
-Format: `due`
+Format: `due [DAYS]`
 
-* Includes incomplete next actions due today or earlier, and yearly reminders from today through 30 days ahead.
-* Completed actions and future next actions do not appear unless the person also has an upcoming reminder.
-* Each person appears once, ordered by their earliest due date, with overdue follow-ups first.
+* `DAYS` is an optional whole number from 0 to 365. Omitting it or using `0` keeps the default behaviour:
+  incomplete next actions due today or earlier, and yearly reminders from today through 30 days ahead.
+* `due DAYS` includes incomplete next actions due on or before today plus `DAYS`, including overdue actions.
+  Yearly reminders qualify from today through `max(30, DAYS)` days ahead. Both cutoffs are inclusive.
+* Completed actions and actions beyond the selected window do not qualify unless the person also has an upcoming reminder.
+* Each person appears once, ordered by their earliest qualifying date, with overdue follow-ups first, then by name.
 * Replaces any current search. Use the index shown beside the person for other commands; `list` shows everyone again.
-* Do not add arguments. Run `due` again after midnight to update which follow-ups and reminders are shown.
+* Run `due` with the same `DAYS` again after midnight to update which follow-ups and reminders are shown.
 
 Examples:
 
 * `due` shows everyone with a due follow-up or an upcoming yearly reminder.
+* `due 7` also includes incomplete follow-ups due in the next 7 days; yearly reminders still look ahead 30 days.
 * `due`, then `done 2` completes the next action of the person shown at index 2, if they have one.
 
 ### Clearing all entries: `clear`
@@ -647,7 +651,7 @@ Action     | Format, Examples
 **Done**   | `done INDEX`<br> e.g., `done 1`
 **Yearly reminder** | `remind INDEX a/LABEL d/MM-dd`<br>e.g. `remind 1 a/Birthday d/11-10`
 **Remove yearly reminder** | `unremind INDEX a/LABEL`<br>e.g. `unremind 1 a/birthday`
-**Due**    | `due`
+**Due**    | `due [DAYS]`
 **List**   | `list`
 **Help**   | `help`
 **Exit**   | `exit`

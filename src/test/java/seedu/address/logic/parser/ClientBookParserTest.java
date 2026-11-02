@@ -103,12 +103,15 @@ public class ClientBookParserTest {
     public void parseCommand_due() throws Exception {
         assertTrue(parser.parseCommand("due") instanceof DueCommand);
         assertTrue(parser.parseCommand("  due \t ") instanceof DueCommand);
+        assertEquals(new DueCommand(0), parser.parseCommand("due 0"));
+        assertEquals(new DueCommand(7), parser.parseCommand("due 7"));
+        assertEquals(new DueCommand(365), parser.parseCommand("due \t365"));
     }
 
     @Test
-    public void parseCommand_dueWithArguments_throwsParseException() {
-        for (String input : List.of("due 1", "due extra", "due \t1")) {
-            assertThrows(ParseException.class, "The due command takes no arguments.", () -> parser.parseCommand(input));
+    public void parseCommand_dueWithInvalidArguments_throwsParseException() {
+        for (String input : List.of("due -1", "due 366", "due extra", "due 7 8", "due 1.5")) {
+            assertThrows(ParseException.class, DueCommandParser.MESSAGE_INVALID_DAYS, () -> parser.parseCommand(input));
         }
     }
 

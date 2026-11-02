@@ -61,6 +61,46 @@ public class DueCommandTest {
     }
 
     @Test
+    public void execute_sevenDays_includesFutureActionsAfterOverdueActions() throws Exception {
+        Person atCutoff = DUE_TOMORROW.withNextAction(new NextAction("Meet", TODAY.plusDays(7), false));
+        Person outside = NO_ACTION.withNextAction(new NextAction("Call", TODAY.plusDays(8), false));
+        List<Person> original = List.of(atCutoff, outside, DUE_TODAY, COMPLETED, DUE_YESTERDAY);
+        Model upcoming = new ModelManager(new ClientBookBuilder().withPerson(atCutoff).withPerson(outside)
+                .withPerson(DUE_TODAY).withPerson(COMPLETED).withPerson(DUE_YESTERDAY).build(), new UserPrefs());
+
+        CommandResult result = new DueCommand(7, CLOCK).execute(upcoming, null);
+
+        assertEquals(List.of(DUE_YESTERDAY, DUE_TODAY, atCutoff), upcoming.getFilteredPersonList());
+        assertEquals("3 person(s) with follow-ups due within 7 day(s) or yearly reminders coming up.",
+                result.getFeedbackToUser());
+        assertEquals(original, upcoming.getClientBook().getPersonList());
+    }
+
+    @Test
+    public void execute_sevenDaysWithNoMatches_returnsLookaheadMessage() throws Exception {
+        Model outside = new ModelManager(new ClientBookBuilder().withPerson(COMPLETED)
+                .withPerson(NO_ACTION.withNextAction(new NextAction("Call", TODAY.plusDays(8), false))).build(),
+                new UserPrefs());
+        DueCommand sevenDays = new DueCommand(7, CLOCK);
+        String expected = "No follow-ups are due within 7 day(s) and no yearly reminders are upcoming.";
+
+        assertEquals(expected, sevenDays.execute(outside, null).getFeedbackToUser());
+        assertTrue(outside.getFilteredPersonList().isEmpty());
+        assertEquals(expected, sevenDays.execute(new ModelManager(), null).getFeedbackToUser());
+    }
+
+    @Test
+    public void execute_zeroDays_matchesDefaultBehaviourAndMessages() throws Exception {
+        CommandResult expected = command.execute(model, null);
+        List<Person> expectedPeople = List.copyOf(model.getFilteredPersonList());
+
+        assertEquals(expected, new DueCommand(0, CLOCK).execute(model, null));
+        assertEquals(expectedPeople, model.getFilteredPersonList());
+        assertEquals(command.execute(new ModelManager(), null),
+                new DueCommand(0, CLOCK).execute(new ModelManager(), null));
+    }
+
+    @Test
     public void execute_noDueActions_returnsEmptyResultMessage() throws Exception {
         Model noDueModel = new ModelManager(new ClientBookBuilder().withPerson(DUE_TOMORROW)
                 .withPerson(COMPLETED).withPerson(NO_ACTION).build(), new UserPrefs());
@@ -191,7 +231,11 @@ public class DueCommandTest {
     public void equals() {
         assertEquals(command, command);
         assertEquals(command, new DueCommand(Clock.fixed(CLOCK.instant(), CLOCK.getZone())));
+        assertEquals(command, new DueCommand(0, CLOCK));
         assertEquals(command.hashCode(), new DueCommand(Clock.fixed(CLOCK.instant(), CLOCK.getZone())).hashCode());
+        assertEquals(new DueCommand(7, CLOCK), new DueCommand(7, CLOCK));
+        assertEquals(new DueCommand(7, CLOCK).hashCode(), new DueCommand(7, CLOCK).hashCode());
+        assertNotEquals(command, new DueCommand(7, CLOCK));
         assertNotEquals(command, new DueCommand(Clock.fixed(CLOCK.instant().plusSeconds(1), CLOCK.getZone())));
         assertNotEquals(command, new DueCommand(CLOCK.withZone(ZoneId.of("UTC"))));
         assertNotEquals(command, null);
@@ -200,7 +244,9 @@ public class DueCommandTest {
 
     @Test
     public void toStringMethod() {
-        String expected = DueCommand.class.getCanonicalName() + "{clock=" + CLOCK + "}";
+        String expected = DueCommand.class.getCanonicalName() + "{clock=" + CLOCK + ", days=0}";
         assertEquals(expected, command.toString());
+        assertEquals(DueCommand.class.getCanonicalName() + "{clock=" + CLOCK + ", days=7}",
+                new DueCommand(7, CLOCK).toString());
     }
 }
