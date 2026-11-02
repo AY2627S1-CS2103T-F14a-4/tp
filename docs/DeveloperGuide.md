@@ -2061,3 +2061,11 @@ backup and clears an active search.
 
    Expected: They report respectively `The backup command takes no arguments.` and
    `The restore command takes no arguments.` No backup or restore occurs.
+
+--------------------------------------------------------------------------------------------------------------------
+
+## **Appendix: Planned Enhancements**
+
+Team size: 5
+
+1. **Let `due` show upcoming follow-ups, not just today's.** Currently `due` only lists follow-ups due today or earlier, so users get no lead time to prepare for follow-ups due later in the week. We plan to accept an optional number of days, `due [DAYS]`, e.g. `due 7` lists every incomplete follow-up due within the next 7 days, sorted by earliest due date, so overdue ones still appear first. `due` with no argument keeps its current behaviour. `DAYS` must be a non-negative integer; otherwise the error message will be: `DAYS must be a non-negative integer, e.g. due 7`.
