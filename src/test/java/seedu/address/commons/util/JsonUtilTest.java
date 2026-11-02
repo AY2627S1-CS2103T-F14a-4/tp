@@ -19,7 +19,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.exceptions.DataLoadingException;
-import seedu.address.storage.JsonSerializableClientBook;
 import seedu.address.testutil.SerializableTestClass;
 import seedu.address.testutil.TestUtil;
 
@@ -60,8 +59,7 @@ public class JsonUtilTest {
         };
         logger.addHandler(handler);
         try {
-            assertThrows(DataLoadingException.class,
-                    () -> JsonUtil.readJsonFile(file, JsonSerializableClientBook.class));
+            assertThrows(DataLoadingException.class, () -> JsonUtil.readJsonFile(file, Object.class));
             assertTrue(messages.stream().anyMatch(message -> message.startsWith("Error reading from jsonFile file "
                     + file + ": JsonParseException at line 1, column ")));
             assertTrue(messages.stream().noneMatch(message -> message.contains("Alice")));
