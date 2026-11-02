@@ -213,9 +213,27 @@ public class ContactCommandParserTest {
     @Test
     public void parse_missingOrInvalidIndex_failure() {
         for (String index : List.of("", "0", "-1", "abc", "1.5", "1 2", "2147483648")) {
-            assertParseFailure(parser, index + " ch/Email", ParserUtil.MESSAGE_INVALID_INDEX);
+            String expectedMessage = index.equals("1 2")
+                    ? "contact accepts exactly one index. Unexpected argument: 2"
+                    : ParserUtil.MESSAGE_INVALID_INDEX;
+            assertParseFailure(parser, index + " ch/Email", expectedMessage);
         }
         assertParseFailure(parser, "", ParserUtil.MESSAGE_INVALID_INDEX);
+    }
+
+    @Test
+    public void parse_additionalIndexArguments_reportsUnexpectedArguments() {
+        for (String extra : List.of("2", "2 3", "extra", "extra  more")) {
+            String expectedMessage = "contact accepts exactly one index. Unexpected argument: " + extra;
+            for (String fields : List.of("", " ch/X", " tm/-", " ch/- tm/")) {
+                String input = "1 " + extra + fields;
+                assertParseFailure(parser, input, expectedMessage);
+                assertThrows(ParseException.class, expectedMessage, () ->
+                        new ClientBookParser().parseCommand("contact " + input));
+            }
+        }
+        assertParseFailure(parser, "1\t2 ch/X", "contact accepts exactly one index. Unexpected argument: 2");
+        assertParseFailure(parser, "1 2 ch/X ch/Y", "contact accepts exactly one index. Unexpected argument: 2");
     }
 
     @Test
@@ -245,10 +263,13 @@ public class ContactCommandParserTest {
     @Test
     public void parse_invalidIndexWithUnsupportedSlashParameters_indexError() {
         for (String index : List.of("", "0", "abc", "-1", "1.5", "1 2", "2147483648")) {
+            String expectedMessage = index.equals("1 2")
+                    ? "contact accepts exactly one index. Unexpected argument: 2"
+                    : ParserUtil.MESSAGE_INVALID_INDEX;
             for (String fields : List.of("/pr hi", "/pr hi ch/Phone", "/pr hi tm/Evenings")) {
                 String input = index + " " + fields;
-                assertParseFailure(parser, input, ParserUtil.MESSAGE_INVALID_INDEX);
-                assertThrows(ParseException.class, ParserUtil.MESSAGE_INVALID_INDEX, () ->
+                assertParseFailure(parser, input, expectedMessage);
+                assertThrows(ParseException.class, expectedMessage, () ->
                         new ClientBookParser().parseCommand("contact " + input));
             }
         }
@@ -289,8 +310,11 @@ public class ContactCommandParserTest {
     @Test
     public void parse_invalidIndexWithParameterMistakes_indexError() {
         for (String index : List.of("0", "abc", "2147483648", "-1", "1.5", "1 2")) {
+            String expectedMessage = index.equals("1 2")
+                    ? "contact accepts exactly one index. Unexpected argument: 2"
+                    : ParserUtil.MESSAGE_INVALID_INDEX;
             for (String fields : List.of("/ch sms", "ch/WhatsApp tmm/Evenings", "tmm/Evenings")) {
-                assertParseFailure(parser, index + " " + fields, ParserUtil.MESSAGE_INVALID_INDEX);
+                assertParseFailure(parser, index + " " + fields, expectedMessage);
             }
         }
         assertParseFailure(parser, "/ch sms", ParserUtil.MESSAGE_INVALID_INDEX);
@@ -320,8 +344,11 @@ public class ContactCommandParserTest {
     @Test
     public void parse_missingFieldsOrMalformedPrefixes_failure() {
         assertParseFailure(parser, " 1", ContactCommand.MESSAGE_NO_FIELDS);
-        for (String input : List.of(" 1 xx/Email", " 1 chEmail", " 1 tm Evenings ch/Email")) {
-            assertParseFailure(parser, input, ParserUtil.MESSAGE_INVALID_INDEX);
+        for (String extra : List.of("xx/Email", "chEmail", "tm Evenings")) {
+            for (String fields : List.of("", " ch/Email")) {
+                assertParseFailure(parser, " 1 " + extra + fields,
+                        "contact accepts exactly one index. Unexpected argument: " + extra);
+            }
         }
         assertThrows(NullPointerException.class, () -> parser.parse(null));
     }
