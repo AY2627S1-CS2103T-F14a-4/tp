@@ -10,13 +10,21 @@ import static seedu.address.testutil.TypicalPersons.IDA;
 import static seedu.address.testutil.TypicalPersons.getTypicalClientBook;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.exceptions.DataLoadingException;
 import seedu.address.logic.parser.ClientBookParser;
 import seedu.address.model.ClientBook;
@@ -33,6 +41,46 @@ public class JsonClientBookStorageTest {
 
     @TempDir
     public Path testFolder;
+
+    /** Ensures invalid stored field values are omitted from INFO logs. */
+    @Test
+    public void readClientBook_invalidField_infoLogsDoNotContainFieldValue() throws IOException {
+        Path file = testFolder.resolve("invalid-field.json");
+        ClientBook original = new ClientBook();
+        original.addPerson(ALICE.withNextAction(new NextAction("Call", LocalDate.of(2000, 1, 1), false)));
+        JsonClientBookStorage storage = new JsonClientBookStorage(file);
+        storage.saveClientBook(original);
+        String invalidDate = "PRIVATE_CLIENT_DATE_7391";
+        Files.writeString(file, Files.readString(file).replace("2000-01-01", invalidDate));
+        List<String> infoMessages = new ArrayList<>();
+        Logger logger = LogsCenter.getLogger(JsonClientBookStorage.class).getParent();
+        Handler handler = new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                if (Level.INFO.equals(record.getLevel())) {
+                    infoMessages.add(record.getMessage());
+                }
+            }
+
+            @Override
+            public void flush() {
+                // No buffering.
+            }
+
+            @Override
+            public void close() {
+                // No resources to close.
+            }
+        };
+        logger.addHandler(handler);
+        try {
+            assertThrows(DataLoadingException.class, () -> storage.readClientBook());
+            assertTrue(infoMessages.contains("Illegal values found in " + file));
+            assertTrue(infoMessages.stream().noneMatch(message -> message.contains(invalidDate)));
+        } finally {
+            logger.removeHandler(handler);
+        }
+    }
 
     @Test
     public void saveAndReadClearedPreferences_preservesAbsence() throws Exception {

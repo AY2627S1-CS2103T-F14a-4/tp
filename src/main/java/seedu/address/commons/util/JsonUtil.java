@@ -10,6 +10,7 @@ import java.util.logging.Logger;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonLocation;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -62,11 +63,23 @@ public class JsonUtil {
         try {
             jsonFile = deserializeObjectFromJsonFile(filePath, classOfObjectToDeserialize);
         } catch (IOException e) {
-            logger.warning("Error reading from jsonFile file " + filePath + ": " + e);
+            logger.warning("Error reading from jsonFile file " + filePath + ": " + describeReadError(e));
             throw new DataLoadingException(e);
         }
 
         return Optional.of(jsonFile);
+    }
+
+    /** Returns diagnostic details without including exception messages or source contents. */
+    private static String describeReadError(IOException exception) {
+        String description = exception.getClass().getSimpleName();
+        if (exception instanceof JsonProcessingException jsonException) {
+            JsonLocation location = jsonException.getLocation();
+            if (location != null) {
+                return description + " at line " + location.getLineNr() + ", column " + location.getColumnNr();
+            }
+        }
+        return description;
     }
 
     /**

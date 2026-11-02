@@ -68,6 +68,40 @@ public class LogicManagerTest {
         logic = new LogicManager(model, storage);
     }
 
+    /** Ensures unrecognised command input is never included in INFO logs. */
+    @Test
+    public void execute_unrecognisedCommand_infoLogsDoNotContainRawInput() {
+        List<String> infoMessages = new ArrayList<>();
+        Logger logger = LogsCenter.getLogger(LogicManager.class).getParent();
+        Handler handler = new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                if (Level.INFO.equals(record.getLevel())) {
+                    infoMessages.add(record.getMessage());
+                }
+            }
+
+            @Override
+            public void flush() {
+                // No buffering.
+            }
+
+            @Override
+            public void close() {
+                // No resources to close.
+            }
+        };
+        logger.addHandler(handler);
+        try {
+            assertThrows(ParseException.class, () -> logic.execute("S1234567A Alice"));
+            assertTrue(infoMessages.contains("----------------[USER COMMAND][unrecognised]"));
+            assertTrue(infoMessages.stream().noneMatch(message -> message.contains("S1234567A")
+                    || message.contains("Alice")));
+        } finally {
+            logger.removeHandler(handler);
+        }
+    }
+
     @Test
     public void execute_addCommand_infoLogsDoNotContainClientName() throws Exception {
         List<String> infoMessages = new ArrayList<>();
@@ -94,7 +128,7 @@ public class LogicManagerTest {
         try {
             logic.execute("  " + AddCommand.COMMAND_WORD + " r/Prospect"
                     + NAME_DESC_AMY + EMAIL_DESC_AMY + PHONE_DESC_AMY);
-            assertTrue(infoMessages.contains("----------------[USER COMMAND][add]"));
+            assertTrue(infoMessages.contains("----------------[USER COMMAND][AddCommand]"));
             assertTrue(infoMessages.stream().noneMatch(message -> message.contains(AMY.getName().fullName)));
         } finally {
             logger.removeHandler(handler);

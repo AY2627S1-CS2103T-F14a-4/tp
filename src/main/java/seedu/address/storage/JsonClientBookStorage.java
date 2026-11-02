@@ -58,7 +58,7 @@ public class JsonClientBookStorage {
         try {
             return Optional.of(jsonClientBook.get().toModelType());
         } catch (IllegalValueException ive) {
-            logger.info("Illegal values found in " + filePath + ": " + ive.getMessage());
+            logger.info("Illegal values found in " + filePath);
             throw new DataLoadingException(ive);
         }
     }
