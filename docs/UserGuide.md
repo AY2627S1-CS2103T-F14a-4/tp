@@ -614,6 +614,26 @@ If the data file cannot be read, ClientBook first tries to copy it to a sibling 
 Furthermore, certain edits can cause the ClientBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
 
+## Coming Soon
+
+The following features are planned for future versions of ClientBook:
+
+- Client portfolio tracking: Record a client's investments, insurance policies, assets, liabilities, and portfolio allocation.
+- Financial goal planning: Track goals such as retirement, education, home ownership, and emergency savings, including target amounts and deadlines.
+- Client pipeline management: Organise prospects by stages such as *New Lead*, *Contacted*, *Meeting Scheduled*, *Proposal Sent*, and *Converted*.
+- Flexible recurring reminders: Create weekly, monthly, quarterly, or custom reminders in addition to yearly reminders.
+- Calendar integration: Synchronise follow-ups, meetings, and reminders with external calendar applications.
+- Advanced search and saved filters: Combine multiple search criteria and save frequently used searches for quick access.
+- Dashboard and analytics: View summaries of upcoming follow-ups, overdue actions, prospect conversion, and client relationship activity.
+- Data import and export: Import client records from CSV files and export selected information for reporting or migration.
+- Duplicate detection and merging: Identify possible duplicate client records and safely combine their information.
+- Document attachments: Associate supporting documents, such as meeting summaries and financial plans, with a client record.
+- Secure data protection: Protect sensitive client information using encryption and optional application authentication.
+- Multi-user collaboration: Allow authorised team members to share records, assign follow-ups, and track changes.
+- Custom fields: Let users define additional fields suited to their organisation's workflow.
+- Interaction templates: Provide reusable templates for common calls, meetings, reviews, and follow-up notes.
+- Undo and redo: Reverse accidental changes and restore recently modified or deleted information.
+
 ## FAQ
 
 **Q**: How do I transfer my data to another computer?<br>
