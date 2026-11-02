@@ -637,7 +637,8 @@ completed work. Success reports `Next action for NAME has been updated successfu
 Condition | Error message
 ----------|--------------
 Missing index | `Person index is required.`
-Zero, negative, non-integer, overflowing or multiple indices | `Index must be a positive integer.`
+Zero, negative, non-integer or overflowing index | `Index must be a positive integer.`
+More than one index | `next accepts exactly one index. Unexpected argument: EXTRA`
 Missing `a/` | `Next action is required: use a/ACTION.`
 Missing or blank `d/` | `Due date is required: use d/yyyy-MM-dd.`
 Blank or overlong action | `Next action must contain 1 to 200 characters.`
@@ -665,7 +666,8 @@ stays visible only if another qualifying event remains.
 Condition | Error message
 ----------|--------------
 Missing index | `Person index is required.`
-Zero, negative, non-integer, overflowing or multiple indices | `Index must be a positive integer.`
+Zero, negative, non-integer or overflowing index | `Index must be a positive integer.`
+More than one index | `done accepts exactly one index. Unexpected argument: EXTRA`
 No next action after visibility validation | `NAME has no next action to complete.`
 
 #### Rescheduling existing follow-ups
@@ -686,7 +688,8 @@ action qualify. Changing the date can also reorder the due view without changing
 Condition | Error message
 ----------|--------------
 Missing index | `Person index is required.`
-Zero, negative, non-integer, overflowing or multiple indices | `Index must be a positive integer.`
+Zero, negative, non-integer or overflowing index | `Index must be a positive integer.`
+More than one index | `reschedule accepts exactly one index. Unexpected argument: EXTRA`
 Missing or blank `d/` | `Due date is required: use d/yyyy-MM-dd.`
 Supplied action is blank or overlong | `Next action must contain 1 to 200 characters.`
 Invalid calendar date, format or year | `Due date must be a valid date in yyyy-MM-dd format.`
@@ -724,7 +727,11 @@ the one-off action.
 
 Condition | Error message
 ----------|--------------
-Missing, zero, negative, non-integer, overflowing or multiple indices | `Index must be a positive integer.`
+Missing index (`remind`) | `remind INDEX a/LABEL d/MM-dd`
+Missing index (`unremind`) | `unremind INDEX a/LABEL`
+Zero, negative, non-integer or overflowing index | `Index must be a positive integer.`
+More than one index (`remind`) | `remind accepts exactly one index. Unexpected argument: EXTRA`
+More than one index (`unremind`) | `unremind accepts exactly one index. Unexpected argument: EXTRA`
 `remind` missing either required prefix, after index/duplicate checks | `remind INDEX a/LABEL d/MM-dd`
 `unremind` missing `a/`, after index/duplicate checks | `unremind INDEX a/LABEL`
 Blank, overlong or invalid label | `Reminder label must contain 1 to 50 characters, without control characters or slashes.`
