@@ -103,15 +103,15 @@ public class JsonUtilTest {
 
     /** Checks the class-only diagnostic when reading fails before JSON parsing. */
     @Test
-    public void readJsonFile_directory_logsOnlyIOExceptionClass() throws IOException {
+    public void readJsonFile_directory_logsOnlyExceptionClass() throws IOException {
         Path directory = Files.createDirectory(testFolder.resolve("directory"));
         List<String> messages = new ArrayList<>();
         Logger logger = LogsCenter.getLogger(JsonUtil.class).getParent();
         Handler handler = captureDefaultLogs(messages);
         logger.addHandler(handler);
         try {
-            DataLoadingException exception = assertThrows(DataLoadingException.class,
-                    () -> JsonUtil.readJsonFile(directory, Object.class));
+            DataLoadingException exception = assertThrows(DataLoadingException.class, () ->
+                    JsonUtil.readJsonFile(directory, Object.class));
             IOException cause = assertInstanceOf(IOException.class, exception.getCause());
             assertFalse(cause instanceof JsonProcessingException);
             assertTrue(messages.contains("Error reading from jsonFile file " + directory + ": "
@@ -132,8 +132,8 @@ public class JsonUtilTest {
         Handler handler = captureDefaultLogs(messages);
         logger.addHandler(handler);
         try {
-            DataLoadingException exception = assertThrows(DataLoadingException.class,
-                    () -> JsonUtil.readJsonFile(file, LocationlessJsonValue.class));
+            DataLoadingException exception = assertThrows(DataLoadingException.class, () ->
+                    JsonUtil.readJsonFile(file, LocationlessJsonValue.class));
             JsonParseException cause = assertInstanceOf(JsonParseException.class, exception.getCause());
             assertNull(cause.getLocation());
             assertTrue(cause.getMessage().contains(LocationlessJsonDeserializer.PRIVATE_TOKEN));
