@@ -311,6 +311,7 @@ public class InfoContactReleaseAuditTest {
         harness.logic.execute("info 1 fn/- pr/- ai/-");
         harness.logic.execute("contact 1 ch/- tm/-");
         harness.logic.execute("restore");
+        harness.logic.execute("yes");
         assertEquals(backedUp, harness.first());
         harness.assertReopened();
     }

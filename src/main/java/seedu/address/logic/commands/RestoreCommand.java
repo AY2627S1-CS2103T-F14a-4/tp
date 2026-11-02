@@ -12,12 +12,16 @@ import seedu.address.model.ReadOnlyClientBook;
 import seedu.address.storage.Storage;
 
 /** Replaces current records with the records held in a JSON backup file. */
-public class RestoreCommand extends Command {
+public class RestoreCommand extends Command implements ConfirmableCommand {
     public static final String COMMAND_WORD = "restore";
     public static final String MESSAGE_USAGE = "restore";
     public static final String MESSAGE_SUCCESS = "Records restored from %s.";
     public static final String MESSAGE_FILE_NOT_FOUND = "Backup file does not exist: %s";
     public static final String MESSAGE_FAILURE = "Could not restore backup: %s";
+    public static final String MESSAGE_CONFIRMATION = "Are you sure you want to restore the backup?\n"
+            + "This will replace all current records and cannot be undone.\n"
+            + "Enter Y/Yes to confirm or N/No to cancel.";
+    public static final String MESSAGE_CANCELLED = "Restore cancelled.";
     private final Path backupFilePath;
 
     /** Creates a command that restores records from the default backup file. */
@@ -27,6 +31,17 @@ public class RestoreCommand extends Command {
 
     RestoreCommand(Path backupFilePath) {
         this.backupFilePath = requireNonNull(backupFilePath);
+    }
+
+    @Override
+    public String getConfirmationMessage(Model model) {
+        requireNonNull(model);
+        return MESSAGE_CONFIRMATION;
+    }
+
+    @Override
+    public String getCancellationMessage() {
+        return MESSAGE_CANCELLED;
     }
 
     @Override

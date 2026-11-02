@@ -559,14 +559,16 @@ Example: `backup`
 ### Restoring records: `restore`
 
 Replaces all current records with the records from a backup created by ClientBook. The backup is validated before any
-current records are changed. Restoring resets any active search so all restored records are visible.
+current records are changed. Restoring resets any active search so all restored records are visible. The app asks for
+confirmation before restoring.
 
 Format: `restore`
 
 The backup is read from `clientbook-backup.json` in ClientBook's `data` folder.
 Do not add arguments to this command.
+Enter `Y` or `Yes` to confirm, or `N` or `No` to cancel. Responses are case-insensitive.
 
-Example: `restore`
+Example: `restore`, then `yes`
 
 <box type="warning" seamless>
 
@@ -637,7 +639,7 @@ Action     | Format, Examples
 **Note**   | `note INDEX d/DATE [t/TYPE] [o/OUTCOME] n/NOTE`<br> e.g., `note 1 d/2026-10-06 n/Discussed retirement planning.`
 **Note edit** | `noteedit CONTACT_INDEX NOTE_INDEX [d/DATE] [n/NEW_NOTE_CONTENT]`<br> e.g., `noteedit 1 2 d/2026-10-19 n/Discussed insurance renewal`
 **Note delete** | `notedelete CONTACT_INDEX NOTE_INDEX`<br> e.g., `notedelete 1 2`
-**Restore** | `restore`<br> e.g., `restore`
+**Restore** | `restore`, then `Y/Yes`<br> e.g., `restore`, then `yes`
 **Tag**    | `tag INDEX TAG [MORE_TAGS...]`<br> e.g., `tag 1 priority referral`
 **Tag delete** | `tagdelete INDEX [TAG...]`<br> e.g., `tagdelete 1 friend referral`
 **Next**   | `next INDEX a/ACTION d/yyyy-MM-dd`<br> e.g., `next 1 a/Call d/2099-11-02` (use today or later)

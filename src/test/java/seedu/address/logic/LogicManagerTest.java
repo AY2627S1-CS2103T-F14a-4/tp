@@ -321,6 +321,8 @@ public class LogicManagerTest {
         logic = new LogicManager(model, storage);
 
         logic.execute("restore");
+        assertEquals(0, saveAttempts.get());
+        logic.execute("yes");
 
         assertEquals(1, saveAttempts.get());
     }
