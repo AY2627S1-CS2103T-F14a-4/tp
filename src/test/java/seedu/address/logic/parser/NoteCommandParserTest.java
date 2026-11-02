@@ -18,6 +18,40 @@ public class NoteCommandParserTest {
     private final NoteCommandParser parser = new NoteCommandParser();
 
     @Test
+    public void parse_whitespaceBeforeDate_preservesValidCommandsAndRejectsExtraIndex() {
+        for (String whitespace : List.of(" ", "\t", "\n", " \u2003", "\t\u2003\u2002")) {
+            assertParseSuccess(parser, "1" + whitespace + "d/2000-01-01 n/Text",
+                    new NoteCommand(INDEX_FIRST_PERSON, new InteractionNote(LocalDate.of(2000, 1, 1), "Text")));
+            assertParseFailure(parser, "1 2" + whitespace + "d/2000-01-01 n/Text",
+                    "note accepts exactly one index. Unexpected argument: 2");
+        }
+    }
+
+    @Test
+    public void parse_extraIndex_rejectedBeforeCheckingDate() {
+        for (String whitespace : List.of(" ", "\t", "\n")) {
+            assertParseFailure(parser, "1" + whitespace + "2 d/2026-10-01 n/X",
+                    "note accepts exactly one index. Unexpected argument: 2");
+        }
+        assertParseFailure(parser, "1 2 3 d/2000-01-01 t/CALL o/PENDING n/Text",
+                "note accepts exactly one index. Unexpected argument: 2 3");
+    }
+
+    @Test
+    public void parse_invalidIndex_rejected() {
+        for (String index : List.of("0", "-1", "+1", "abc", "1.5", "2147483648")) {
+            assertParseFailure(parser, index + " d/2000-01-01 n/Text", ParserUtil.MESSAGE_INVALID_INDEX);
+        }
+    }
+
+    @Test
+    public void parse_singleIndexAndLiteralBody_success() {
+        assertParseSuccess(parser, "1\td/2000-01-01 n/2 d/literal n/text",
+                new NoteCommand(INDEX_FIRST_PERSON,
+                        new InteractionNote(LocalDate.of(2000, 1, 1), "2 d/literal n/text")));
+    }
+
+    @Test
     public void parse_optionalMetadata_acceptsEitherOrderAndCaseWithoutParsingBodyPrefixes() {
         LocalDate date = LocalDate.of(2000, 1, 1);
         assertParseSuccess(parser, "1 d/2000-01-01 t/cAlL o/unSUCCESSFUL n/No answer t/OTHER o/PENDING",

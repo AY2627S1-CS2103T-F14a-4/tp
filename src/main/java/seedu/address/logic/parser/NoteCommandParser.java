@@ -22,20 +22,17 @@ public class NoteCommandParser implements Parser<NoteCommand> {
     public static final String MESSAGE_DATE_REQUIRED = "Interaction date is required: use d/yyyy-MM-dd before n/NOTE.";
     public static final String MESSAGE_NOTE_REQUIRED = "Interaction note is required: use n/NOTE after the date.";
 
-    private static final Pattern INDEX = Pattern.compile("^\\s*(\\S+)(?:\\s+|$)");
+    private static final Pattern HEADER_PREFIX = Pattern.compile("(?<!\\S)\\p{javaWhitespace}*[dnto]/");
     private static final Pattern NOTE_PREFIX = Pattern.compile("(?<!\\S)n/");
 
     @Override
     public NoteCommand parse(String args) throws ParseException {
         requireNonNull(args);
-        Matcher indexMatcher = INDEX.matcher(args);
-        if (!indexMatcher.find() || indexMatcher.group(1).startsWith("d/")
-                || indexMatcher.group(1).startsWith("n/") || indexMatcher.group(1).startsWith("t/")
-                || indexMatcher.group(1).startsWith("o/")) {
-            throw new ParseException(MESSAGE_INDEX_REQUIRED);
-        }
-        Index index = ParserUtil.parseIndex(indexMatcher.group(1));
-        String fields = args.substring(indexMatcher.end()).strip();
+        Matcher headerMatcher = HEADER_PREFIX.matcher(args);
+        int fieldsStart = headerMatcher.find() ? headerMatcher.start() : args.length();
+        Index index = ParserUtil.parseSingleIndex(args.substring(0, fieldsStart), NoteCommand.COMMAND_WORD,
+                MESSAGE_INDEX_REQUIRED);
+        String fields = args.substring(fieldsStart).strip();
         if (!fields.startsWith("d/")) {
             throw new ParseException(MESSAGE_DATE_REQUIRED);
         }

@@ -41,6 +41,30 @@ public class NoteCommandTest {
     private final ClientBookParser parser = new ClientBookParser();
 
     @Test
+    public void execute_throughLogic_malformedNoteCommandsPreserveRecordsAndStorage() throws Exception {
+        JsonClientBookStorage storage = new JsonClientBookStorage(temporaryFolder.resolve("clientbook.json"));
+        LogicManager logic = new LogicManager(model, new StorageManager(storage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("preferences.json"))));
+        logic.execute("note 1 d/2000-01-01 t/CALL o/PENDING n/Existing note");
+        ReadOnlyClientBook saved = storage.readClientBook().orElseThrow();
+        showPersonAtIndex(model, INDEX_FIRST_PERSON);
+        List<Person> displayed = List.copyOf(model.getFilteredPersonList());
+        String savedJson = Files.readString(storage.getClientBookFilePath());
+
+        for (String command : List.of("note 1 2 d/2026-10-01 n/X", "note d/2000-01-01 n/X",
+                "note 0 d/2000-01-01 n/X", "note -1 d/2000-01-01 n/X", "note abc d/2000-01-01 n/X",
+                "note 1 n/X", "note 1 d/2000-01-01", "note 1 d/2000-01-01 n/ ",
+                "noteedit 1 1 2 n/X", "noteedit 1 0 n/X", "noteedit 1 1 d/invalid n/X",
+                "noteedit 1 1 n/ ", "notedelete 1 1 2", "notedelete 1 0", "notedelete abc 1")) {
+            assertThrows(ParseException.class, () -> logic.execute(command));
+            assertEquals(saved, model.getClientBook());
+            assertEquals(displayed, model.getFilteredPersonList());
+            assertEquals(savedJson, Files.readString(storage.getClientBookFilePath()));
+            assertEquals(saved, storage.readClientBook().orElseThrow());
+        }
+    }
+
+    @Test
     public void execute_throughLogic_validDatesPersistAndInvalidDatesPreserveRecords() throws Exception {
         JsonClientBookStorage storage = new JsonClientBookStorage(temporaryFolder.resolve("clientbook.json"));
         LogicManager logic = new LogicManager(model, new StorageManager(storage,
