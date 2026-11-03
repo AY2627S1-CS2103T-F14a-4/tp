@@ -234,7 +234,7 @@ public class MainWindow extends UiPart<Stage> {
         findResultNavigationActive = false;
         try {
             CommandResult commandResult = logic.execute(commandText);
-            logger.info("Result: " + commandResult.getFeedbackToUser());
+            logger.fine("Result: " + commandResult.getFeedbackToUser());
             resultDisplay.setFeedbackToUser(commandText, commandResult.getFeedbackToUser());
 
             if (commandResult.shouldSelectFirstResult()) {
@@ -252,7 +252,7 @@ public class MainWindow extends UiPart<Stage> {
 
             return commandResult;
         } catch (CommandException | ParseException e) {
-            logger.info("An error occurred while executing command: " + commandText);
+            logger.info("An error occurred while executing a command.");
             resultDisplay.setFeedbackToUser(commandText, e.getMessage());
             throw e;
         }

@@ -47,12 +47,19 @@ public class LogicManager implements Logic {
 
     @Override
     public CommandResult execute(String commandText) throws CommandException, ParseException {
-        logger.info("----------------[USER COMMAND][" + commandText + "]");
         if (pendingCommand != null) {
+            logger.info("----------------[USER COMMAND][confirmation response]");
             return handleConfirmation(commandText);
         }
 
-        Command command = clientBookParser.parseCommand(commandText);
+        Command command;
+        try {
+            command = clientBookParser.parseCommand(commandText);
+        } catch (ParseException e) {
+            logger.info("----------------[USER COMMAND][unrecognised]");
+            throw e;
+        }
+        logger.info("----------------[USER COMMAND][" + command.getClass().getSimpleName() + "]");
         if (command instanceof ConfirmableCommand confirmableCommand) {
             String confirmationMessage = confirmableCommand.getConfirmationMessage(model);
             pendingCommand = command;
