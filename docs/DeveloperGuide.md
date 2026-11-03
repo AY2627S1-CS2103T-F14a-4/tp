@@ -679,7 +679,7 @@ in that order. `NextAction#reschedule` creates a pending copy, reopening complet
 `Person#withNextAction` and `Model#setPerson` preserve all other fields.
 Success reports `Follow-up for NAME has been rescheduled successfully.`.
 
-The active filter and comparator are retained and re-evaluated. Moving an action into the future removes
+The active filter and comparator are retained and re-evaluated. Moving an action beyond the active due window removes
 its person from `due` only if no upcoming yearly reminder still qualifies; moving it to today makes the
 action qualify. Changing the date can also reorder the due view without changing full-list indices.
 
@@ -742,11 +742,15 @@ The shared visibility and duplicate-prefix checks above also apply. An empty `d/
 
 #### Viewing due actions
 
-`ClientBookParser` routes argument-free `due` to `DueCommand`. Each execution captures
+`ClientBookParser` routes `due [DAYS]` through `DueCommandParser` to `DueCommand`. `DAYS` is an optional
+whole number from 0 to 365, defaulting to 0. Each execution captures
 `LocalDate.now(clock)` and supplies a new `NextActionDuePredicate` and comparator to
 `Model#updateFilteredPersonList`, replacing any previous filter. A person qualifies once if they have an
-incomplete next action dated today or earlier, or a yearly reminder whose next occurrence falls 0–30 days
-from the captured date, inclusive. Completed and future one-off actions do not qualify on their own.
+incomplete next action dated on or before the captured date plus `DAYS`, or a yearly reminder whose next
+occurrence falls from the captured date through `max(30, DAYS)` days ahead, inclusive. Completed one-off
+actions and those beyond the action cutoff do not qualify on their own. `due` and `due 0` retain the
+original action cutoff of today and reminder window of 30 days. The predicate retains `actionDays`
+alongside its captured reference date, and the same predicate supplies both eligibility and sorting dates.
 The default clock uses the system's local zone; rerunning `due` refreshes the captured date after midnight.
 
 Results sort by the earliest qualifying action or reminder date ascending, so overdue actions come first.
@@ -755,14 +759,18 @@ Ties use name ignoring case, then exact spelling. `ModelManager` exposes a `Sort
 Replacing a person re-evaluates membership and order. `list` and `find` clear the comparator and return
 to the original contact order.
 
-Nonempty results report `N person(s) with due follow-ups or yearly reminders in the next 30 days.`;
+With no argument or `0`, nonempty results report
+`N person(s) with due follow-ups or yearly reminders in the next 30 days.`;
 empty results report `No follow-ups are due and no yearly reminders are upcoming.`.
+For `DAYS > 0`, nonempty results report
+`N person(s) with follow-ups due within DAYS day(s) or yearly reminders coming up.`;
+empty results report `No follow-ups are due within DAYS day(s) and no yearly reminders are upcoming.`.
 
 ##### Validation errors
 
 Condition | Error message
 ----------|--------------
-Any arguments to `due` | `The due command takes no arguments.`
+Non-integer, negative or above-365 `DAYS`, or more than one argument | `DAYS must be a whole number from 0 to 365, e.g. due 7`
 
 #### Persistence and card display
 
@@ -798,7 +806,9 @@ blank/overlong descriptions and labels, strict dates, leap days, local-zone boun
 replacement and rescheduling resets, repeated completion, case-insensitive reminder updates/deletion,
 field preservation and unchanged data on errors. Model, JSON and integration tests cover old files,
 invalid stored values, round trips, historical overdue actions, the inclusive reminder window and year
-rollover. `DueSortingIntegrationTest` verifies date/name ties, original indices, stored order and live
+rollover. Due parser, predicate and command tests also cover optional-day validation, inclusive action
+cutoffs, extended reminder windows, unchanged zero-day behaviour and lookahead messages using fixed dates/clocks.
+`DueSortingIntegrationTest` verifies date/name ties, original indices, stored order and live
 membership/order updates through logic and storage. Card tests cover status display and wrapping.
 
 ### Backing up and restoring records
@@ -1797,8 +1807,19 @@ Rejected commands should leave both records, their notes and the current filter 
       John's completed action, Jane's future action and Alex's reminder 31 days away are excluded.
       Run `list` to restore all three persons.
 
-   5. Test case: `due 1`<br>
-      Expected: `The due command takes no arguments.` The full list remains unchanged.
+   5. Test case: `due 7`<br>
+      Expected: `1 person(s) with follow-ups due within 7 day(s) or yearly reminders coming up.`
+      Jane appears for her action due tomorrow. Alex's reminder 31 days away is still excluded.
+
+   6. Test case: `due 31`<br>
+      Expected: `2 person(s) with follow-ups due within 31 day(s) or yearly reminders coming up.`
+      Jane appears before Alex, whose reminder exactly 31 days away now qualifies.
+
+   7. Test case: `due 0`<br>
+      Expected: `No follow-ups are due and no yearly reminders are upcoming.` The list is empty, as for `due`.
+
+   8. Test cases: `due -1`, `due 366`, `due abc`, `due 7 8`, `due 1.5`<br>
+      Expected: `DAYS must be a whole number from 0 to 365, e.g. due 7` for each command. The list remains unchanged.
 
 ### Finding persons by relationship
 ### Managing tags

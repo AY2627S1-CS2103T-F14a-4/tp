@@ -90,12 +90,7 @@ public class ClientBookParser {
             case EditCommand.COMMAND_WORD -> new EditCommandParser().parse(arguments);
             case DeleteCommand.COMMAND_WORD -> new DeleteCommandParser().parse(arguments);
             case DoneCommand.COMMAND_WORD -> new DoneCommandParser().parse(arguments);
-            case DueCommand.COMMAND_WORD -> {
-                if (!arguments.isBlank()) {
-                    throw new ParseException("The due command takes no arguments.");
-                }
-                yield new DueCommand();
-            }
+            case DueCommand.COMMAND_WORD -> new DueCommandParser().parse(arguments);
             case ClearCommand.COMMAND_WORD -> {
                 if (!arguments.isBlank()) {
                     throw new ParseException("The clear command takes no arguments.");

@@ -452,7 +452,7 @@ Format: `reschedule INDEX d/yyyy-MM-dd [a/ACTION]`
 * Supply `d/` once, with a real date in `yyyy-MM-dd` format that is today or later.
 * Leave out `a/` to keep the description, or supply it once with a new description of 1–200 characters.
 * Rescheduling sets the follow-up to pending, even if it was completed. Other details stay unchanged.
-* A future follow-up leaves `due` unless the person also has an upcoming yearly reminder.
+* A follow-up beyond the active `due` window leaves that view unless the person also has an upcoming yearly reminder.
 
 Examples:
 
@@ -517,17 +517,21 @@ Examples:
 
 Shows people with follow-ups to complete or yearly reminders coming up soon.
 
-Format: `due`
+Format: `due [DAYS]`
 
-* Includes incomplete next actions due today or earlier, and yearly reminders from today through 30 days ahead.
-* Completed actions and future next actions do not appear unless the person also has an upcoming reminder.
-* Each person appears once, ordered by their earliest due date, with overdue follow-ups first.
+* `DAYS` is an optional whole number from 0 to 365. Omitting it or using `0` keeps the default behaviour:
+  incomplete next actions due today or earlier, and yearly reminders from today through 30 days ahead.
+* `due DAYS` includes incomplete next actions due on or before today plus `DAYS`, including overdue actions.
+  Yearly reminders qualify from today through `max(30, DAYS)` days ahead. Both cutoffs are inclusive.
+* Completed actions and actions beyond the selected window do not qualify unless the person also has an upcoming reminder.
+* Each person appears once, ordered by their earliest qualifying date, with overdue follow-ups first, then by name.
 * Replaces any current search. Use the index shown beside the person for other commands; `list` shows everyone again.
-* Do not add arguments. Run `due` again after midnight to update which follow-ups and reminders are shown.
+* Run `due` with the same `DAYS` again after midnight to update which follow-ups and reminders are shown.
 
 Examples:
 
 * `due` shows everyone with a due follow-up or an upcoming yearly reminder.
+* `due 7` also includes incomplete follow-ups due in the next 7 days; yearly reminders still look ahead 30 days.
 * `due`, then `done 2` completes the next action of the person shown at index 2, if they have one.
 
 ### Clearing all entries: `clear`
@@ -610,6 +614,26 @@ If the data file cannot be read, ClientBook first tries to copy it to a sibling 
 Furthermore, certain edits can cause the ClientBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
 
+## Coming Soon
+
+The following features are planned for future versions of ClientBook:
+
+- Client portfolio tracking: Record a client's investments, insurance policies, assets, liabilities, and portfolio allocation.
+- Financial goal planning: Track goals such as retirement, education, home ownership, and emergency savings, including target amounts and deadlines.
+- Client pipeline management: Organise prospects by stages such as *New Lead*, *Contacted*, *Meeting Scheduled*, *Proposal Sent*, and *Converted*.
+- Flexible recurring reminders: Create weekly, monthly, quarterly, or custom reminders in addition to yearly reminders.
+- Calendar integration: Synchronise follow-ups, meetings, and reminders with external calendar applications.
+- Advanced search and saved filters: Combine multiple search criteria and save frequently used searches for quick access.
+- Dashboard and analytics: View summaries of upcoming follow-ups, overdue actions, prospect conversion, and client relationship activity.
+- Data import and export: Import client records from CSV files and export selected information for reporting or migration.
+- Duplicate detection and merging: Identify possible duplicate client records and safely combine their information.
+- Document attachments: Associate supporting documents, such as meeting summaries and financial plans, with a client record.
+- Secure data protection: Protect sensitive client information using encryption and optional application authentication.
+- Multi-user collaboration: Allow authorised team members to share records, assign follow-ups, and track changes.
+- Custom fields: Let users define additional fields suited to their organisation's workflow.
+- Interaction templates: Provide reusable templates for common calls, meetings, reviews, and follow-up notes.
+- Undo and redo: Reverse accidental changes and restore recently modified or deleted information.
+
 ## FAQ
 
 **Q**: How do I transfer my data to another computer?<br>
@@ -647,7 +671,7 @@ Action     | Format, Examples
 **Done**   | `done INDEX`<br> e.g., `done 1`
 **Yearly reminder** | `remind INDEX a/LABEL d/MM-dd`<br>e.g. `remind 1 a/Birthday d/11-10`
 **Remove yearly reminder** | `unremind INDEX a/LABEL`<br>e.g. `unremind 1 a/birthday`
-**Due**    | `due`
+**Due**    | `due [DAYS]`
 **List**   | `list`
 **Help**   | `help`
 **Exit**   | `exit`
