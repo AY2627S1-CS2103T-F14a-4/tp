@@ -2,12 +2,14 @@ package seedu.address.logic.parser;
 
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
+import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 
 import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.commands.InfoCommand;
 import seedu.address.logic.commands.InfoCommand.InfoDescriptor;
+import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.AreaOfInterest;
 import seedu.address.model.person.FinancialNeed;
 import seedu.address.model.person.Priority;
@@ -83,11 +85,15 @@ public class InfoCommandParserTest {
     @Test
     public void parse_unknownPrefixBeforeFirstField_rejectsWithoutHidingInvalidIndex() {
         for (String prefix : new String[] {"xyz/Value", "fna/Value", "fnValue/Value", "CPF/SRS"}) {
+            assertParseFailure(parser, prefix + " pr/High", InfoCommandParser.MESSAGE_INVALID_INDEX);
             assertParseFailure(parser, "2 " + prefix, InfoCommandParser.MESSAGE_INVALID_PARAMETER);
             assertParseFailure(parser, "2 " + prefix + " pr/High", InfoCommandParser.MESSAGE_INVALID_PARAMETER);
             for (String index : new String[] {"0", "-1", "abc", "1.5", "2147483648", "1 2"}) {
+                String expectedMessage = index.equals("1 2")
+                        ? "info accepts exactly one index. Unexpected argument: 2"
+                        : InfoCommandParser.MESSAGE_INVALID_INDEX;
                 assertParseFailure(parser, index + " " + prefix + " pr/High",
-                        InfoCommandParser.MESSAGE_INVALID_INDEX);
+                        expectedMessage);
             }
         }
     }
@@ -261,10 +267,35 @@ public class InfoCommandParserTest {
             assertParseFailure(parser, args, "Client index is required");
         }
         for (String index : new String[] {"0", "-1", "abc", "1.5", "2147483648", "1 2"}) {
-            assertParseFailure(parser, index + " fn/Retirement", "Client index must be a positive integer.");
-            assertParseFailure(parser, index + " pr/-", "Client index must be a positive integer.");
+            String expectedMessage = index.equals("1 2")
+                    ? "info accepts exactly one index. Unexpected argument: 2"
+                    : InfoCommandParser.MESSAGE_INVALID_INDEX;
+            assertParseFailure(parser, index + " fn/Retirement", expectedMessage);
+            assertParseFailure(parser, index + " pr/-", expectedMessage);
         }
         assertParseFailure(parser, "1", InfoCommandParser.MESSAGE_NO_PARAMETERS);
+    }
+
+    @Test
+    public void parse_additionalIndexArguments_reportsUnexpectedArguments() {
+        for (String extra : new String[] {"2", "2 3", "extra", "extra  more"}) {
+            String expectedMessage = "info accepts exactly one index. Unexpected argument: " + extra;
+            for (String fields : new String[] {"", " fn/X", " pr/-", " ai/- fn/"}) {
+                String input = "1 " + extra + fields;
+                assertParseFailure(parser, input, expectedMessage);
+                assertThrows(ParseException.class, expectedMessage, () ->
+                        new ClientBookParser().parseCommand("info " + input));
+            }
+        }
+        assertParseFailure(parser, "1\t2 fn/X", "info accepts exactly one index. Unexpected argument: 2");
+    }
+
+    @Test
+    public void parse_additionalIndexWithMalformedOrDuplicatePrefixes_preservesPrecedence() {
+        assertParseFailure(parser, "1 2 /pr X", InfoCommandParser.MESSAGE_INVALID_PARAMETER);
+        assertParseFailure(parser, "1 2 fnn/X", InfoCommandParser.MESSAGE_INVALID_PARAMETER);
+        assertParseFailure(parser, "1 2 fn/X fn/Y",
+                String.format(InfoCommandParser.MESSAGE_DUPLICATE_PARAMETER, "fn/"));
     }
 
     @Test

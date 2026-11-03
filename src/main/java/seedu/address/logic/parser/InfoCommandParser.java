@@ -74,8 +74,11 @@ public class InfoCommandParser implements Parser<InfoCommand> {
                 ? indexText.substring(0, preambleParameter.start()).trim() : indexText;
         Index index;
         try {
-            index = ParserUtil.parseIndex(indexCandidate);
+            index = ParserUtil.parseSingleIndex(indexCandidate, InfoCommand.COMMAND_WORD, MESSAGE_INVALID_INDEX);
         } catch (ParseException e) {
+            if (!ParserUtil.MESSAGE_INVALID_INDEX.equals(e.getMessage())) {
+                throw e;
+            }
             throw new ParseException(MESSAGE_INVALID_INDEX, e);
         }
         if (hasUnexpectedParameter) {

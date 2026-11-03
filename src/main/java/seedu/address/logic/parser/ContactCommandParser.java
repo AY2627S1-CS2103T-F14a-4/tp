@@ -57,7 +57,8 @@ public class ContactCommandParser implements Parser<ContactCommand> {
     private static Index parseContactIndex(String preamble) throws ParseException {
         String text = " " + preamble;
         Matcher matcher = PREAMBLE_PARAMETER.matcher(text);
-        return ParserUtil.parseIndex(matcher.find() ? text.substring(0, matcher.start()) : text);
+        return ParserUtil.parseSingleIndex(matcher.find() ? text.substring(0, matcher.start()) : text,
+                ContactCommand.COMMAND_WORD, ParserUtil.MESSAGE_INVALID_INDEX);
     }
 
     /** Retains raw values for marker recognition, using the shared tokenizer's prefix boundaries. */
